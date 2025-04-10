@@ -50,7 +50,7 @@ https://rumble.com/v4hyha6-livingrimoire-database-tutorial.html
 ********
 wikis:
 ********
-https://github.com/yotamarker/public-livinGrimoire/wiki
+https://github.com/yotamarker/LivinGrimoire/wiki
 
 
-to post or sell your own skills goto yotamarker.com
+official LivinGrimoire forum: yotamarker.com
