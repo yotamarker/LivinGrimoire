@@ -1,0 +1,8 @@
+*********
+*CREDITS*
+*********
+
+the living grimoire was created by Moti Barski
+
+LivinGrimoire core port from java to python : Marco Vavassori (Vavuz), Moti Barski
+LivinGrimoire core port from Java to C++: thompsct (https://github.com/thompsct)

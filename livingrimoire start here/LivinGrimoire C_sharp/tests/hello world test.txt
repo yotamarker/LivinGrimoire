@@ -1,0 +1,5 @@
+Brain brain = new Brain();
+brain.AddLogicalSkill(new DiHelloWorld());
+brain.AddHardwareSkill(new DiPrinter());
+brain.DoIt("hello", "", "");
+Console.ReadLine();
