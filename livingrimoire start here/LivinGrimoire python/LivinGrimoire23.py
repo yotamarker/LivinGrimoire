@@ -447,14 +447,16 @@ class Brain:
         self._logicChobitOutput: str = ""
         self.logicChobit: Chobits = Chobits()
         self.hardwareChobit: Chobits = Chobits()
-        self.hardwareChobit.setKokoro(self.logicChobit.getKokoro())
         #120425 upgrade
         self.ear: Chobits = Chobits()
-        self.ear.setKokoro(self.logicChobit.getKokoro())
         self.skin: Chobits = Chobits()
-        self.skin.setKokoro(self.logicChobit.getKokoro())
         self.eye: Chobits = Chobits()
-        self.eye.setKokoro(self.logicChobit.getKokoro())
+        Brain.imprintSoul(self.logicChobit.getKokoro(), self.hardwareChobit,self.ear,self.skin,self.eye)
+
+    @staticmethod
+    def imprintSoul(kokoro: Kokoro, *args:Chobits):
+        for arg in args:
+            arg.setKokoro(kokoro)
 
     def getEmotion(self) -> str:
         return self._emotion
@@ -487,19 +489,19 @@ class Brain:
         self.ear.addSkill(skill)
 
     def add_skin_skill(self, skill):
-        self.logicChobit.addSkill(skill)
+        self.skin.addSkill(skill)
 
     def add_eye_skill(self, skill):
-        self.logicChobit.addSkill(skill)
+        self.eye.addSkill(skill)
 
-    def think(self, ear):
+    def think_default(self, ear):
         if bool(ear):
             self.doIt(ear,"","")  # the string is not empty
         else:
             # the string is empty
             self.doIt(self.ear.think("","",""), self.skin.think("","",""), self.eye.think("","",""))
 
-    def fink(self):
+    def think(self):
         # overload of think method because Python does not support it
         self.doIt(self.ear.think("", "", ""), self.skin.think("", "", ""), self.eye.think("", "", ""))
 
