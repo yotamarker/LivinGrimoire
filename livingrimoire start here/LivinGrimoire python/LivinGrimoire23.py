@@ -448,6 +448,13 @@ class Brain:
         self.logicChobit: Chobits = Chobits()
         self.hardwareChobit: Chobits = Chobits()
         self.hardwareChobit.setKokoro(self.logicChobit.getKokoro())
+        #120425 upgrade
+        self.ear: Chobits = Chobits()
+        self.ear.setKokoro(self.logicChobit.getKokoro())
+        self.skin: Chobits = Chobits()
+        self.skin.setKokoro(self.logicChobit.getKokoro())
+        self.eye: Chobits = Chobits()
+        self.eye.setKokoro(self.logicChobit.getKokoro())
 
     def getEmotion(self) -> str:
         return self._emotion
@@ -475,6 +482,26 @@ class Brain:
     def add_skillAware(self, skill):
         # add a skill with Chobit in its c'tor(has Chobit attribute)
         self.logicChobit.addSkillAware(skill)
+    # sensory skills 120425 upgrade
+    def add_ear_skill(self, skill):
+        self.ear.addSkill(skill)
+
+    def add_skin_skill(self, skill):
+        self.logicChobit.addSkill(skill)
+
+    def add_eye_skill(self, skill):
+        self.logicChobit.addSkill(skill)
+
+    def think(self, ear):
+        if bool(ear):
+            self.doIt(ear,"","")  # the string is not empty
+        else:
+            # the string is empty
+            self.doIt(self.ear.think("","",""), self.skin.think("","",""), self.eye.think("","",""))
+
+    def fink(self):
+        # overload of think method because Python does not support it
+        self.doIt(self.ear.think("", "", ""), self.skin.think("", "", ""), self.eye.think("", "", ""))
 
 
 ''' Chobits CLASS '''
