@@ -56,11 +56,14 @@ package LivinGrimoire;
  see Brain main for example use of the cyberpunk Software Design Pattern
  */
 public class Brain {
-    public Chobits logicChobit;
-    public Chobits hardwareChobit;
+    public Chobits logicChobit = new Chobits();
     private String emotion = "";
     private String bodyInfo = "";
     private String logicChobitOutput = "";
+    public Chobits hardwareChobit = new Chobits();
+    public Chobits ear = new Chobits(); // 120425 upgrade
+    public Chobits skin = new Chobits();
+    public Chobits eye = new Chobits();
 
     public String getEmotion() {
         return emotion;
@@ -75,9 +78,12 @@ public class Brain {
     }
 
     public Brain() {
-        logicChobit = new Chobits();
-        hardwareChobit = new Chobits();
-        hardwareChobit.setKokoro(logicChobit.getKokoro());
+        Brain.imprintSoul(this.logicChobit.getKokoro(), this.hardwareChobit, this.ear, this.skin, this.eye);
+    }
+    public static void imprintSoul(Kokoro kokoro, Chobits... args) {
+        for (Chobits arg : args) {
+            arg.setKokoro(kokoro);
+        }
     }
     public void doIt(String ear, String skin, String eye) {
         if (!bodyInfo.isEmpty()){
@@ -92,4 +98,30 @@ public class Brain {
     }
     public void addLogicalSkill(Skill skill){logicChobit.addSkill(skill);}
     public void addHardwareSkill(Skill skill){hardwareChobit.addSkill(skill);}
+    // 120425 upgrade
+    public void addEarSkill(Skill skill) {
+        this.ear.addSkill(skill);
+    }
+
+    public void addSkinSkill(Skill skill) {
+        this.skin.addSkill(skill);
+    }
+
+    public void addEyeSkill(Skill skill) {
+        this.eye.addSkill(skill);
+    }
+    public void think(String ear) {
+        if (!ear.isEmpty()) {
+            // handles typed inputs
+            this.doIt(ear, "", "");
+        } else {
+            // accounts for sensory inputs
+            this.doIt(this.ear.think("", "", ""), this.skin.think("", "", ""), this.eye.think("", "", ""));
+        }
+    }
+
+    public void think() {
+        // accounts for sensory inputs
+        this.doIt(this.ear.think("", "", ""), this.skin.think("", "", ""), this.eye.think("", "", ""));
+    }
 }
