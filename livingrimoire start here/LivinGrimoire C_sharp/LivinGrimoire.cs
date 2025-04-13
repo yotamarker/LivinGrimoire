@@ -604,23 +604,31 @@ public class Chobits
 }
 public class Brain
 {
-    public Chobits logicChobit;
-    public Chobits hardwareChobit;
+    public Chobits logicChobit = new Chobits();
     private string emotion = "";
     private string bodyInfo = "";
     private string logicChobitOutput = "";
+    public Chobits hardwareChobit = new Chobits();
+    public Chobits ear = new Chobits(); // 120425 upgrade
+    public Chobits skin = new Chobits();
+    public Chobits eye = new Chobits();
 
     public string GetEmotion => emotion;
-
     public string GetBodyInfo => bodyInfo;
-
     public string GetLogicChobitOutput => logicChobitOutput;
+
 
     public Brain()
     {
-        logicChobit = new Chobits();
-        hardwareChobit = new Chobits();
-        hardwareChobit.SetKokoro(logicChobit.GetKokoro());
+        Brain.ImprintSoul(logicChobit.GetKokoro(), hardwareChobit, ear, skin, eye);
+    }
+
+    public static void ImprintSoul(Kokoro kokoro, params Chobits[] args)
+    {
+        foreach (Chobits arg in args)
+        {
+            arg.SetKokoro(kokoro);
+        }
     }
 
     public void DoIt(string ear, string skin, string eye)
@@ -634,9 +642,9 @@ public class Brain
             logicChobitOutput = logicChobit.Think(ear, skin, eye);
         }
         emotion = logicChobit.GetSoulEmotion();
-        // Case: Hardware skill wishes to pass info to logical chobit
         bodyInfo = hardwareChobit.Think(logicChobitOutput, skin, eye);
     }
+
     public void AddLogicalSkill(Skill skill)
     {
         logicChobit.AddSkill(skill);
@@ -647,7 +655,39 @@ public class Brain
         hardwareChobit.AddSkill(skill);
     }
 
+    public void AddEarSkill(Skill skill)
+    {
+        ear.AddSkill(skill);
+    }
+
+    public void AddSkinSkill(Skill skill)
+    {
+        skin.AddSkill(skill);
+    }
+
+    public void AddEyeSkill(Skill skill)
+    {
+        eye.AddSkill(skill);
+    }
+
+    public void Think(string input)
+    {
+        if (!string.IsNullOrEmpty(input))
+        {
+            DoIt(input, "", "");
+        }
+        else
+        {
+            DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""));
+        }
+    }
+
+    public void Think()
+    {
+        DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""));
+    }
 }
+
 public class DiPrinter : Skill
 {
     // hello world skill for testing purposes

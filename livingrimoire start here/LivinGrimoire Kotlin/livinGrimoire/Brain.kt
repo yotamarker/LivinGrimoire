@@ -57,23 +57,32 @@ package livinGrimoire
  * see Brain main for example use of the cyberpunk Software Design Pattern
  */
 class Brain {
-    var logicChobit: Chobits
-    var hardwareChobit: Chobits
-    var emotion = ""
-        private set
-    var bodyInfo = ""
-        private set
-    var logicChobitOutput = ""
-        private set
+    var logicChobit = Chobits()
+    private var emotion = ""
+    private var bodyInfo = ""
+    private var logicChobitOutput = ""
+    var hardwareChobit = Chobits()
+    var ear = Chobits() // 120425 upgrade
+    var skin = Chobits()
+    var eye = Chobits()
+    fun getEmotion(): String {
+        return emotion
+    }
+
+    fun getBodyInfo(): String {
+        return bodyInfo
+    }
+
+    fun getLogicChobitOutput(): String {
+        return logicChobitOutput
+    }
 
     init {
-        logicChobit = Chobits()
-        hardwareChobit = Chobits()
-        hardwareChobit.kokoro = logicChobit.kokoro
+        imprintSoul(logicChobit.kokoro, hardwareChobit, ear, skin, eye)
     }
 
     fun doIt(ear: String, skin: String, eye: String) {
-        logicChobitOutput = if (!bodyInfo.isEmpty()) {
+        logicChobitOutput = if (bodyInfo.isNotEmpty()) {
             logicChobit.think(ear, bodyInfo, eye)
         } else {
             logicChobit.think(ear, skin, eye)
@@ -82,11 +91,48 @@ class Brain {
         // case: hardware skill wishes to pass info to logical chobit
         bodyInfo = hardwareChobit.think(logicChobitOutput, skin, eye)
     }
+
     fun addLogicalSkill(skill: Skill) {
         logicChobit.addSkill(skill)
     }
 
     fun addHardwareSkill(skill: Skill) {
         hardwareChobit.addSkill(skill)
+    }
+
+    // 120425 upgrade
+    fun addEarSkill(skill: Skill) {
+        ear.addSkill(skill)
+    }
+
+    fun addSkinSkill(skill: Skill) {
+        skin.addSkill(skill)
+    }
+
+    fun addEyeSkill(skill: Skill) {
+        eye.addSkill(skill)
+    }
+
+    fun think(ear: String) {
+        if (ear.isNotEmpty()) {
+            // handles typed inputs
+            doIt(ear, "", "")
+        } else {
+            // accounts for sensory inputs
+            doIt(this.ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""))
+        }
+    }
+
+    fun think() {
+        // accounts for sensory inputs
+        doIt(ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""))
+    }
+
+    companion object {
+        fun imprintSoul(kokoro: Kokoro, vararg args: Chobits) {
+            for (arg in args) {
+                arg.kokoro = kokoro
+            }
+        }
     }
 }

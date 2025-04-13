@@ -486,44 +486,45 @@
         End Sub
     End Class
     Public Class Brain
-        Public logicChobit As Chobits
-        Public hardwareChobit As Chobits
+        Public logicChobit As New Chobits()
         Private emotion As String = ""
         Private bodyInfo As String = ""
         Private logicChobitOutput As String = ""
+        Public hardwareChobit As New Chobits()
+        Public ear As New Chobits() ' 120425 upgrade
+        Public skin As New Chobits()
+        Public eye As New Chobits()
 
-        Public ReadOnly Property GetEmotion() As String
-            Get
-                Return emotion
-            End Get
-        End Property
+        Public Function GetEmotion() As String
+            Return emotion
+        End Function
 
-        Public ReadOnly Property GetBodyInfo() As String
-            Get
-                Return bodyInfo
-            End Get
-        End Property
+        Public Function GetBodyInfo() As String
+            Return bodyInfo
+        End Function
 
-        Public ReadOnly Property GetLogicChobitOutput() As String
-            Get
-                Return logicChobitOutput
-            End Get
-        End Property
+        Public Function GetLogicChobitOutput() As String
+            Return logicChobitOutput
+        End Function
 
         Public Sub New()
-            logicChobit = New Chobits()
-            hardwareChobit = New Chobits()
-            hardwareChobit.SetKokoro(logicChobit.GetKokoro())
+            Brain.ImprintSoul(logicChobit.GetKokoro(), hardwareChobit, ear, skin, eye)
         End Sub
 
-        Public Sub DoIt(ByVal ear As String, ByVal skin As String, ByVal eye As String)
-            If Not bodyInfo = "" Then
+        Public Shared Sub ImprintSoul(kokoro As Kokoro, ParamArray args As Chobits())
+            For Each arg As Chobits In args
+                arg.SetKokoro(kokoro)
+            Next
+        End Sub
+
+        Public Sub DoIt(ear As String, skin As String, eye As String)
+            If Not String.IsNullOrEmpty(bodyInfo) Then
                 logicChobitOutput = logicChobit.Think(ear, bodyInfo, eye)
             Else
                 logicChobitOutput = logicChobit.Think(ear, skin, eye)
             End If
             emotion = logicChobit.GetSoulEmotion()
-            ' Case: Hardware skill wishes to pass info to logical chobit
+            ' Case: hardware skill wishes to pass info to logical chobit
             bodyInfo = hardwareChobit.Think(logicChobitOutput, skin, eye)
         End Sub
 
@@ -535,6 +536,33 @@
             hardwareChobit.AddSkill(skill)
         End Sub
 
+        ' 120425 upgrade
+        Public Sub AddEarSkill(skill As Skill)
+            ear.AddSkill(skill)
+        End Sub
+
+        Public Sub AddSkinSkill(skill As Skill)
+            skin.AddSkill(skill)
+        End Sub
+
+        Public Sub AddEyeSkill(skill As Skill)
+            eye.AddSkill(skill)
+        End Sub
+
+        Public Sub Think(input As String)
+            If Not String.IsNullOrEmpty(input) Then
+                ' Handles typed inputs
+                DoIt(input, "", "")
+            Else
+                ' Accounts for sensory inputs
+                DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""))
+            End If
+        End Sub
+
+        Public Sub Think()
+            ' Accounts for sensory inputs
+            DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""))
+        End Sub
     End Class
     Public Class DiPrinter
         Inherits Skill
