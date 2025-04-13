@@ -495,38 +495,86 @@ class Chobits {
 
  see Brain main for example use of the cyberpunk Software Design Pattern
  */
-class Brain {
-    public var logicChobit:Chobits
-    public var hardwareChobit:Chobits
-    private var emotion:String = ""
-    private var bodyInfo:String = ""
-    private var logicChobitOutput:String = ""
-    public func getEmotion()->String{return emotion}
-    public func getLogicChobitOutput()->String{return logicChobitOutput}
-    public func getBodyInfo()->String{return bodyInfo}
-    init() {
-        self.logicChobit = Chobits()
-        self.hardwareChobit = Chobits()
-        self.hardwareChobit.kokoro = self.logicChobit.kokoro
+public class Brain {
+    var logicChobit = Chobits()
+    private var emotion = ""
+    private var bodyInfo = ""
+    private var logicChobitOutput = ""
+    var hardwareChobit = Chobits()
+    var ear = Chobits() // 120425 upgrade
+    var skin = Chobits()
+    var eye = Chobits()
+
+    public func getEmotion() -> String {
+        return emotion
     }
-    func doIt(ear:String, skin:String, eye:String) {
-        if !bodyInfo.isEmpty{
-            logicChobitOutput = logicChobit.think(ear: ear, skin: bodyInfo, eye: eye)
+
+    public func getBodyInfo() -> String {
+        return bodyInfo
+    }
+
+    public func getLogicChobitOutput() -> String {
+        return logicChobitOutput
+    }
+
+    public init() {
+        Brain.imprintSoul(kokoro: logicChobit.getKokoro(), args: hardwareChobit, ear, skin, eye)
+    }
+
+    static func imprintSoul(kokoro: Kokoro, args: Chobits...) {
+        for arg in args {
+            arg.setKokoro(kokoro: kokoro)
         }
-        else{
+    }
+
+    public func doIt(ear: String, skin: String, eye: String) {
+        if !bodyInfo.isEmpty {
+            logicChobitOutput = logicChobit.think(ear: ear, skin: bodyInfo, eye: eye)
+        } else {
             logicChobitOutput = logicChobit.think(ear: ear, skin: skin, eye: eye)
         }
         emotion = logicChobit.getSoulEmotion()
-        bodyInfo = hardwareChobit.think(ear: logicChobitOutput, skin: skin, eye: ear)
+        bodyInfo = hardwareChobit.think(ear: logicChobitOutput, skin: skin, eye: eye)
     }
-    func addLogicalSkill(_ skill: Skill) {
+
+    public func addLogicalSkill(skill: Skill) {
         logicChobit.addSkill(skill: skill)
+    }
+
+    public func addHardwareSkill(skill: Skill) {
+        hardwareChobit.addSkill(skill: skill)
+    }
+
+    // 120425 upgrade
+    public func addEarSkill(skill: Skill) {
+        ear.addSkill(skill: skill)
+    }
+
+    public func addSkinSkill(skill: Skill) {
+        skin.addSkill(skill: skill)
+    }
+
+    public func addEyeSkill(skill: Skill) {
+        eye.addSkill(skill: skill)
+    }
+
+    public func think(_ ear: String) {
+        if !ear.isEmpty {
+            doIt(ear: ear, skin: "", eye: "")
+        } else {
+            doIt(ear: self.ear.think(ear: "", skin: "", eye: ""),
+                 skin: skin.think(ear: "", skin: "", eye: ""),
+                 eye: eye.think(ear: "", skin: "", eye: ""))
         }
-        
-        func addHardwareSkill(_ skill: Skill) {
-            hardwareChobit.addSkill(skill: skill)
-        }
+    }
+
+    public func think() {
+        doIt(ear: ear.think(ear: "", skin: "", eye: ""),
+             skin: skin.think(ear: "", skin: "", eye: ""),
+             eye: eye.think(ear: "", skin: "", eye: ""))
+    }
 }
+
 class DiSysOut:Skill{
     // hello world skill for testing purposes
     override func input(ear: String, skin: String, eye: String) {
