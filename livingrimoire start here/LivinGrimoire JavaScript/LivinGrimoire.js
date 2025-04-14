@@ -469,11 +469,17 @@ class Chobits {
 class Brain {
     constructor() {
         this.logicChobit = new Chobits();
-        this.hardwareChobit = new Chobits();
-        this.hardwareChobit.SetKokoro(this.logicChobit.GetKokoro());
         this.emotion = "";
         this.bodyInfo = "";
         this.logicChobitOutput = "";
+        this.hardwareChobit = new Chobits();
+        this.hardwareChobit.SetKokoro(this.logicChobit.GetKokoro());
+        this.ear = new Chobits(); // 120425 upgrade
+        this.ear.SetKokoro(this.logicChobit.GetKokoro());
+        this.skin = new Chobits();
+        this.skin.SetKokoro(this.logicChobit.GetKokoro());
+        this.eye = new Chobits();
+        this.eye.SetKokoro(this.logicChobit.GetKokoro());
     }
 
     get GetEmotion() {
@@ -505,6 +511,26 @@ class Brain {
 
     AddHardwareSkill(skill) {
         this.hardwareChobit.AddSkill(skill);
+    }
+    AddEarSkill(skill) {
+        this.ear.AddSkill(skill);
+    }
+    AddSkinSkill(skill) {
+        this.skin.AddSkill(skill);
+    }
+    AddEyeSkill(skill) {
+        this.Eye.AddSkill(skill);
+    }
+    Think_Default(str1) {
+        if (str1.trim() !== "") {
+            this.DoIt(str1, "", "");
+        } else {
+            this.DoIt(this.ear.Think("", "", ""), this.skin.Think("", "", ""), this.eye.Think("", "", ""));
+        }
+    }
+
+    Think() {
+        this.DoIt(this.ear.Think("", "", ""), this.skin.Think("", "", ""), this.eye.Think("", "", ""));
     }
 }
 

@@ -10,6 +10,7 @@ brain.AddHardwareSkill(new DiPrinter());
 
 // Execute the DoIt method
 brain.DoIt("hello", "", "");
+brain.Think_Default("hello");
 
 // Keep the console open
 const readline = require('readline');
