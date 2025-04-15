@@ -66,16 +66,6 @@ open class Skill {
         // returns an algorithm that says the sayThis Strings verbatim per think cycle
         return algBuilder(APVerbatim(*sayThis))
     }
-
-    fun strContainsList(str1: String, items: ArrayList<String>): String {
-        // returns the 1st match between words in a string and values in a list.
-        for (temp in items) {
-            if (str1.contains(temp)) {
-                return temp
-            }
-        }
-        return ""
-    }
     open fun skillNotes(param: String): String {
         return "notes unknown"
     }

@@ -271,14 +271,6 @@ class Skill:
         # returns alg that says the word string (sayThis)
         return self.algBuilder(APVerbatim(*sayThis))
 
-    # noinspection PyMethodMayBeStatic
-    def strContainsList(self, str1: str, items: list[str]) -> str:
-        # returns the 1st match between words in a string and values in a list.
-        for temp in items:
-            if str1.count(temp) > 0:
-                return temp
-        return ""
-
     def skillNotes(self, param: str) -> str:
         return "notes unknown"
 
@@ -475,26 +467,26 @@ class Brain:
         self._emotion = self.logicChobit.getSoulEmotion()
         self._bodyInfo = self.hardwareChobit.think(self._logicChobitOutput, skin, eye)
 
-    def add_logical_skill(self, skill):
+    def add_logical_skill(self, skill: Skill):
         self.logicChobit.addSkill(skill)
 
-    def add_hardware_skill(self, skill):
+    def add_hardware_skill(self, skill: Skill):
         self.hardwareChobit.addSkill(skill)
 
-    def add_skillAware(self, skill):
+    def add_skillAware(self, skill: Skill):
         # add a skill with Chobit in its c'tor(has Chobit attribute)
         self.logicChobit.addSkillAware(skill)
     # sensory skills 120425 upgrade
-    def add_ear_skill(self, skill):
+    def add_ear_skill(self, skill: Skill):
         self.ear.addSkill(skill)
 
-    def add_skin_skill(self, skill):
+    def add_skin_skill(self, skill: Skill):
         self.skin.addSkill(skill)
 
-    def add_eye_skill(self, skill):
+    def add_eye_skill(self, skill: Skill):
         self.eye.addSkill(skill)
 
-    def think_default(self, ear):
+    def think_default(self, ear: str):
         if bool(ear):
             self.doIt(ear,"","")  # the string is not empty
         else:

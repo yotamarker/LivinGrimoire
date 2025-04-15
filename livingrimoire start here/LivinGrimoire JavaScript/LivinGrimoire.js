@@ -211,16 +211,6 @@ class Skill {
         return this.AlgBuilder(new APVerbatim(...sayThis));
     }
 
-    StrContainsList(str1, items) {
-        // Returns the 1st match between words in a string and values in a list.
-        for (const temp of items) {
-            if (str1.includes(temp)) {
-                return temp;
-            }
-        }
-        return "";
-    }
-
     SkillNotes(param) {
         return "notes unknown";
     }

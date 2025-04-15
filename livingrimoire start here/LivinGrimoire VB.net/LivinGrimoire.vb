@@ -237,16 +237,6 @@
             ' returns an algorithm that says the sayThis Strings verbatim per think cycle
             Return AlgBuilder(New APVerbatim(sayThis))
         End Function
-
-        Public Function StrContainsList(str1 As String, items As List(Of String)) As String
-            ' returns the 1st match between words in a string and values in a list.
-            For Each temp As String In items
-                If str1.Contains(temp) Then
-                    Return temp
-                End If
-            Next
-            Return ""
-        End Function
         Public Overridable Function SkillNotes(param As String) As String
             Return "notes unknown"
         End Function

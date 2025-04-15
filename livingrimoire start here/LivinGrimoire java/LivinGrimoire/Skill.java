@@ -66,15 +66,6 @@ public class Skill {
         // returns an algorithm that says the sayThis Strings verbatim per think cycle
         return algBuilder(new APVerbatim(sayThis));
     }
-    public String strContainsList(String str1, ArrayList<String> items) {
-        // returns the 1st match between words in a string and values in a list.
-        for (String temp : items) {
-            if (str1.contains(temp)) {
-                return temp;
-            }
-        }
-        return "";
-    }
     public String skillNotes(String param) {
         return "notes unknown";
     }

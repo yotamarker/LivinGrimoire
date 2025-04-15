@@ -221,13 +221,7 @@ open class Skill{
         // returns an algorithm that says the sayThis Strings verbatim per think cycle
         return algBuilder(algParts: APVerbatim(sentences: sayThis))
     }
-    func stringContainsListElement(str1:String, items:Array<String>)->String{
-        // returns the 1st match between words in a string and values in a list.
-        for item in items{
-            if str1.contains(item){return item}
-        }
-        return ""
-    }
+    
     func skillNotes(param: String) -> String {
         return "notes unknown"
     }

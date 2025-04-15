@@ -288,18 +288,6 @@ public class Skill
         return AlgBuilder(new APVerbatim(sayThis));
     }
 
-    public string StrContainsList(string str1, List<string> items)
-    {
-        // Returns the 1st match between words in a string and values in a list.
-        foreach (string temp in items)
-        {
-            if (str1.Contains(temp))
-            {
-                return temp;
-            }
-        }
-        return "";
-    }
     public virtual string SkillNotes(string param)
     {
         return "notes unknown";
