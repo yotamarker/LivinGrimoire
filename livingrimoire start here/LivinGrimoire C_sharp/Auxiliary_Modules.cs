@@ -4083,4 +4083,50 @@ public class RailBot
         return elizaWrapper.Respond(ear, ec, kokoro);
     }
 }
+public class KeyWords
+{
+    private readonly HashSet<string> hashSet;
+
+    // Constructor to initialize the hashSet
+    public KeyWords(params string[] keywords)
+    {
+        this.hashSet = new HashSet<string>();
+        foreach (string keyword in keywords)
+        {
+            this.hashSet.Add(keyword);
+        }
+    }
+
+    // Method to add keywords to the hashSet
+    public void AddKeyword(string keyword)
+    {
+        hashSet.Add(keyword);
+    }
+
+    // Extractor method
+    public string Extractor(string str1)
+    {
+        foreach (string keyword in hashSet)
+        {
+            if (str1.Contains(keyword))
+            {
+                return keyword; // Return the first matching keyword
+            }
+        }
+        return ""; // Return empty string if no keyword matches
+    }
+
+    // Excluder method
+    public bool Excluder(string str1)
+    {
+        foreach (string keyword in hashSet)
+        {
+            if (str1.Contains(keyword))
+            {
+                return true; // Return true if a matching keyword is found
+            }
+        }
+        return false; // Return false if no keyword matches
+    }
+}
 

@@ -3430,6 +3430,41 @@ Module Auxiliary_modules
             Return elizaWrapper.Respond(ear, ec, kokoro)
         End Function
     End Class
+    Public Class KeyWords
+        Private ReadOnly hashSet As HashSet(Of String)
 
+        ' Constructor to initialize the hashSet
+        Public Sub New(ParamArray keywords As String())
+            Me.hashSet = New HashSet(Of String)()
+            For Each keyword As String In keywords
+                Me.hashSet.Add(keyword)
+            Next
+        End Sub
+
+        ' Method to add keywords to the hashSet
+        Public Sub AddKeyword(keyword As String)
+            hashSet.Add(keyword)
+        End Sub
+
+        ' Extractor method
+        Public Function Extractor(str1 As String) As String
+            For Each keyword As String In hashSet
+                If str1.Contains(keyword) Then
+                    Return keyword ' Return the first matching keyword
+                End If
+            Next
+            Return "" ' Return empty string if no keyword matches
+        End Function
+
+        ' Excluder method
+        Public Function Excluder(str1 As String) As Boolean
+            For Each keyword As String In hashSet
+                If str1.Contains(keyword) Then
+                    Return True ' Return true if a matching keyword is found
+                End If
+            Next
+            Return False ' Return false if no keyword matches
+        End Function
+    End Class
 
 End Module

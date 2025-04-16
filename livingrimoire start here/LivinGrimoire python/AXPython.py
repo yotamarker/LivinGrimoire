@@ -3647,3 +3647,27 @@ class RailBot:
         if self.eliza_wrapper is None:
             return self.respond_dialog(ear)
         return self.eliza_wrapper.respond(ear, self.ec, kokoro)
+
+
+class KeyWords:
+    def __init__(self, *keywords):
+        # Initialize a set to store the keywords
+        self.hash_set = set(keywords)
+
+    # Method to add keywords to the hash_set
+    def add_keyword(self, keyword):
+        self.hash_set.add(keyword)
+
+    # Extractor method
+    def extractor(self, str1):
+        for keyword in self.hash_set:
+            if keyword in str1:
+                return keyword  # Return the first matching keyword
+        return ""  # Return empty string if no keyword matches
+
+    # Excluder method
+    def excluder(self, str1):
+        for keyword in self.hash_set:
+            if keyword in str1:
+                return True  # Return True if a matching keyword is found
+        return False  # Return False if no keyword matches

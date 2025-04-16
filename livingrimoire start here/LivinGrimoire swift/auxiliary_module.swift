@@ -3957,7 +3957,7 @@ class RailBot {
 
     /// Returns a loadable monolog based on the current context.
     func loadableMonolog(kokoro: Kokoro) -> String {
-        guard let elizaWrapper = elizaWrapper else { return monolog() }
+        guard elizaWrapper != nil else { return monolog() }
         return loadableMonologMechanics(ear: context, kokoro: kokoro)
     }
 
@@ -3965,5 +3965,38 @@ class RailBot {
     func loadableDialog(ear: String, kokoro: Kokoro) -> String {
         guard let elizaWrapper = elizaWrapper else { return respondDialog(ear) }
         return elizaWrapper.respond(ear, ec, kokoro)
+    }
+}
+class KeyWords {
+    private var hashSet: Set<String>
+
+    // Constructor to initialize the hashSet
+    init(keywords: String...) {
+        self.hashSet = Set(keywords)
+    }
+
+    // Method to add keywords to the hashSet
+    func addKeyword(keyword: String) {
+        hashSet.insert(keyword)
+    }
+
+    // Extractor method
+    func extractor(str1: String) -> String {
+        for keyword in hashSet {
+            if str1.contains(keyword) {
+                return keyword // Return the first matching keyword
+            }
+        }
+        return "" // Return empty string if no keyword matches
+    }
+
+    // Excluder method
+    func excluder(str1: String) -> Bool {
+        for keyword in hashSet {
+            if str1.contains(keyword) {
+                return true // Return true if a matching keyword is found
+            }
+        }
+        return false // Return false if no keyword matches
     }
 }
