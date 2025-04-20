@@ -382,60 +382,10 @@ class Fusion:
         return self._result
 
 
-'''*********
- *intro *
- ********
-
- cyberpunk>the matrix.
- one line of code to add a skill(logical skill), 
- but ALSO! 1 line of code to add a hardware capability(hardware skill).
-
- ***********
- *Atributes*
- ***********
-
- the logicChobit is a Chobits attribute with logic skills. these skills have algorithmic logic,
- and thinking patterns.
-
- the hardwareChobit is a Chobit attribute with hardware skills. these skills access the
- hardware capabilities of the machine.
- for example: output printing, sending mail, sending SMS, making a phone call, taking
- a photo, accessing GPIO pins, opening a program, fetching the weather and so on.
-
- ********************
- *special attributes*
- ********************
-
- in some cases the hardware chobit may want to send a message to the logic chobit,
- for example to give feedback on hardware components. this is handled by the bodyInfo
- String.
-
- the emot attribute is the chobit's current emotion.
-
- the logicChobitOutput is the chobit's last output.
-
- **********************
- *hardware skill types*
- **********************
-
- assembly style: these skills are triggered by strings with certain wild card characters
- for example: #open browser
-
- funnel: these are triggered by strings without wild cards.
- for example: "hello world"->prints hello world
-
- *************
- *example use*
- *************
- DiSysOut is an example of a hardware skill
-
- see Brain main for example use of the cyberpunk Software Design Pattern'''
-
-
 class Brain:
+    # c'tor
     def __init__(self):
         self._emotion: str = ""
-        self._bodyInfo: str = ""
         self._logicChobitOutput: str = ""
         self.logicChobit: Chobits = Chobits()
         self.hardwareChobit: Chobits = Chobits()
@@ -450,47 +400,50 @@ class Brain:
         for arg in args:
             arg.setKokoro(kokoro)
 
+    # ret active alg part representing emotion
     def getEmotion(self) -> str:
         return self._emotion
 
-    def getBodyInfo(self) -> str:
-        return self._bodyInfo
-
+    # ret feedback (last output)
     def getLogicChobitOutput(self) -> str:
         return self._logicChobitOutput
 
+    # live
     def doIt(self, ear: str, skin: str, eye: str):
-        if not self._bodyInfo == "":
-            self._logicChobitOutput = self.logicChobit.think(ear, self._bodyInfo, eye)
-        else:
-            self._logicChobitOutput = self.logicChobit.think(ear, skin, eye)
+        self._logicChobitOutput = self.logicChobit.think(ear, skin, eye)
         self._emotion = self.logicChobit.getSoulEmotion()
-        self._bodyInfo = self.hardwareChobit.think(self._logicChobitOutput, skin, eye)
+        self.hardwareChobit.think(self._logicChobitOutput, skin, eye)
 
+    # add regular thinking(logical) skill
     def add_logical_skill(self, skill: Skill):
         self.logicChobit.addSkill(skill)
 
+    # add output skill
     def add_hardware_skill(self, skill: Skill):
         self.hardwareChobit.addSkill(skill)
 
     def add_skillAware(self, skill: Skill):
         # add a skill with Chobit in its c'tor(has Chobit attribute)
         self.logicChobit.addSkillAware(skill)
-    # sensory skills 120425 upgrade
+
+    # add audio(ear) input skill
     def add_ear_skill(self, skill: Skill):
         self.ear.addSkill(skill)
 
+    # add sensor input skill
     def add_skin_skill(self, skill: Skill):
         self.skin.addSkill(skill)
 
+    # add visual input skill
     def add_eye_skill(self, skill: Skill):
         self.eye.addSkill(skill)
 
-    def think_default(self, ear: str):
-        if bool(ear):
-            self.doIt(ear,"","")  # the string is not empty
+    def think_default(self, keyIn: str):
+        if bool(keyIn):
+            # handles typed inputs(keyIn)
+            self.doIt(keyIn,"","")  # the string is not empty
         else:
-            # the string is empty
+            # the string is empty, process with sensory inputs
             self.doIt(self.ear.think("","",""), self.skin.think("","",""), self.eye.think("","",""))
 
     def think(self):
