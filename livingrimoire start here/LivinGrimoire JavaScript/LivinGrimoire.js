@@ -460,66 +460,68 @@ class Brain {
     constructor() {
         this.logicChobit = new Chobits();
         this.emotion = "";
-        this.bodyInfo = "";
         this.logicChobitOutput = "";
         this.hardwareChobit = new Chobits();
         this.hardwareChobit.SetKokoro(this.logicChobit.GetKokoro());
-        this.ear = new Chobits(); // 120425 upgrade
+        this.ear = new Chobits();
         this.ear.SetKokoro(this.logicChobit.GetKokoro());
         this.skin = new Chobits();
         this.skin.SetKokoro(this.logicChobit.GetKokoro());
         this.eye = new Chobits();
         this.eye.SetKokoro(this.logicChobit.GetKokoro());
     }
-
+    // ret active alg part representing emotion
     get GetEmotion() {
         return this.emotion;
     }
-
-    get GetBodyInfo() {
-        return this.bodyInfo;
-    }
-
+    // ret feedback (last output)
     get GetLogicChobitOutput() {
         return this.logicChobitOutput;
     }
-
+    // live
     DoIt(ear, skin, eye) {
         if (this.bodyInfo) {
             this.logicChobitOutput = this.logicChobit.Think(ear, this.bodyInfo, eye);
         } else {
-            this.logicChobitOutput = this.logicChobit.Think(ear, skin, eye);
+            
         }
+        this.logicChobitOutput = this.logicChobit.Think(ear, skin, eye);
         this.emotion = this.logicChobit.GetSoulEmotion();
         // Case: Hardware skill wishes to pass info to logical chobit
-        this.bodyInfo = this.hardwareChobit.Think(this.logicChobitOutput, skin, eye);
+        this.hardwareChobit.Think(this.logicChobitOutput, skin, eye);
     }
-
+    // add regular thinking(logical) skill
     AddLogicalSkill(skill) {
         this.logicChobit.AddSkill(skill);
     }
-
+    // add output skill
     AddHardwareSkill(skill) {
         this.hardwareChobit.AddSkill(skill);
     }
+    // add audio(ear) input skill
     AddEarSkill(skill) {
         this.ear.AddSkill(skill);
     }
+    // add sensor input skill
     AddSkinSkill(skill) {
         this.skin.AddSkill(skill);
     }
+    // add visual input skill
     AddEyeSkill(skill) {
         this.Eye.AddSkill(skill);
     }
-    Think_Default(str1) {
-        if (str1.trim() !== "") {
-            this.DoIt(str1, "", "");
+    Think_Default(keyIn) {
+        if (keyIn.trim() !== "") {
+            // handles typed inputs(keyIn)
+            this.DoIt(keyIn, "", "");
         } else {
+            // accounts for sensory inputs
             this.DoIt(this.ear.Think("", "", ""), this.skin.Think("", "", ""), this.eye.Think("", "", ""));
         }
     }
 
     Think() {
+        // accounts for sensory inputs only. use this overload for tick events(where it is certain no typed inputs are to be processed)
         this.DoIt(this.ear.Think("", "", ""), this.skin.Think("", "", ""), this.eye.Think("", "", ""));
     }
 }
