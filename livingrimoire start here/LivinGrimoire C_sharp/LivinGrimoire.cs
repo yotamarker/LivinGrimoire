@@ -594,20 +594,19 @@ public class Brain
 {
     public Chobits logicChobit = new Chobits();
     private string emotion = "";
-    private string bodyInfo = "";
     private string logicChobitOutput = "";
     public Chobits hardwareChobit = new Chobits();
-    public Chobits ear = new Chobits(); // 120425 upgrade
+    public Chobits ear = new Chobits();
     public Chobits skin = new Chobits();
     public Chobits eye = new Chobits();
 
     public string GetEmotion => emotion;
-    public string GetBodyInfo => bodyInfo;
     public string GetLogicChobitOutput => logicChobitOutput;
 
 
     public Brain()
     {
+        // c'tor
         Brain.ImprintSoul(logicChobit.GetKokoro(), hardwareChobit, ear, skin, eye);
     }
 
@@ -618,60 +617,56 @@ public class Brain
             arg.SetKokoro(kokoro);
         }
     }
-
+    // live
     public void DoIt(string ear, string skin, string eye)
     {
-        if (!string.IsNullOrEmpty(bodyInfo))
-        {
-            logicChobitOutput = logicChobit.Think(ear, bodyInfo, eye);
-        }
-        else
-        {
-            logicChobitOutput = logicChobit.Think(ear, skin, eye);
-        }
+        logicChobitOutput = logicChobit.Think(ear, skin, eye);
         emotion = logicChobit.GetSoulEmotion();
-        bodyInfo = hardwareChobit.Think(logicChobitOutput, skin, eye);
+        hardwareChobit.Think(logicChobitOutput, skin, eye);
     }
-
+    // add a skill (builder design patterned func))
     public void AddLogicalSkill(Skill skill)
     {
         logicChobit.AddSkill(skill);
     }
-
+    // add output skill
     public void AddHardwareSkill(Skill skill)
     {
         hardwareChobit.AddSkill(skill);
     }
-
+    // add audio(ear) input skill
     public void AddEarSkill(Skill skill)
     {
         ear.AddSkill(skill);
     }
-
+    // add sensor input skill
     public void AddSkinSkill(Skill skill)
     {
         skin.AddSkill(skill);
     }
-
+    // add visual input skill
     public void AddEyeSkill(Skill skill)
     {
         eye.AddSkill(skill);
     }
 
-    public void Think(string input)
+    public void Think(string keyIn)
     {
-        if (!string.IsNullOrEmpty(input))
+        if (!string.IsNullOrEmpty(keyIn))
         {
-            DoIt(input, "", "");
+            // handles typed inputs(keyIn)
+            DoIt(keyIn, "", "");
         }
         else
         {
+            // accounts for sensory inputs
             DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""));
         }
     }
 
     public void Think()
     {
+        // accounts for sensory inputs only. use this overload for tick events(where it is certain no typed inputs are to be processed)
         DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""));
     }
 }

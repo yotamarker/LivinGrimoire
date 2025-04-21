@@ -478,7 +478,6 @@
     Public Class Brain
         Public logicChobit As New Chobits()
         Private emotion As String = ""
-        Private bodyInfo As String = ""
         Private logicChobitOutput As String = ""
         Public hardwareChobit As New Chobits()
         Public ear As New Chobits() ' 120425 upgrade
@@ -488,15 +487,11 @@
         Public Function GetEmotion() As String
             Return emotion
         End Function
-
-        Public Function GetBodyInfo() As String
-            Return bodyInfo
-        End Function
-
+        ' ret feedback (last output)
         Public Function GetLogicChobitOutput() As String
             Return logicChobitOutput
         End Function
-
+        ' c'tor
         Public Sub New()
             Brain.ImprintSoul(logicChobit.GetKokoro(), hardwareChobit, ear, skin, eye)
         End Sub
@@ -506,18 +501,14 @@
                 arg.SetKokoro(kokoro)
             Next
         End Sub
-
+        ' live
         Public Sub DoIt(ear As String, skin As String, eye As String)
-            If Not String.IsNullOrEmpty(bodyInfo) Then
-                logicChobitOutput = logicChobit.Think(ear, bodyInfo, eye)
-            Else
-                logicChobitOutput = logicChobit.Think(ear, skin, eye)
-            End If
+            logicChobitOutput = logicChobit.Think(ear, skin, eye)
             emotion = logicChobit.GetSoulEmotion()
-            ' Case: hardware skill wishes to pass info to logical chobit
-            bodyInfo = hardwareChobit.Think(logicChobitOutput, skin, eye)
+            ' output thoughts and account for reflexes(with skin or eye) in respective skills if needed
+            hardwareChobit.Think(logicChobitOutput, skin, eye)
         End Sub
-
+        'add regular thinking(logical) skill
         Public Sub AddLogicalSkill(skill As Skill)
             logicChobit.AddSkill(skill)
         End Sub
@@ -526,23 +517,23 @@
             hardwareChobit.AddSkill(skill)
         End Sub
 
-        ' 120425 upgrade
+        ' add audio(ear) input skill
         Public Sub AddEarSkill(skill As Skill)
             ear.AddSkill(skill)
         End Sub
-
+        ' add sensor input skill
         Public Sub AddSkinSkill(skill As Skill)
             skin.AddSkill(skill)
         End Sub
-
+        ' add visual input skill
         Public Sub AddEyeSkill(skill As Skill)
             eye.AddSkill(skill)
         End Sub
 
-        Public Sub Think(input As String)
-            If Not String.IsNullOrEmpty(input) Then
-                ' Handles typed inputs
-                DoIt(input, "", "")
+        Public Sub Think(keyIn As String)
+            If Not String.IsNullOrEmpty(keyIn) Then
+                ' handles typed inputs(keyIn)
+                DoIt(keyIn, "", "")
             Else
                 ' Accounts for sensory inputs
                 DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""))
