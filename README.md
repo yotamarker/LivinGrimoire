@@ -14,7 +14,7 @@ buy me a green tea:
 6. **Auxiliary Classes**: Specialized for learnability and trigger management, with miscellaneous classes for time savings on common coding actions.
 7. **Multistep Algorithms**: Can form multistep algorithms and abort algorithms while they run.
 8. **Built-In Skill Catalog**: Features a built-in skill catalog (see wiki to learn more).
-9. **Dynamic Skill Management**: Can use self-aware skills, enabling them to add or remove other skills while the program is running, similar to a command terminal (see TheShell wiki).
+9. **Dynamic Skill Management**: Can use self-aware skills, enabling them to add or remove other skills while the program is running, similar to a command terminal (see AI hormones wiki).
 
 to learn how to use the LivinGrimoire:
 
