@@ -11,7 +11,7 @@ class Brain {
     var logicChobitOutput = ""
         private set
     var hardwareChobit = Chobits()
-    var ear = Chobits() // 120425 upgrade
+    var ear = Chobits()
     var skin = Chobits()
     var eye = Chobits()
 

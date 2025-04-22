@@ -4,7 +4,7 @@ public class Brain {
     private String emotion = "";
     private String logicChobitOutput = "";
     public Chobits hardwareChobit = new Chobits();
-    public Chobits ear = new Chobits(); // 120425 upgrade
+    public Chobits ear = new Chobits();
     public Chobits skin = new Chobits();
     public Chobits eye = new Chobits();
     // ret active alg part representing emotion
