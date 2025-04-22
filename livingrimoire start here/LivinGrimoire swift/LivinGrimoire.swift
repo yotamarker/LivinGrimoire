@@ -389,7 +389,7 @@ class Chobits {
     func containsSkill(skill: Skill) -> Bool {
         return self.dClasses.contains(where: { $0 === skill })
     }
-
+    @discardableResult
     func think(ear: String, skin: String, eye: String) -> String {
         self.isThinking = true
         for dCls in self.dClasses {
@@ -432,85 +432,24 @@ class Chobits {
         return result
     }
 }
-/* Brain class
- *********
- *intro *
- ********
 
- up until now, the LivinGrimoire was on par with the matrix learn scene.
- one line of code to add one skill.
-
- that is great, that is sci-fi turned real, that is the most significant coding achievement in the history of time.
-
- but hey why stop there? why only be on par with the matrix and the human brain ?
- what is beyond the matrix level? you already know
-
- cyberpunk>the matrix.
- one line of code to add a skill, but ALSO! 1 line of code to add a hardware capability.
-
- ***********
- *Atributes*
- ***********
-
- the logicChobit is a Chobits attribute with logic skills. these skills have algorithmic logic,
- and thinking patterns.
-
- the hardwareChobit is a Chobit attribute with hardware skills. these skills access the
- hardware capabilities of the machine.
- for example: output printing, sending mail, sending SMS, making a phone call, taking
- a photo, accessing GPIO pins, opening a program, fetching the weather and so on.
-
- ********************
- *special attributes*
- ********************
-
- in some cases the hardware chobit may want to send a message to the logic chobit,
- for example to give feedback on hardware components. this is handled by the bodyInfo
- String.
-
- the emot attribute is the chobit's current emotion.
-
- the logicChobitOutput is the chobit's last output.
-
- **********************
- *hardware skill types*
- **********************
-
- assembly style: these skills are triggered by strings with certain wild card characters
- for example: #open browser
-
- funnel: these are triggered by strings without wild cards.
- for example: "hello world"->prints hello world
-
- *************
- *example use*
- *************
- DiSysOut is an example of a hardware skill
-
- see Brain main for example use of the cyberpunk Software Design Pattern
- */
 public class Brain {
     var logicChobit = Chobits()
     private var emotion = ""
-    private var bodyInfo = ""
     private var logicChobitOutput = ""
     var hardwareChobit = Chobits()
-    var ear = Chobits() // 120425 upgrade
+    var ear = Chobits()
     var skin = Chobits()
     var eye = Chobits()
-
+    // ret active alg part representing emotion
     public func getEmotion() -> String {
         return emotion
     }
-
-    public func getBodyInfo() -> String {
-        return bodyInfo
-    }
-
+    // ret feedback (last output)
     public func getLogicChobitOutput() -> String {
         return logicChobitOutput
     }
-
+    // c'tor
     public init() {
         Brain.imprintSoul(kokoro: logicChobit.getKokoro(), args: hardwareChobit, ear, skin, eye)
     }
@@ -520,42 +459,40 @@ public class Brain {
             arg.setKokoro(kokoro: kokoro)
         }
     }
-
+    // live
     public func doIt(ear: String, skin: String, eye: String) {
-        if !bodyInfo.isEmpty {
-            logicChobitOutput = logicChobit.think(ear: ear, skin: bodyInfo, eye: eye)
-        } else {
-            logicChobitOutput = logicChobit.think(ear: ear, skin: skin, eye: eye)
-        }
+        logicChobitOutput = logicChobit.think(ear: ear, skin: skin, eye: eye)
         emotion = logicChobit.getSoulEmotion()
-        bodyInfo = hardwareChobit.think(ear: logicChobitOutput, skin: skin, eye: eye)
+        hardwareChobit.think(ear: logicChobitOutput, skin: skin, eye: eye)
     }
-
+    // add regular thinking(logical) skill
     public func addLogicalSkill(skill: Skill) {
         logicChobit.addSkill(skill: skill)
     }
-
+    // add output skill
     public func addHardwareSkill(skill: Skill) {
         hardwareChobit.addSkill(skill: skill)
     }
 
-    // 120425 upgrade
+    // add visual input skill
     public func addEarSkill(skill: Skill) {
         ear.addSkill(skill: skill)
     }
-
+    // add sensor input skill
     public func addSkinSkill(skill: Skill) {
         skin.addSkill(skill: skill)
     }
-
+    // add visual input skill
     public func addEyeSkill(skill: Skill) {
         eye.addSkill(skill: skill)
     }
 
-    public func think(_ ear: String) {
-        if !ear.isEmpty {
-            doIt(ear: ear, skin: "", eye: "")
+    public func think(_ keyIn: String) {
+        if !keyIn.isEmpty {
+            // handles typed inputs(keyIn)
+            doIt(ear: keyIn, skin: "", eye: "")
         } else {
+            // accounts for sensory inputs
             doIt(ear: self.ear.think(ear: "", skin: "", eye: ""),
                  skin: skin.think(ear: "", skin: "", eye: ""),
                  eye: eye.think(ear: "", skin: "", eye: ""))
