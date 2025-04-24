@@ -4,40 +4,29 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class APVerbatim extends Mutatable {
-    /*
-     * this algorithm part says each past param verbatim
-     */
-    private ArrayList<String> sentences = new ArrayList<String>();
-    private int at = 0;
+    private ArrayList<String> sentences = new ArrayList<>();
 
     public APVerbatim(String... sentences) {
         this.sentences.addAll(Arrays.asList(sentences));
-        if (0 == sentences.length) {
-            at = 30;
-        }
     }
 
     public APVerbatim(ArrayList<String> list1) {
-        this.sentences = new ArrayList<String>(list1);
-        if (0 == this.sentences.size()) {
-            at = 30;
-        }
+        this.sentences = new ArrayList<>(list1);
     }
 
     @Override
     public String action(String ear, String skin, String eye) {
-        // TODO Auto-generated method stub
-        String axnStr = "";
-        if (this.at < this.sentences.size()) {
-            axnStr = this.sentences.get(at);
-            at++;
+        // Return the next sentence and remove it from the list
+        if (!this.sentences.isEmpty()) {
+            return this.sentences.remove(0);
         }
-        return axnStr;
+        return ""; // Return empty string if no sentences left
     }
 
     @Override
     public Boolean completed() {
-        // TODO Auto-generated method stub
-        return at >= this.sentences.size();
+        // Check if all sentences have been processed
+        return this.sentences.isEmpty();
     }
 }
+

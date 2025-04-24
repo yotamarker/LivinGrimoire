@@ -5,7 +5,6 @@ import java.util.Hashtable;
 /* this class enables:
 communication between skills
 utilization of a database for skills
-in skill monitoring of which Mutatable was last run by the AI (consciousness)
 this class is a built-in attribute in skill objects.
  * */
 public class Kokoro {

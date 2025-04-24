@@ -21,7 +21,7 @@ open class Skill {
     protected fun setVerbatimAlg(priority: Int, vararg sayThis: String) {
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
-        outAlg = simpleVerbatimAlgorithm(*sayThis)
+        outAlg = Algorithm(APVerbatim(*sayThis));
         outpAlgPriority = priority // 1->5 1 is the highest algorithm priority
     }
 
@@ -29,20 +29,14 @@ open class Skill {
         // based on the setVerbatimAlg method
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
-        outAlg = simpleVerbatimAlgorithm(*sayThis)
+        outAlg = Algorithm(APVerbatim(*sayThis));
         outpAlgPriority = 4 // 1->5 1 is the highest algorithm priority
     }
 
     protected fun setVerbatimAlgFromList(priority: Int, sayThis: ArrayList<String>) {
         // build a simple output algorithm to speak string by string per think cycle
         // uses list param
-        outAlg = algBuilder(APVerbatim(sayThis))
-        outpAlgPriority = priority // 1->5 1 is the highest algorithm priority
-    }
-
-    protected fun algPartsFusion(priority: Int, vararg algParts: Mutatable) {
-        // build a custom algorithm out of a chain of algorithm parts(actions)
-        outAlg = algBuilder(*algParts)
+        outAlg = Algorithm(APVerbatim(sayThis));
         outpAlgPriority = priority // 1->5 1 is the highest algorithm priority
     }
 
@@ -51,21 +45,6 @@ open class Skill {
         return outAlg != null
     }
 
-    // algorithm build methods
-    fun algBuilder(vararg algParts: Mutatable): Algorithm {
-        // returns an algorithm built with the algPart varargs
-        val algParts1 = ArrayList<Mutatable>()
-        for (i in algParts.indices) {
-            algParts1.add(algParts[i])
-        }
-        return Algorithm(algParts1)
-    }
-
-    // String based algorithm building methods
-    fun simpleVerbatimAlgorithm(vararg sayThis: String): Algorithm {
-        // returns an algorithm that says the sayThis Strings verbatim per think cycle
-        return algBuilder(APVerbatim(*sayThis))
-    }
     open fun skillNotes(param: String): String {
         return "notes unknown"
     }

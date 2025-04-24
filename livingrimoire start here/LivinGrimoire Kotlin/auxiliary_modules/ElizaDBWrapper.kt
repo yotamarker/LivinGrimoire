@@ -22,7 +22,7 @@ class ElizaDBWrapper {
         }
         modifiedKeys.add(in1)
         // load
-        ec.addFromDB(in1, kokoro.grimoireMemento.simpleLoad(in1))
+        ec.addFromDB(in1, kokoro.grimoireMemento.load(in1))
         return ec.response(in1)
     }
 
@@ -32,13 +32,13 @@ class ElizaDBWrapper {
         }
         modifiedKeys.add(in1)
         // load and get latest reply for input
-        ec.addFromDB(in1, kokoro.grimoireMemento.simpleLoad(in1))
+        ec.addFromDB(in1, kokoro.grimoireMemento.load(in1))
         return ec.responseLatest(in1)
     }
 
     fun sleepNSave(ecv2: EventChatV2, kokoro: Kokoro) {
         ecv2.modifiedKeys.forEach { element ->
-            kokoro.grimoireMemento.simpleSave(
+            kokoro.grimoireMemento.save(
                 element,
                 ecv2.getSaveStr(element)
             )
