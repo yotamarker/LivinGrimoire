@@ -18,10 +18,10 @@ public class Kokoro {
     public void setEmot(String emot) {
         this.emot = emot;
     }
-    public GrimoireMemento grimoireMemento;
+    public AbsDictionaryDB grimoireMemento;
     public Hashtable<String, String> toHeart = new Hashtable<>();
     public Kokoro(AbsDictionaryDB absDictionaryDB) {
         super();
-        this.grimoireMemento = new GrimoireMemento(absDictionaryDB);
+        this.grimoireMemento = absDictionaryDB;
     }
 }

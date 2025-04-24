@@ -3,6 +3,7 @@ package Skills.logical;
 import Auxiliary_Modules.Responder;
 import Auxiliary_Modules.TrgTime;
 import LivinGrimoire.APVerbatim;
+import LivinGrimoire.Algorithm;
 import LivinGrimoire.Skill;
 
 public class DiSleep extends Skill {
@@ -26,7 +27,8 @@ public class DiSleep extends Skill {
         if(trgTime.alarm()){
             APVerbatim announce = new APVerbatim("initializing sleep");
             APSleep apSleep = new APSleep(wakeners, sleep_duration_minutes);
-            this.algPartsFusion(2,announce,apSleep);
+            this.outpAlgPriority = 2;
+            this.outAlg = new Algorithm(announce,apSleep);
         }
     }
 }

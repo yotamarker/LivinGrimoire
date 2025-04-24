@@ -30,44 +30,27 @@ public class Skill {
     protected void setVerbatimAlg(int priority, String... sayThis){
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
-        this.outAlg = simpleVerbatimAlgorithm(sayThis);
+        this.outAlg = new Algorithm(new APVerbatim(sayThis));
         this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
     protected void setSimpleAlg(String... sayThis){
         // based on the setVerbatimAlg method
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
-        this.outAlg = simpleVerbatimAlgorithm(sayThis);
+        this.outAlg = new Algorithm(new APVerbatim(sayThis));
         this.outpAlgPriority = 4; // 1->5 1 is the highest algorithm priority
     }
     protected void setVerbatimAlgFromList(int priority, ArrayList<String> sayThis){
         // build a simple output algorithm to speak string by string per think cycle
         // uses list param
-        this.outAlg = algBuilder(new APVerbatim(sayThis));
-        this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
-    }
-    protected void algPartsFusion(int priority,Mutatable... algParts){
-        // build a custom algorithm out of a chain of algorithm parts(actions)
-        this.outAlg = algBuilder(algParts);
+        this.outAlg = new Algorithm(new APVerbatim(sayThis));
         this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
     public Boolean pendingAlgorithm(){
         // is an algorithm pending?
         return this.outAlg != null;
     }
-    // algorithm build methods
-    public Algorithm algBuilder(Mutatable... algParts) {
-        // returns an algorithm built with the algPart varargs
-        ArrayList<Mutatable> algParts1 = new ArrayList<>(Arrays.asList(algParts));
-        return new Algorithm(algParts1);
-    }
-    // String based algorithm building methods
-    public Algorithm simpleVerbatimAlgorithm(String... sayThis) {
-        // returns an algorithm that says the sayThis Strings verbatim per think cycle
-        return algBuilder(new APVerbatim(sayThis));
-    }
     public String skillNotes(String param) {
         return "notes unknown";
     }
-
 }

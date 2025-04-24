@@ -2,6 +2,8 @@ package Skills.logical;
 
 
 import Auxiliary_Modules.*;
+import LivinGrimoire.APVerbatim;
+import LivinGrimoire.Algorithm;
 import LivinGrimoire.Skill;
 
 
@@ -40,8 +42,7 @@ public class DiSneezer extends Skill {
         int nowMinutes = TimeUtils.getMinutesAsInt();
         if(burpMinutes.contains(nowMinutes)){
             burpMinutes.removeItem(nowMinutes);
-            this.outAlg = simpleVerbatimAlgorithm("petv3",responder1.getAResponse());
-            return;
+            this.outAlg = new Algorithm(new APVerbatim("petv3",responder1.getAResponse()));
         }
     }
 }

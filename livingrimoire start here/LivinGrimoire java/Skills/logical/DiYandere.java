@@ -83,7 +83,7 @@ public class DiYandere extends Skill {
                     for (int i = 0; i < d1.getSimpleRNDNum(3); i++) {
                         tempList.add(sadYandere.getAResponse());
                     }
-                    this.algPartsFusion(4,new APVerbatim(tempList));
+                    setVerbatimAlgFromList(4,tempList);
                 }
                 break;
         }

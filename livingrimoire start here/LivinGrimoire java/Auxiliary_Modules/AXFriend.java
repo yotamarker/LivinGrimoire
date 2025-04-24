@@ -1,5 +1,6 @@
 package Auxiliary_Modules;
 
+import LivinGrimoire.APVerbatim;
 import LivinGrimoire.Algorithm;
 import LivinGrimoire.Skill;
 
@@ -39,7 +40,7 @@ public class AXFriend {
 
     public Algorithm friendHandShake() {
         // engage after reset() or at certain time of day if needsFriend, with snooze
-        return diSkillUtils.simpleVerbatimAlgorithm("friend_request", "i am " + myName);
+        return new Algorithm(new APVerbatim("friend_request", "i am " + myName));
     }
 
     public Boolean getFriendIsActive() {

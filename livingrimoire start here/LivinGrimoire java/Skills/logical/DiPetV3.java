@@ -2,6 +2,8 @@ package Skills.logical;
 
 
 import Auxiliary_Modules.*;
+import LivinGrimoire.APVerbatim;
+import LivinGrimoire.Algorithm;
 import LivinGrimoire.Skill;
 
 
@@ -44,14 +46,14 @@ public class DiPetV3 extends Skill {
         int nowMinutes = TimeUtils.getMinutesAsInt();
         if(burpMinutes.contains(nowMinutes)){
             burpMinutes.removeItem(nowMinutes);
-            this.outAlg = simpleVerbatimAlgorithm("petv3",responder1.getAResponse());
+            this.outAlg = new Algorithm(new APVerbatim("petv3",responder1.getAResponse()));
             return;
         }
         // chirp back to input
         if(responder1.contains(ear)){
             int n = chirpMinutes.getSimpleRNDNum(100);
             if (n<35){
-                this.outAlg = simpleVerbatimAlgorithm("burp_hkn",responder1.getAResponse());
+                this.outAlg = new Algorithm(new APVerbatim("burp_hkn",responder1.getAResponse()));
             }
         }
         // listen n learn recent single words
