@@ -2935,7 +2935,7 @@ class ElizaDBWrapper:
             return ec.response(in1)
         self.modified_keys.add(in1)
         # Load
-        ec.add_from_db(in1, kokoro.grimoireMemento.simple_load(in1))
+        ec.add_from_db(in1, kokoro.grimoireMemento.load(in1))
         return ec.response(in1)
 
     def respond_latest(self, in1: str, ec: EventChatV2, kokoro: 'Kokoro') -> str:
@@ -2943,12 +2943,12 @@ class ElizaDBWrapper:
             return ec.response_latest(in1)
         self.modified_keys.add(in1)
         # Load and get latest reply for input
-        ec.add_from_db(in1, kokoro.grimoireMemento.simple_load(in1))
+        ec.add_from_db(in1, kokoro.grimoireMemento.load(in1))
         return ec.response_latest(in1)
 
     def sleep_n_save(self, ecv2: EventChatV2, kokoro: 'Kokoro') -> None:
         for element in ecv2.get_modified_keys():
-            kokoro.grimoireMemento.simple_save(element, ecv2.get_save_str(element))
+            kokoro.grimoireMemento.save(element, ecv2.get_save_str(element))
 
 
 class AXFunnelResponder:

@@ -25,8 +25,8 @@ def read_from_txt(db_directory, key):
         return f.read()
 
 
-def check_data_exists(db_directory, key):
-    return f'{db_directory}/{key}.txt'
+def check_data_exists(db_directory: str, key: str) -> bool:
+    return os.path.exists(f'{db_directory}/{key}.txt')
 
 
 class LivinGrimoirePandaDB(AbsDictionaryDB):
@@ -40,6 +40,8 @@ class LivinGrimoirePandaDB(AbsDictionaryDB):
             print(f"Directory '{self._db_name}' already exists.")
 
     def save(self, key: str, value: str):
+        if key == "" or value == "":
+            return
         save_to_txt(self._db_name, key, value)
 
     def load(self, key: str) -> str:

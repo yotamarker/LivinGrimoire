@@ -362,12 +362,12 @@ class DiSayer(Skill):
         if len(ear) == 0:
             return
         if ear == "say it":
-            self.setSimpleAlg(self.getKokoro().grimoireMemento.simpleLoad(f'disayer'))
+            self.setSimpleAlg(self.getKokoro().grimoireMemento.load(f'disayer'))
             return
 
         self.command = self.cmdBreaker.extractCmdParam(ear)
         if self.command:
-            self.getKokoro().grimoireMemento.simpleSave(f'disayer', self.command)
+            self.getKokoro().grimoireMemento.save(f'disayer', self.command)
             self.setSimpleAlg(self.command)
             self.command = ""
 
@@ -1889,7 +1889,7 @@ class DiCusser(Skill):
             return
         # memory load from .txt
         if not self._initialized:
-            self.npc.responder.queue = self.splitter.split(self.getKokoro().grimoireMemento.simpleLoad("blabberv4"))
+            self.npc.responder.queue = self.splitter.split(self.getKokoro().grimoireMemento.load("blabberv4"))
             self._initialized = True
         # auto skill activation via DiBicameral skill:
         if "diblabberv4" == self.getKokoro().toHeart["dibicameral"]:
@@ -1915,7 +1915,7 @@ class DiCusser(Skill):
             # str learn
             if not self.npc.strLearn(ear):
                 return
-        self.getKokoro().grimoireMemento.simpleSave("blabberv4", self.splitter.stringBuilder(self.npc.responder.queue))
+        self.getKokoro().grimoireMemento.save("blabberv4", self.splitter.stringBuilder(self.npc.responder.queue))
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":

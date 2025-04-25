@@ -42,20 +42,6 @@ class Mutatable(ABC):
         return self.__class__.__name__
 
 
-class GrimoireMemento:
-    def __init__(self, absDictionaryDB: AbsDictionaryDB) -> None:
-        super().__init__()
-        self.absDictionaryDB = absDictionaryDB
-
-    def simpleLoad(self, key: str) -> str:
-        return self.absDictionaryDB.load(key)
-
-    def simpleSave(self, key: str, value: str):
-        if key == "" or value == "":
-            return
-        self.absDictionaryDB.save(key, value)
-
-
 '''
 the Kokoro clss enables: using a database, inter skill communication and action log monitoring
 '''
@@ -64,7 +50,7 @@ the Kokoro clss enables: using a database, inter skill communication and action 
 class Kokoro:
     def __init__(self, absDictionaryDB: AbsDictionaryDB):
         self.emot = ""
-        self.grimoireMemento = GrimoireMemento(absDictionaryDB)
+        self.grimoireMemento = absDictionaryDB
         self.toHeart: dict[str, str] = {}
 
     def getEmot(self) -> str:
@@ -103,40 +89,22 @@ class APSay(Mutatable):
 class APVerbatim(Mutatable):
     """this algorithm part says each past param verbatim"""
 
-    def __init__(self, *args) -> None:
+    def __init__(self, *sentences) -> None:
         super().__init__()
-        self.sentences: list[str] = []
-        self.at = 0
-        try:
-            if isinstance(args[0], list):
-                self.sentences = args[0]
-                if len(self.sentences) == 0:
-                    self.at = 30
-            else:
-                for i in range(len(args)):
-                    self.sentences.append(args[i])
-        except IndexError:
-            # Handle the case where args[0] does not exist
-            self.at = 30
-        except AttributeError:
-            # Handle the case where self.sentences is not initialized
-            self.at = 30
-        except Exception as e:
-            # Log or handle other exceptions
-            print(f"An unexpected error occurred: {e}")
-            self.at = 30
+        if len(sentences) == 1 and isinstance(sentences[0], list):
+            self.sentences = list(sentences[0])  # Initialize with a copy of the list
+        else:
+            self.sentences = list(sentences)
 
     # Override
     def action(self, ear: str, skin: str, eye: str) -> str:
-        axnStr = ""
-        if self.at < len(self.sentences):
-            axnStr = self.sentences[self.at]
-            self.at += 1
-        return axnStr
+        if self.sentences:
+            return self.sentences.pop(0)
+        return ""
 
     # Override
     def completed(self) -> bool:
-        return self.at >= len(self.sentences)
+        return not self.sentences
 
 
 # A step-by-step plan to achieve a goal
@@ -146,7 +114,10 @@ class Algorithm:
         super().__init__()
         self.algParts: list[Mutatable] = algParts
 
-    # *constract with string and goal
+    @classmethod
+    def from_varargs(cls, *algParts: Mutatable) -> Algorithm:
+        # Create an instance from varargs
+        return cls(list(algParts))
 
     @property
     def getAlgParts(self) -> list[Mutatable]:
@@ -219,57 +190,27 @@ class Skill:
     # in skill algorithm building shortcut methods:
     def setVerbatimAlg(self, priority: int, *sayThis: str):
         # build a simple output algorithm to speak string by string per think cycle
-        # uses varargs param
-        temp: list[str] = []
-        for i in range(0, len(sayThis)):
-            temp.append(sayThis[i])
-        self._outAlg = self.simpleVerbatimAlgorithm(temp)
+        self._outAlg = Algorithm.from_varargs(APVerbatim(*sayThis))
         self._outpAlgPriority = priority  # 1->5 1 is the highest algorithm priority
 
     def setSimpleAlg(self, *sayThis: str):
-        # based on the setVerbatimAlg method
-        # build a simple output algorithm to speak string by string per think cycle
-        # uses varargs param
-        temp: list[str] = []
-        for i in range(0, len(sayThis)):
-            temp.append(sayThis[i])
-        self._outAlg = self.simpleVerbatimAlgorithm(temp)
+        # Shortcut to build a simple algorithm
+        self._outAlg = Algorithm.from_varargs(APVerbatim(*sayThis))
         self._outpAlgPriority = 4  # 1->5 1 is the highest algorithm priority
 
     def setVebatimAlgFromList(self, priority: int, sayThis: list[str]):
         # build a simple output algorithm to speak string by string per think cycle
         # uses list param
-        self._outAlg = self.algBuilder(APVerbatim(sayThis))
+        self._outAlg = Algorithm.from_varargs(APVerbatim(sayThis))
         self._outpAlgPriority = priority  # 1->5 1 is the highest algorithm priority
 
     def algPartsFusion(self, priority: int, *algParts: Mutatable):
-        # build a custom algorithm out of a chain of algorithm parts(actions)
-        algParts1: list[Mutatable] = []
-        for i in range(0, len(algParts)):
-            algParts1.append(algParts[i])
-        self._outAlg = Algorithm(algParts1)
+        self._outAlg = Algorithm.from_varargs(*algParts)
         self._outpAlgPriority = priority  # 1->5 1 is the highest algorithm priority
 
     def pendingAlgorithm(self) -> bool:
         # is an algorithm pending?
         return self._outAlg is not None
-
-    # skill utils
-    # alg part based algorithm building methods
-    # var args param
-    # noinspection PyMethodMayBeStatic
-    def algBuilder(self, *itte: Mutatable) -> Algorithm:
-        # returns an algorithm built with the algPart varargs
-        algParts1: list[Mutatable] = []
-        for i in range(0, len(itte)):
-            algParts1.append(itte[i])
-        algorithm: Algorithm = Algorithm(algParts1)
-        return algorithm
-
-    # String based algorithm building methods
-    def simpleVerbatimAlgorithm(self, *sayThis) -> Algorithm:
-        # returns alg that says the word string (sayThis)
-        return self.algBuilder(APVerbatim(*sayThis))
 
     def skillNotes(self, param: str) -> str:
         return "notes unknown"
