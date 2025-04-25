@@ -1,5 +1,5 @@
 // app.js
-const { AbsDictionaryDB, Mutatable, APSay, APVerbatim, GrimoireMemento, Algorithm, Kokoro, Neuron, Skill, DiHelloWorld, Cerabellum, Fusion, Chobits, Brain, DiPrinter } = require('./livingrimoire');
+const { AbsDictionaryDB, Mutatable, APSay, APVerbatim, Algorithm, Kokoro, Neuron, Skill, DiHelloWorld, Cerabellum, Fusion, Chobits, Brain, DiPrinter } = require('./livingrimoire');
 
 // Create an instance of Brain
 const brain = new Brain();

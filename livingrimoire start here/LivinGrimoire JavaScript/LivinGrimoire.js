@@ -57,44 +57,25 @@ class APSay extends Mutatable {
 class APVerbatim extends Mutatable {
     constructor(...sentences) {
         super();
-        this.sentences = sentences.length > 0 ? sentences : [];
-        this.at = sentences.length === 0 ? 30 : 0;
+        this.sentences = Array.isArray(sentences[0]) ? [...sentences[0]] : [...sentences];
     }
 
     Action(ear, skin, eye) {
-        let axnStr = "";
-        if (this.at < this.sentences.length) {
-            axnStr = this.sentences[this.at];
-            this.at++;
+        if (this.sentences.length > 0) {
+            return this.sentences.shift(); // Removes and returns the first sentence
         }
-        return axnStr;
+        return "";
     }
 
     Completed() {
-        return this.at >= this.sentences.length;
-    }
-}
-
-class GrimoireMemento {
-    constructor(absDictionaryDB) {
-        this.absDictionaryDB = absDictionaryDB;
-    }
-
-    SimpleLoad(key) {
-        return this.absDictionaryDB.load(key);
-    }
-
-    SimpleSave(key, value) {
-        if (!key || !value) {
-            return;
-        }
-        this.absDictionaryDB.save(key, value);
+        return this.sentences.length === 0;
     }
 }
 
 class Algorithm {
     constructor(algParts) {
-        this.algParts = algParts;
+        // Handle both Array input and variable arguments (rest parameters)
+        this.algParts = Array.isArray(algParts) ? [...algParts] : [...arguments];
     }
 
     GetAlgParts() {
@@ -108,7 +89,7 @@ class Algorithm {
 class Kokoro {
     constructor(absDictionaryDB) {
         this.emot = "";
-        this.grimoireMemento = new GrimoireMemento(absDictionaryDB);
+        this.grimoireMemento = absDictionaryDB;
         this.toHeart = new Map();
     }
 
@@ -170,45 +151,26 @@ class Skill {
         this.kokoro = kokoro;
     }
 
+    // Build a simple output algorithm to speak string by string per think cycle (varargs)
     SetVerbatimAlg(priority, ...sayThis) {
-        this.outAlg = this.SimpleVerbatimAlgorithm(...sayThis);
-        this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
+        this.outAlg = new Algorithm(new APVerbatim(...sayThis));
+        this.outpAlgPriority = priority; // DEFCON levels 1->5, 1 is the highest
     }
 
+    // Shortcut to build a simple algorithm
     SetSimpleAlg(...sayThis) {
-        this.outAlg = this.SimpleVerbatimAlgorithm(...sayThis);
-        this.outpAlgPriority = 4; // 1->5 1 is the highest algorithm priority
+        this.outAlg = new Algorithm(new APVerbatim(...sayThis));
+        this.outpAlgPriority = 4; // Default priority 4
     }
 
+    // Build a verbatim algorithm from a list
     SetVerbatimAlgFromList(priority, sayThis) {
-        this.outAlg = this.AlgBuilder(new APVerbatim(sayThis));
-        this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
-    }
-
-    AlgPartsFusion(priority, ...algParts) {
-        this.outAlg = this.AlgBuilder(...algParts);
-        this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
+        this.outAlg = new Algorithm(new APVerbatim(sayThis));
+        this.outpAlgPriority = priority; // DEFCON levels 1->5, 1 is the highest
     }
 
     PendingAlgorithm() {
         return this.outAlg !== null;
-    }
-
-    // skill utils (alg building methods)
-    // Alg part based algorithm building methods (var args param)
-    AlgBuilder(...algParts) {
-        // Returns an algorithm built with the algPart varargs
-        const algParts1 = [];
-        for (const part of algParts) {
-            algParts1.push(part);
-        }
-        return new Algorithm(algParts1);
-    }
-
-    // String based algorithm building methods
-    SimpleVerbatimAlgorithm(...sayThis) {
-        // Returns an algorithm that says the sayThis Strings verbatim per think cycle
-        return this.AlgBuilder(new APVerbatim(...sayThis));
     }
 
     SkillNotes(param) {
@@ -541,4 +503,4 @@ class DiPrinter extends Skill {
 }
 
 
-module.exports = { AbsDictionaryDB, Mutatable, APSay, APVerbatim, GrimoireMemento, Algorithm, Kokoro, Neuron, Skill, DiHelloWorld, Cerabellum, Fusion, Chobits, Brain, DiPrinter };
+module.exports = { AbsDictionaryDB, Mutatable, APSay, APVerbatim, Algorithm, Kokoro, Neuron, Skill, DiHelloWorld, Cerabellum, Fusion, Chobits, Brain, DiPrinter };
