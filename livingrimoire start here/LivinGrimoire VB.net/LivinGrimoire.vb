@@ -57,61 +57,36 @@
     Public Class APVerbatim
         Inherits Mutatable
 
-        ' This algorithm part says each past param verbatim
         Private sentences As New List(Of String)()
-        Private at As Integer = 0
 
+        ' Constructor accepting variable arguments
         Public Sub New(ParamArray sentences() As String)
-            For Each sentence As String In sentences
-                Me.sentences.Add(sentence)
-            Next
-
-            If sentences.Length = 0 Then
-                at = 30
-            End If
+            Me.sentences.AddRange(sentences)
         End Sub
 
+        ' Constructor accepting a List(Of String)
         Public Sub New(list1 As List(Of String))
             Me.sentences = New List(Of String)(list1)
-
-            If Me.sentences.Count = 0 Then
-                at = 30
-            End If
         End Sub
 
+        ' Overrides action method
         Public Overrides Function Action(ear As String, skin As String, eye As String) As String
-            Dim axnStr As String = ""
-            If at < sentences.Count Then
-                axnStr = sentences(at)
-                at += 1
+            ' Return the next sentence and remove it from the list
+            If Me.sentences.Count > 0 Then
+                Dim nextSentence As String = Me.sentences(0)
+                Me.sentences.RemoveAt(0)
+                Return nextSentence
             End If
-            Return axnStr
+            Return "" ' Return empty string if no sentences left
         End Function
 
+        ' Overrides completed method
         Public Overrides Function Completed() As Boolean
-            Return at >= sentences.Count
+            ' Check if all sentences have been processed
+            Return Me.sentences.Count = 0
         End Function
-
     End Class
-    Public Class GrimoireMemento
-        Private absDictionaryDB As AbsDictionaryDB
 
-        Public Sub New(ByVal absDictionaryDB As AbsDictionaryDB)
-            MyBase.New()
-            Me.absDictionaryDB = absDictionaryDB
-        End Sub
-
-        Public Function SimpleLoad(ByVal key As String) As String
-            Return Me.absDictionaryDB.Load(key)
-        End Function
-
-        Public Sub SimpleSave(ByVal key As String, ByVal value As String)
-            If key = "" Or value = "" Then
-                Return
-            End If
-            Me.absDictionaryDB.Save(key, value)
-        End Sub
-    End Class
     Public Class Algorithm
         Private algParts As New List(Of Mutatable)()
 
@@ -120,6 +95,10 @@
             Me.algParts = algParts
         End Sub
 
+        ' Constructor accepting variable arguments
+        Public Sub New(ParamArray algParts() As Mutatable)
+            Me.algParts = New List(Of Mutatable)(algParts)
+        End Sub
         Public Function GetAlgParts() As List(Of Mutatable)
             Return algParts
         End Function
@@ -140,12 +119,12 @@
             Me.emot = emot
         End Sub
 
-        Public grimoireMemento As GrimoireMemento
+        Public grimoireMemento As AbsDictionaryDB
         Public toHeart As New Hashtable()
 
         Public Sub New(absDictionaryDB As AbsDictionaryDB)
             MyBase.New()
-            Me.grimoireMemento = New GrimoireMemento(absDictionaryDB)
+            Me.grimoireMemento = absDictionaryDB
         End Sub
     End Class
     Public Class Neuron
@@ -198,45 +177,28 @@
             Me.kokoro = kokoro
         End Sub
 
-        Protected Sub SetVerbatimAlg(priority As Integer, ParamArray sayThis As String())
-            Me.outAlg = SimpleVerbatimAlgorithm(sayThis)
-            Me.outpAlgPriority = priority ' 1->5 1 is the highest algorithm priority
+        ' Build a simple output algorithm to speak string by string per think cycle
+        Protected Sub SetVerbatimAlg(priority As Integer, ParamArray sayThis() As String)
+            Me.outAlg = New Algorithm(New APVerbatim(sayThis))
+            Me.outpAlgPriority = priority ' DEFCON levels 1->5
         End Sub
 
-        Protected Sub SetSimpleAlg(ParamArray sayThis As String())
-            Me.outAlg = SimpleVerbatimAlgorithm(sayThis)
-            Me.outpAlgPriority = 4 ' 1->5 1 is the highest algorithm priority
+        ' Shortcut to build a simple algorithm
+        Protected Sub SetSimpleAlg(ParamArray sayThis() As String)
+            Me.outAlg = New Algorithm(New APVerbatim(sayThis))
+            Me.outpAlgPriority = 4 ' Default priority 4
         End Sub
 
+        ' Build a verbatim algorithm from a list
         Protected Sub SetVerbatimAlgFromList(priority As Integer, sayThis As List(Of String))
-            Me.outAlg = AlgBuilder(New APVerbatim(sayThis))
-            Me.outpAlgPriority = priority ' 1->5 1 is the highest algorithm priority
-        End Sub
-
-        Protected Sub AlgPartsFusion(priority As Integer, ParamArray algParts As Mutatable())
-            Me.outAlg = AlgBuilder(algParts)
-            Me.outpAlgPriority = priority ' 1->5 1 is the highest algorithm priority
+            Me.outAlg = New Algorithm(New APVerbatim(sayThis))
+            Me.outpAlgPriority = priority ' DEFCON levels 1->5
         End Sub
 
         Public Function PendingAlgorithm() As Boolean
             Return Me.outAlg IsNot Nothing
         End Function
-        ' algorithm building methods
-        Public Function AlgBuilder(ParamArray algParts As Mutatable()) As Algorithm
-            ' returns an algorithm built with the algPart varargs
-            Dim algParts1 As New List(Of Mutatable)()
-            For Each part As Mutatable In algParts
-                algParts1.Add(part)
-            Next
-            Dim algorithm As New Algorithm(algParts1)
-            Return algorithm
-        End Function
 
-        ' String based algorithm building methods
-        Public Function SimpleVerbatimAlgorithm(ParamArray sayThis As String()) As Algorithm
-            ' returns an algorithm that says the sayThis Strings verbatim per think cycle
-            Return AlgBuilder(New APVerbatim(sayThis))
-        End Function
         Public Overridable Function SkillNotes(param As String) As String
             Return "notes unknown"
         End Function

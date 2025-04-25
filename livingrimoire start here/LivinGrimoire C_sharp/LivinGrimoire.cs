@@ -71,68 +71,33 @@ public class APSay : Mutatable
 public class APVerbatim : Mutatable
 {
     private List<string> sentences = new List<string>();
-    private int at = 0;
 
     public APVerbatim(params string[] sentences)
     {
-        foreach (string sentence in sentences)
-        {
-            this.sentences.Add(sentence);
-        }
-
-        if (sentences.Length == 0)
-        {
-            at = 30;
-        }
+        this.sentences.AddRange(sentences);
     }
 
     public APVerbatim(List<string> list1)
     {
         this.sentences = new List<string>(list1);
-
-        if (this.sentences.Count == 0)
-        {
-            at = 30;
-        }
     }
 
     public override string Action(string ear, string skin, string eye)
     {
-        string axnStr = "";
-        if (at < sentences.Count)
+        // Return the next sentence and remove it from the list
+        if (this.sentences.Count > 0)
         {
-            axnStr = sentences[at];
-            at++;
+            string sentence = this.sentences[0];
+            this.sentences.RemoveAt(0);
+            return sentence;
         }
-        return axnStr;
+        return ""; // Return empty string if no sentences left
     }
 
     public override bool Completed()
     {
-        return at >= sentences.Count;
-    }
-}
-public class GrimoireMemento
-{
-    private AbsDictionaryDB absDictionaryDB;
-
-    public GrimoireMemento(AbsDictionaryDB absDictionaryDB)
-    {
-        this.absDictionaryDB = absDictionaryDB;
-    }
-
-    public string SimpleLoad(string key)
-    {
-        return this.absDictionaryDB.Load(key);
-    }
-
-    public void SimpleSave(string key, string value)
-    {
-        if (key == "" || value == "")
-        {
-            return;
-        }
-        this.absDictionaryDB.Save(key, value);
+        // Check if all sentences have been processed
+        return this.sentences.Count == 0;
     }
 }
 public class Algorithm
@@ -143,6 +108,11 @@ public class Algorithm
     {
         this.algParts = algParts;
     }
+    public Algorithm(params Mutatable[] algParts)
+    {
+        this.algParts = new List<Mutatable>(algParts);
+    }
+
 
     public List<Mutatable> GetAlgParts()
     {
@@ -168,12 +138,12 @@ public class Kokoro
         this.emot = emot;
     }
 
-    public GrimoireMemento grimoireMemento;
+    public AbsDictionaryDB grimoireMemento;
     public Hashtable toHeart = new Hashtable();
 
     public Kokoro(AbsDictionaryDB absDictionaryDB)
     {
-        this.grimoireMemento = new GrimoireMemento(absDictionaryDB);
+        this.grimoireMemento = absDictionaryDB;
     }
 }
 public class Neuron
@@ -241,51 +211,32 @@ public class Skill
 
     protected void SetVerbatimAlg(int priority, params string[] sayThis)
     {
-        outAlg = SimpleVerbatimAlgorithm(sayThis);
-        outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
+        // Build a simple output algorithm to speak string by string per think cycle
+        // Uses varargs parameter
+        this.outAlg = new Algorithm(new APVerbatim(sayThis));
+        this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
 
     protected void SetSimpleAlg(params string[] sayThis)
     {
-        outAlg = SimpleVerbatimAlgorithm(sayThis);
-        outpAlgPriority = 4; // 1->5 1 is the highest algorithm priority
+        // Based on the SetVerbatimAlg method
+        // Build a simple output algorithm to speak string by string per think cycle
+        // Uses varargs parameter
+        this.outAlg = new Algorithm(new APVerbatim(sayThis));
+        this.outpAlgPriority = 4; // 1->5 1 is the highest algorithm priority
     }
 
     protected void SetVerbatimAlgFromList(int priority, List<string> sayThis)
     {
-        outAlg = AlgBuilder(new APVerbatim(sayThis));
-        outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
-    }
-
-    protected void AlgPartsFusion(int priority, params Mutatable[] algParts)
-    {
-        outAlg = AlgBuilder(algParts);
-        outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
+        // Build a simple output algorithm to speak string by string per think cycle
+        // Uses list parameter
+        this.outAlg = new Algorithm(new APVerbatim(sayThis));
+        this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
 
     public bool PendingAlgorithm()
     {
         return outAlg != null;
-    }
-    // skill utils (alg building methods)
-    // Alg part based algorithm building methods (var args param)
-    public Algorithm AlgBuilder(params Mutatable[] algParts)
-    {
-        // Returns an algorithm built with the algPart varargs
-        List<Mutatable> algParts1 = new List<Mutatable>();
-        foreach (Mutatable part in algParts)
-        {
-            algParts1.Add(part);
-        }
-        Algorithm algorithm = new Algorithm(algParts1);
-        return algorithm;
-    }
-
-    // String based algorithm building methods
-    public Algorithm SimpleVerbatimAlgorithm(params string[] sayThis)
-    {
-        // Returns an algorithm that says the sayThis Strings verbatim per think cycle
-        return AlgBuilder(new APVerbatim(sayThis));
     }
 
     public virtual string SkillNotes(string param)
@@ -670,7 +621,6 @@ public class Brain
         DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""));
     }
 }
-
 public class DiPrinter : Skill
 {
     // hello world skill for testing purposes

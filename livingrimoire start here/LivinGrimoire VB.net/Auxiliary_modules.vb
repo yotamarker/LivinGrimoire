@@ -3157,7 +3157,7 @@ Module Auxiliary_modules
             End If
             modifiedKeys.Add(in1)
             ' Load
-            ec.AddFromDB(in1, kokoro.grimoireMemento.SimpleLoad(in1))
+            ec.AddFromDB(in1, kokoro.grimoireMemento.Load(in1))
             Return ec.Response(in1)
         End Function
 
@@ -3167,13 +3167,13 @@ Module Auxiliary_modules
             End If
             modifiedKeys.Add(in1)
             ' Load and get latest reply for input
-            ec.AddFromDB(in1, kokoro.grimoireMemento.SimpleLoad(in1))
+            ec.AddFromDB(in1, kokoro.grimoireMemento.Load(in1))
             Return ec.ResponseLatest(in1)
         End Function
 
         Public Sub SleepNSave(ecv2 As EventChatV2, kokoro As Kokoro)
             For Each element As String In ecv2.GetModifiedKeys()
-                kokoro.grimoireMemento.SimpleSave(element, ecv2.GetSaveStr(element))
+                kokoro.grimoireMemento.Save(element, ecv2.GetSaveStr(element))
             Next
         End Sub
     End Class

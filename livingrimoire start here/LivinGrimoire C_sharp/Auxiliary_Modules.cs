@@ -3763,7 +3763,7 @@ public class ElizaDBWrapper
         }
         modifiedKeys.Add(in1);
         // Load
-        ec.AddFromDB(in1, kokoro.grimoireMemento.SimpleLoad(in1));
+        ec.AddFromDB(in1, kokoro.grimoireMemento.Load(in1));
         return ec.Response(in1);
     }
 
@@ -3775,7 +3775,7 @@ public class ElizaDBWrapper
         }
         modifiedKeys.Add(in1);
         // Load and get latest reply for input
-        ec.AddFromDB(in1, kokoro.grimoireMemento.SimpleLoad(in1));
+        ec.AddFromDB(in1, kokoro.grimoireMemento.Load(in1));
         return ec.ResponseLatest(in1);
     }
 
@@ -3783,7 +3783,7 @@ public class ElizaDBWrapper
     {
         foreach (var element in ecv2.GetModifiedKeys())
         {
-            kokoro.grimoireMemento.SimpleSave(element, ecv2.GetSaveStr(element));
+            kokoro.grimoireMemento.Save(element, ecv2.GetSaveStr(element));
         }
     }
 }
