@@ -18,14 +18,14 @@ open class Skill {
     }
 
     // in skill algorithm building shortcut methods:
-    protected fun setVerbatimAlg(priority: Int, vararg sayThis: String) {
+    fun setVerbatimAlg(priority: Int, vararg sayThis: String) {
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
         outAlg = Algorithm(APVerbatim(*sayThis));
         outpAlgPriority = priority // 1->5 1 is the highest algorithm priority
     }
 
-    protected fun setSimpleAlg(vararg sayThis: String) {
+    fun setSimpleAlg(vararg sayThis: String) {
         // based on the setVerbatimAlg method
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
@@ -33,12 +33,17 @@ open class Skill {
         outpAlgPriority = 4 // 1->5 1 is the highest algorithm priority
     }
 
-    protected fun setVerbatimAlgFromList(priority: Int, sayThis: ArrayList<String>) {
+    fun setVerbatimAlgFromList(priority: Int, sayThis: ArrayList<String>) {
         // build a simple output algorithm to speak string by string per think cycle
         // uses list param
         outAlg = Algorithm(APVerbatim(sayThis));
         outpAlgPriority = priority // 1->5 1 is the highest algorithm priority
     }
+    fun algPartsFusion(priority: Int, vararg algParts: Mutatable) {
+        this.outAlg = Algorithm(*algParts)
+        this.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
+    }
+
 
     fun pendingAlgorithm(): Boolean {
         // is an algorithm pending?

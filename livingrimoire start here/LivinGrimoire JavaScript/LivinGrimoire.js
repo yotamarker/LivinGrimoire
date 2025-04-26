@@ -169,6 +169,11 @@ class Skill {
         this.outpAlgPriority = priority; // DEFCON levels 1->5, 1 is the highest
     }
 
+    algPartsFusion(priority, ...algParts) {
+        this.outAlg = new Algorithm(...algParts);
+        this.outpAlgPriority = priority; // 1->5, 1 is the highest algorithm priority
+    }
+
     PendingAlgorithm() {
         return this.outAlg !== null;
     }

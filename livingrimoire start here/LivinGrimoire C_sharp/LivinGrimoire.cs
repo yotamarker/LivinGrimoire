@@ -234,6 +234,13 @@ public class Skill
         this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
 
+    public void AlgPartsFusion(int priority, params Mutatable[] algParts)
+    {
+        this.outAlg = new Algorithm(algParts);
+        this.outpAlgPriority = priority; // 1->5, 1 is the highest algorithm priority
+    }
+
+
     public bool PendingAlgorithm()
     {
         return outAlg != null;

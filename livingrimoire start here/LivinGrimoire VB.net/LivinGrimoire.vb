@@ -195,6 +195,11 @@
             Me.outpAlgPriority = priority ' DEFCON levels 1->5
         End Sub
 
+        Public Sub AlgPartsFusion(ByVal priority As Integer, ParamArray algParts() As Mutatable)
+            Me.outAlg = New Algorithm(algParts)
+            Me.outpAlgPriority = priority ' 1->5, 1 is the highest algorithm priority
+        End Sub
+
         Public Function PendingAlgorithm() As Boolean
             Return Me.outAlg IsNot Nothing
         End Function
