@@ -58,55 +58,31 @@ class APsay:Mutatable{
 
 class APVerbatim:Mutatable{
     // this algorithm part says each past param verbatim
-    var at:Int=0
     var sentences: Array<String> = [String]()
     init(_ sentences:String...){
-        for item in sentences{
-            self.sentences.append(item)
-        }
-        if sentences.isEmpty {
-            self.at = 30
-        }
+        self.sentences.append(contentsOf: sentences)
     }
     init(sentences: Array<String>){
-        for item in sentences{
-            self.sentences.append(item)
-        }
-        if sentences.isEmpty {
-            self.at = 30
-        }
+        self.sentences = sentences
     }
     override func action(ear: String, skin: String, eye: String) -> String {
-        var axnStr = ""
-        if self.at < self.sentences.count{
-            axnStr=self.sentences[at]
-            self.at += 1
-        }
-        return axnStr
+        if !self.sentences.isEmpty {
+                    return self.sentences.removeFirst()
+                }
+                return ""
     }
     override func completed() -> Bool {
-        return self.at == self.sentences.count
+        return self.sentences.isEmpty
     }
 }
 
-// grimoirememento
-class GrimoireMemento{
-    private(set) var absDictionaryDB:AbsDictionaryDB
-    init(absDictionaryDB:AbsDictionaryDB){
-        self.absDictionaryDB = absDictionaryDB
-    }
-    func simpleLoad(key:String)->String{
-        return self.absDictionaryDB.load(key: key)
-    }
-    func simpleSave(key:String,value:String){
-        if(key.isEmpty || value.isEmpty){return}
-        self.absDictionaryDB.save(key: key, value: value)
-    }
-}
 // a step by step plan to achieve a goal
 class Algorithm{
     var algParts: Array<Mutatable> = [Mutatable]()
     init(algParts: Array<Mutatable>) {
+        self.algParts = algParts
+    }
+    init(_ algParts: Mutatable...) {
         self.algParts = algParts
     }
     func getSize() -> Int {
@@ -115,10 +91,10 @@ class Algorithm{
 }
 class Kokoro{
     private var emot:String = ""
-    private(set) var grimoireMemento:GrimoireMemento
+    private(set) var grimoireMemento:AbsDictionaryDB
     var toHeart:[String:String] = [:]
     init(absDictionaryDB: AbsDictionaryDB) {
-        self.grimoireMemento = GrimoireMemento(absDictionaryDB: absDictionaryDB)
+        self.grimoireMemento = absDictionaryDB
     }
     func getEmot()->String{
         return emot
@@ -172,54 +148,28 @@ open class Skill{
     func setVerbatimAlgFromList(priority:Int,  sayThis: Array<String>) {
         // build a simple output algorithm to speak string by string per think cycle
         // uses list param
-        self.outAlg = algBuilder(algParts: APVerbatim(sentences: sayThis))
-        self.outpAlgPriority = priority // 1->5 1 is the highest algorithm priority
+        self.outAlg = Algorithm(APVerbatim(sentences: sayThis))
+        self.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
     }
     func setVerbatimAlg(priority:Int,  sayThis:String...) {
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
-        var temp: Array<String> = [String]()
-        for strTemp in sayThis{
-            temp.append(strTemp)
-        }
-        setVerbatimAlgFromList(priority: priority, sayThis: temp)
+        self.outAlg = Algorithm(APVerbatim(sentences: sayThis))
+        self.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
     }
     func setSimpleAlg(sayThis:String...) {
         // based on the setVerbatimAlg method
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
-        var temp: Array<String> = [String]()
-        for strTemp in sayThis{
-            temp.append(strTemp)
-        }
-        setVerbatimAlgFromList(priority: 4, sayThis: temp)
+        self.outAlg = Algorithm(APVerbatim(sentences: sayThis))
+        self.outpAlgPriority = 4 // Default priority of 4
     }
     func algPartsFusion(priority:Int, algParts: Mutatable...) {
-        var algParts1: Array<Mutatable> = [Mutatable]()
-        for algPart in algParts{
-            algParts1.append(algPart)
-        }
-        let result:Algorithm = Algorithm(algParts: algParts1)
-        self.outAlg = result
-        self.outpAlgPriority = priority // 1->5 1 is the highest algorithm priority
+        self.outAlg = Algorithm(algParts: algParts)
+        self.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
     }
     func pendingAlgorithm() -> Bool {
         return outAlg != nil
-    }
-    // algorithm building methods
-    func algBuilder(algParts:Mutatable...)->Algorithm{
-        // returns an algorithm built with the algPart varargs
-        var algParts1: Array<Mutatable> = [Mutatable]()
-        for algPart in algParts{
-            algParts1.append(algPart)
-        }
-        let result:Algorithm = Algorithm(algParts: algParts1)
-        return result
-    }
-    // String based algorithm building methods
-    func simpleVerbatimAlgorithm(sayThis:String...)->Algorithm{
-        // returns an algorithm that says the sayThis Strings verbatim per think cycle
-        return algBuilder(algParts: APVerbatim(sentences: sayThis))
     }
     
     func skillNotes(param: String) -> String {

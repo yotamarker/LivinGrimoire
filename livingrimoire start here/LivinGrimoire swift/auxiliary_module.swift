@@ -3740,7 +3740,7 @@ class ElizaDBWrapper {
         }
         modifiedKeys.insert(in1)
         // load
-        ec.addFromDB(in1, kokoro.grimoireMemento.simpleLoad(key: in1))
+        ec.addFromDB(in1, kokoro.grimoireMemento.load(key: in1))
         return ec.response(in1)
     }
 
@@ -3750,13 +3750,13 @@ class ElizaDBWrapper {
         }
         modifiedKeys.insert(in1)
         // load and get latest reply for input
-        ec.addFromDB(in1, kokoro.grimoireMemento.simpleLoad(key: in1))
+        ec.addFromDB(in1, kokoro.grimoireMemento.load(key: in1))
         return ec.responseLatest(in1)
     }
 
     func sleepNSave(_ ecv2: EventChatV2, _ kokoro: Kokoro) {
         for element in ecv2.getModifiedKeys() {
-            kokoro.grimoireMemento.simpleSave(key: element, value: ecv2.getSaveStr(element))
+            kokoro.grimoireMemento.save(key: element, value: ecv2.getSaveStr(element))
         }
     }
 }
