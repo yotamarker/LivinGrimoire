@@ -411,7 +411,7 @@ class Chobits:
         the database can be using the kokoro attribute'''
 
     def setDatabase(self, absDictionaryDB: AbsDictionaryDB):
-        self._kokoro = Kokoro(absDictionaryDB)
+        self._kokoro.grimoireMemento = absDictionaryDB
 
     def addSkill(self, skill: Skill) -> Chobits:
         # add a skill (builder design patterned func))

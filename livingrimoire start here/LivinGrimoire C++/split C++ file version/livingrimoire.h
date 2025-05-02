@@ -1,4 +1,7 @@
+#ifndef LIVIN_GRIMOIRE_H
+#define LIVIN_GRIMOIRE_H
 #pragma once
+#include <iostream>
 #include <cctype>
 #include <string>
 #include <typeinfo>
@@ -10,317 +13,271 @@
 #include <unordered_map>
 #include <array>
 #include <queue>
+#include <cstdarg>
 
-using namespace std;
 
 //Utility functions
 namespace lgUtil {
-	//Source: https://stackoverflow.com/questions/11635/case-insensitive-string-comparison-in-c
-	inline bool ichar_equals(char a, char b)
-	{
+	//Source: https://stackoverflow.com/questions/11635/case-insensitive-std::string-comparison-in-c
+	inline bool ichar_equals(char a, char b) {
 		return std::tolower(static_cast<unsigned char>(a)) ==
 			std::tolower(static_cast<unsigned char>(b));
 	}
 
 	//Case insensitive comparison
-	inline bool iequals(const std::string& a, const std::string& b)
-	{
+	inline bool iequals(const std::string& a, const std::string& b) {
 		return std::equal(a.begin(), a.end(), b.begin(), b.end(), ichar_equals);
 	}
 }
 
+//AbsDictionaryDB
+
 class AbsDictionaryDB {
 public:
-    inline void save(const string& key, const string& value) {
-        // save to DB (override me)
-    }
+	inline void save(const std::string& key, const std::string& value) {
+		// save to DB (override me)
+	}
 
-    inline string load(const string& key) {
-        // override me
-        return "null";
-    }
+	inline std::string load(const std::string& key) {
+		// override me
+		return "null";
+	}
 };
 
-class Mutable
-{
+//Mutatable
+class Mutable {
 public:
-    Mutable() : algKillSwitch(false) {}
-    virtual ~Mutable() {}
+	Mutable() : algKillSwitch(false) {}
+	virtual ~Mutable() {}
 
-	virtual string action(const string& ear, const string& skin, const string& eye) = 0;
-    virtual bool completed() = 0;
-    string myName() {
-        // Returns the class name
-        return typeid(this).name();
-    }
-    
-    bool algKillSwitch;
+	virtual std::string action(const std::string& ear, const std::string& skin, const std::string& eye) = 0;
+	virtual bool completed() = 0;
+	std::string myName() {
+		// Returns the class name
+		return typeid(this).name();
+	}
+
+	bool algKillSwitch;
 };
 
-class APSay : public Mutable
-{
+//APSay:Mutatable
+class APSay : public Mutable {
 public:
-    APSay(int repetitions, const string& param);
+	APSay(int repetitions, const std::string& param);
 
-    virtual bool completed();
-    virtual string action(const string& ear, const string& skin, const string& eye);
+	virtual bool completed();
+	virtual std::string action(const std::string& ear, const std::string& skin, const std::string& eye);
 
 protected:
-    string param;
+	std::string param;
 private:
 
-    int at;
+	int at;
 };
 
-class APVerbatim : public Mutable
-{
+//APVerbatim:Mutatable
+class APVerbatim : public Mutable {
 public:
+	APVerbatim(std::initializer_list<std::string> initlist);
+	APVerbatim(std::vector<std::string>& list1);
 
-    APVerbatim(initializer_list<string> initlist);
-    APVerbatim(vector<string>& list1);
-
-    virtual string action(const string& ear, const string& skin, const string& eye);
-    virtual bool completed();
+	virtual std::string action(const std::string& ear, const std::string& skin, const std::string& eye);
+	virtual bool completed();
 private:
-    int at;
-    vector<string> sentences;
+	std::queue<std::string> sentences;
 };
 
-class GrimoireMemento
-{
-public:
-    GrimoireMemento(shared_ptr<AbsDictionaryDB>);
-    ~GrimoireMemento() {}
-
-    string simpleLoad(const string& key);
-    void simpleSave(const string& key, const string& value);
-private:
-    shared_ptr<AbsDictionaryDB> absDictionaryDB;
-};
-
+//Algorithm
 // a step-by-step plan to achieve a goal
-class Algorithm
-{
+class Algorithm {
 public:
-	Algorithm(vector<shared_ptr<Mutable>>& algParts);
+	Algorithm(std::vector<std::shared_ptr<Mutable>>& algParts);
+	Algorithm(std::initializer_list<std::shared_ptr<Mutable>> algParts);
 
-	vector<shared_ptr<Mutable>>& getAlgParts();
+	std::vector<std::shared_ptr<Mutable>>& getAlgParts();
 	int getSize();
 private:
-	vector<shared_ptr<Mutable>> algParts;
+	std::vector<std::shared_ptr<Mutable>> algParts;
 };
 
-class CldBool {
-    //cloudian : this class is used to provide shadow reference to a boolean variable
-public:
-    CldBool() : modeActive(false) {}
-    ~CldBool() {}
-
-    bool getModeActive() {
-        return modeActive;
-    }
-
-    void setModeActive(bool bModeActive) {
-        modeActive = bModeActive;
-    }
-
-private:
-    bool modeActive;
-};
-
-class APCldVerbatim : public Mutable
-{
-public:
-    APCldVerbatim(CldBool* cldBool, initializer_list<string> initlist);
-    APCldVerbatim(CldBool* cldBool, vector<string>& list1);
-
-    virtual string action(const string& ear, const string& skin, const string& eye);
-    virtual bool completed();
-private:
-    vector<string> sentences;
-    int at = 0;
-    CldBool* cldBool;
-};
-
+//Kokoro
 class Kokoro {
 public:
-    Kokoro(shared_ptr<AbsDictionaryDB> absDictionaryDB);
-    ~Kokoro() {}
+	Kokoro(std::shared_ptr<AbsDictionaryDB> absDictionaryDB);
+	~Kokoro() {}
 
-    string getEmot();
+	std::string getEmot();
 
-    void setEmot(const string& emot);
+	void setEmot(const std::string& emot);
 
-    GrimoireMemento* getGrimoireMemento();
+	AbsDictionaryDB* getGrimoireMemento();
+	void setGrimoireMemento(std::shared_ptr<AbsDictionaryDB> absDictionaryDB);
 
-    unordered_map<string, string> toHeart;
-
-private:
-    string emot;
-    unique_ptr<GrimoireMemento> grimoireMemento;
-};
-
-class Neuron
-{
-public:
-    Neuron();
-
-    void insertAlg(int priority, const shared_ptr<Algorithm> alg);
-    shared_ptr<Algorithm> getAlg(int defcon);
+	std::unordered_map<std::string, std::string> toHeart;
 
 private:
-    array<queue<shared_ptr<Algorithm>>, 6> defcons;
+	std::string emot;
+	std::shared_ptr<AbsDictionaryDB> grimoireMemento;
 };
 
-namespace DISkillUtils
-{
-    string strContainsList(const string& str1, vector<string>& items);
-};
-
-class DiSkillV2
-{
+//Neuron
+class Neuron {
 public:
-    DiSkillV2() : outAlg(nullptr), lpApVerb(nullptr), outpAlgPriority(-1), kokoro(nullptr) {}
-    virtual ~DiSkillV2() {}
+	Neuron();
 
-    // skill triggers and algorithmic logic
-    virtual void input(const string& ear, const string& skin, const string& eye) = 0;
+	void insertAlg(int priority, const std::shared_ptr<Algorithm> alg);
+	std::shared_ptr<Algorithm> getAlg(int defcon);
 
-    bool pendingAlgorithm();
-    void output(Neuron* neuron);
-    void setKokoro(Kokoro* kokoro);
-    string myName();
+private:
+	std::array<std::queue<std::shared_ptr<Algorithm>>, 6> defcons;
+};
 
+//Skill
+class Skill {
+public:
+	Skill() : outAlg(nullptr), outpAlgPriority(-1), kokoro(nullptr) {}
+	virtual ~Skill() {}
+
+	// skill triggers and algorithmic logic
+	virtual void input(const std::string& ear, const std::string& skin, const std::string& eye) = 0;
+	virtual std::string skillNotes(std::string& param);
+
+	bool pendingAlgorithm();
+	void output(Neuron* neuron);
+	void setKokoro(Kokoro* kokoro);
+	std::string myName();
 protected:
-    void setVerbatimAlg(int priority, initializer_list<string> sayThis);
-    void setSimpleAlg(initializer_list<string> sayThis);
-    void setVerbatimAlgFromList(int priority, vector<string> sayThis);
-    void algPartsFusion(int priority, initializer_list<shared_ptr<Mutable>> algParts);
+	void setVerbatimAlg(int priority, std::initializer_list<std::string> sayThis);
+	void setSimpleAlg(std::initializer_list<std::string> sayThis);
+	void setVerbatimAlgFromList(int priority, std::vector<std::string> sayThis);
+	void algPartsFusion(int priority, std::initializer_list<std::shared_ptr<Mutable>> algParts);
 
-    // alg part based algorithm building methods
-    // var args param
-    void algBuilder(initializer_list<shared_ptr<Mutable>> algParts);
-
-    // string based algorithm building methods
-    void simpleVerbatimAlgorithm(initializer_list<string> sayThis);
-    void simpleVerbatimAlgorithm(vector<string>& sayThis);
-    // string part based algorithm building methods with cloudian (shallow ref object to inform on alg completion)
-    void simpleCloudiandVerbatimAlgorithm(CldBool* cldBool, initializer_list<string> sayThis);
-
-    Kokoro* kokoro; // consciousness, shallow ref class to enable interskill communications
-    shared_ptr<Algorithm> outAlg; // skills output
-    shared_ptr<Mutable> lpApVerb;
-    int outpAlgPriority; // defcon 1->5
+	Kokoro* kokoro; // consciousness, shallow ref class to enable interskill communications
+	std::shared_ptr<Algorithm> outAlg; // skills output
+	int outpAlgPriority; // defcon 1->5
 private:
 };
 
-// logical skill for testing
-class DiHelloWorld : public DiSkillV2
-{
+//DiSysOut
+class DiSysOut : public Skill {
 public:
-    DiHelloWorld() : DiSkillV2() {}
-
-    virtual void input(const string& ear, const string& skin, const string& eye);
+	virtual void input(const std::string& ear, const std::string& skin, const std::string& eye);
 };
 
-class Cerabellum
-{
+//DiHelloWorld:Skill
+class DiHelloWorld : public Skill {
 public:
-    Cerabellum() : fin(0), at(0), incrementAt(false), bIsActive(false), alg(nullptr) {}
-    ~Cerabellum() {}
+	DiHelloWorld() : Skill() {}
 
-    int getAt();
-    void advanceInAlg();
-    string getEmot();
-    bool setAlgorithm(const shared_ptr<Algorithm> algorithm);
-    bool isActive();
-    string act(const string& ear, const string& skin, const string& eye);
+	virtual void input(const std::string& ear, const std::string& skin, const std::string& eye);
+	virtual std::string skillNotes(std::string& param);
+};
+
+//Cerabellum
+class Cerabellum {
+public:
+	Cerabellum() : fin(0), at(0), incrementAt(false), bIsActive(false), alg(nullptr) {}
+	~Cerabellum() {}
+
+	int getAt();
+	void advanceInAlg();
+	std::string getEmot();
+	bool setAlgorithm(const std::shared_ptr<Algorithm> algorithm);
+	bool isActive();
+	std::string act(const std::string& ear, const std::string& skin, const std::string& eye);
 
 
-    void deActivation();
+	void deActivation();
 
 private:
-    shared_ptr<Algorithm> alg;
-    int fin;
-    int at;
-    bool incrementAt;
-    bool bIsActive;
-    string emot;
+	std::shared_ptr<Algorithm> alg;
+	int fin;
+	int at;
+	bool incrementAt;
+	bool bIsActive;
+	std::string emot;
 
 };
 
-class Fusion
-{
+//Fusion
+class Fusion {
 public:
-    Fusion();
-    ~Fusion() {};
+	Fusion();
+	~Fusion() {};
 
-    string getEmot();
-    void loadAlgs(Neuron* neuron);
-    string runAlgs(const string& ear, const string& skin, const string& eye);
+	std::string getEmot();
+	void loadAlgs(Neuron* neuron);
+	std::string runAlgs(const std::string& ear, const std::string& skin, const std::string& eye);
 
 
 private:
-    string emot;
-    array<Cerabellum, 5> ceraArr;
+	std::string emot;
+	std::array<Cerabellum, 5> ceraArr;
 };
 
-class Thinkable {
-public:
-    virtual string think(const string& ear, const string& skin, const string& eye) = 0;
-};
+//Thinkable
 
-class Chobits : public Thinkable
-{
+//Chobits
+class Chobits {
 public:
-    Chobits();
-    ~Chobits();
+	Chobits();
+	~Chobits();
 
-    void setDataBase(shared_ptr<AbsDictionaryDB> absDictionaryDB);
-    Chobits* addSkill(DiSkillV2* skill);
-    void clearSkills();
-    void addSkills(initializer_list<DiSkillV2*> skills);
-    void removeSkill(DiSkillV2* skill);
-    bool containsSkill(DiSkillV2* skill);
-    virtual string think(const string& ear, const string& skin, const string& eye);
-    string getSoulEmotion();
-    shared_ptr<Kokoro> getKokoro();
-    void setKokoro(shared_ptr<Kokoro> kokoro);
-    Fusion* getFusion();
-    vector<string> getSkillList(vector<string>&);
+	void setDataBase(std::shared_ptr<AbsDictionaryDB> absDictionaryDB);
+	Chobits* addSkill(Skill* skill);
+	Chobits* addSkillAware(Skill* skill);
+	void clearSkills();
+	void addSkills(std::initializer_list<Skill*> skills);
+	void removeSkill(Skill* skill);
+	bool containsSkill(Skill* skill);
+	std::string think(const std::string& ear, const std::string& skin, const std::string& eye);
+	std::string getSoulEmotion();
+	std::shared_ptr<Kokoro> getKokoro();
+	void setKokoro(std::shared_ptr<Kokoro> kokoro);
+	Fusion* getFusion();
+	std::vector<std::string> getSkillList(std::vector<std::string>&);
 protected:
-    void inOut(DiSkillV2* dClass, const string& ear, const string& skin, const string& eye);
+	void inOut(Skill* dClass, const std::string& ear, const std::string& skin, const std::string& eye);
 
-    vector<DiSkillV2*> dClasses;
-    unique_ptr<Fusion> fusion;
-    unique_ptr<Neuron> neuron;
-    shared_ptr<Kokoro> kokoro; // consciousness
-};
-
-class Brain
-{
-public:
-    Brain();
-    ~Brain() {}
-
-    Chobits* getLogicChobit();
-    Chobits* getHardwareChobit();
-    string getEmotion();
-    string getBodyInfo();
-    string getLogicChobitOutput();
-    void doIt(const string& ear, const string& skin, const string& eye);
-    void addLogicalSkill(DiSkillV2* skill);
-    void addHardwareSkill(DiSkillV2* skill);
+	std::vector<Skill*> dClasses;
+	std::unique_ptr<Fusion> fusion;
+	std::unique_ptr<Neuron> neuron;
+	std::shared_ptr<Kokoro> kokoro; // consciousness
+	bool isThinking;
 private:
-    string emotion;
-    string bodyInfo;
-    string logicChobitOutput;
-    unique_ptr<Chobits> logicChobit;
-    unique_ptr<Chobits> hardwareChobit;
+	std::vector<Skill*> awareSkills;
 };
 
-class DiSysOut : public DiSkillV2
-{
+//Brain
+class Brain {
 public:
-    virtual void input(const string& ear, const string& skin, const string& eye);
+	Brain();
+	~Brain() {}
+
+	Chobits* getLogicChobit();
+	Chobits* getHardwareChobit();
+	std::string getEmotion();
+	std::string getLogicChobitOutput();
+	void doIt(const std::string& ear, const std::string& skin, const std::string& eye);
+	void addLogicalSkill(Skill* skill);
+	void addHardwareSkill(Skill* skill);
+	void addEarSkill(Skill* skill);
+	void addSkinSkill(Skill* skill);
+	void addEyeSkill(Skill* skill);
+
+	void think();
+	void think(const std::string& keyIn);
+private:
+	void imprintSoul(std::shared_ptr < Kokoro> kokoro, std::initializer_list<Chobits*> args);
+
+	std::string emotion;
+	std::string logicChobitOutput;
+	std::unique_ptr<Chobits> logicChobit;
+	std::unique_ptr<Chobits> hardwareChobit;
+
+	std::unique_ptr<Chobits> ear;
+	std::unique_ptr<Chobits> skin;
+	std::unique_ptr<Chobits> eye;
 };
+#endif // LIVIN_GRIMOIRE_H
+

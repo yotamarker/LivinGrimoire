@@ -16,7 +16,7 @@ public class Chobits {
         noiron = new Neuron();
     }
     public void setDataBase(AbsDictionaryDB absDictionaryDB) {
-        this.kokoro = new Kokoro(absDictionaryDB);
+        this.kokoro.grimoireMemento = absDictionaryDB;
     }
     public Chobits addSkill(Skill skill){
         // add a skill (builder design patterned func))

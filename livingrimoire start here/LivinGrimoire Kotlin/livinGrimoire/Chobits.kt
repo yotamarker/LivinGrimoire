@@ -21,7 +21,7 @@ class Chobits {
     }
 
     fun setDataBase(absDictionaryDB: AbsDictionaryDB) {
-        kokoro = Kokoro(absDictionaryDB)
+        kokoro.grimoireMemento = absDictionaryDB
     }
 
     fun addSkill(skill: Skill): Chobits {
