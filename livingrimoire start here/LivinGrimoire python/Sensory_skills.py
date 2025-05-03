@@ -5,8 +5,7 @@ import re
 import atexit
 from threading import Event
 
-from LivinGrimoire23 import Brain
-from async_skills import ShorniSplash
+from LivinGrimoire23 import Brain, Skill
 
 """
 cmd
@@ -18,8 +17,7 @@ in python terminal:
 pip install openai-whisper pyaudio numpy wave
 """
 
-class DiSTT(ShorniSplash):
-    # All original global variables moved here as class variables
+class DiSTT(Skill):
     CHUNK = 1024
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
@@ -37,8 +35,6 @@ class DiSTT(ShorniSplash):
         input_device_index=None
     )
     silence_threshold = None
-    skip = False
-    processing = False
 
     def __init__(self, brain: Brain):
         super().__init__()
@@ -103,41 +99,25 @@ class DiSTT(ShorniSplash):
         DiSTT.calibrate_mic()
         print(f"Silence threshold set to: {DiSTT.silence_threshold:.2f}")
 
-    # Original instance methods remain exactly the same
-    def trigger(self, ear, skin, eye) -> bool:
-        if DiSTT.processing:
-            print("waiting to finish summoned async")
-            return False
+    def input(self, ear: str, skin: str, eye: str):
         if len(self.brain.getLogicChobitOutput()) > 0:
-            print("skipping")
-            DiSTT.skip = True
-        return True
-
-    @staticmethod
-    def _async_func(this_cls):
-        """This remains EXACTLY as in the original code"""
-        print("\nSpeak now (Press Ctrl+C to stop):")
+            print("skipping listen")
+            return
+        print("\nSpeak now")
         try:
             audio_data = DiSTT.record_chunk()  # Calls static method
             if audio_data:
                 text = DiSTT.transcribe_chunk(audio_data)  # Calls static method
                 cleaned_text = re.sub(r'[^\w\s]', '', text.lower())
-                if DiSTT.skip:
-                    DiSTT.skip = False
-                    print(f"ignoring> {text}")
-                else:
-                    this_cls._result = f"{cleaned_text}"
-                    print(f"> {text}")
+                self.setSimpleAlg(f"{cleaned_text}")
+                print(f"> {text}")
+
         except KeyboardInterrupt:
             pass
         finally:
             print("finished processing")
             DiSTT.processing = False
 
-    def output_result(self):
-        if len(self._result) > 0:
-            print(f'input: {self._result}')
-            self.setSimpleAlg(self._result)
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
