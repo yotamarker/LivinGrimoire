@@ -429,7 +429,7 @@ public class Chobits
 
     public void SetDataBase(AbsDictionaryDB absDictionaryDB)
     {
-        this.kokoro = new Kokoro(absDictionaryDB);
+        this.kokoro.grimoireMemento = absDictionaryDB;
     }
 
     public Chobits AddSkill(Skill skill)

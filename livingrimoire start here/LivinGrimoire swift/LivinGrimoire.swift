@@ -91,7 +91,7 @@ class Algorithm{
 }
 class Kokoro{
     private var emot:String = ""
-    private(set) var grimoireMemento:AbsDictionaryDB
+    public var grimoireMemento:AbsDictionaryDB
     var toHeart:[String:String] = [:]
     init(absDictionaryDB: AbsDictionaryDB) {
         self.grimoireMemento = absDictionaryDB
@@ -287,7 +287,7 @@ class Chobits {
     }
 
     func setDataBase(absDictionaryDB: AbsDictionaryDB) {
-        self.kokoro = Kokoro(absDictionaryDB: absDictionaryDB)
+        self.kokoro.grimoireMemento = absDictionaryDB
     }
 
     @discardableResult

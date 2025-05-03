@@ -321,7 +321,7 @@ class Chobits {
     }
 
     SetDataBase(absDictionaryDB) {
-        this.kokoro = new Kokoro(absDictionaryDB);
+        this.kokoro.grimoireMemento = absDictionaryDB;
     }
 
     AddSkill(skill) {

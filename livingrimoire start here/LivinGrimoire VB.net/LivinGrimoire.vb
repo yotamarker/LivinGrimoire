@@ -353,7 +353,7 @@
         End Sub
 
         Public Sub SetDataBase(absDictionaryDB As AbsDictionaryDB)
-            Me.kokoro = New Kokoro(absDictionaryDB)
+            Me.kokoro.grimoireMemento = absDictionaryDB
         End Sub
 
         Public Function AddSkill(skill As Skill) As Chobits
