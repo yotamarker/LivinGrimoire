@@ -3,19 +3,10 @@ import pyaudio
 import numpy as np
 import re
 import atexit
-from threading import Event
-
+import threading
+from queue import Queue
 from LivinGrimoire23 import Brain, Skill
 
-"""
-cmd
-winget install ffmpeg
-check if it installed ok:
-ffmpeg -version
-
-in python terminal:
-pip install openai-whisper pyaudio numpy wave
-"""
 
 class DiSTT(Skill):
     CHUNK = 1024
@@ -23,7 +14,7 @@ class DiSTT(Skill):
     CHANNELS = 1
     RATE = 16000
     MIN_ACTIVE_SECONDS = 0.5
-    exit_event = Event()
+    exit_event = threading.Event()
     model = whisper.load_model("base")
     p = pyaudio.PyAudio()
     stream = p.open(
@@ -32,17 +23,20 @@ class DiSTT(Skill):
         rate=RATE,
         input=True,
         frames_per_buffer=CHUNK,
-        input_device_index=None
     )
     silence_threshold = None
+    audio_queue = Queue()
+    latest_transcription = ""
 
     def __init__(self, brain: Brain):
         super().__init__()
-        DiSTT.initSTT()  # Call static method
         self.brain = brain
-        atexit.register(DiSTT.cleanup)  # Register static method
+        atexit.register(DiSTT.cleanup)
+        DiSTT.initSTT()
 
-    # All original functions converted to static methods with identical logic
+        # Launch background STT thread
+        threading.Thread(target=self.run_stt, daemon=True).start()
+
     @staticmethod
     def cleanup():
         print("\nCleaning up resources...")
@@ -63,8 +57,14 @@ class DiSTT(Skill):
 
     @staticmethod
     def clean_text(text):
-        text = re.sub(r'(\b\w+\b)(?:\s+\1\b)+', r'\1', text)
-        return text.strip() if text.strip() and len(text.split()) >= 1 else ""
+        # Convert to lowercase
+        text = text.lower()
+        # Remove special characters except alphanumeric and spaces
+        text = re.sub(r'[^a-z0-9\s]', '', text)
+        # Remove extra spaces
+        text = re.sub(r'\s+', ' ', text).strip()
+
+        return text
 
     @staticmethod
     def record_chunk():
@@ -99,25 +99,27 @@ class DiSTT(Skill):
         DiSTT.calibrate_mic()
         print(f"Silence threshold set to: {DiSTT.silence_threshold:.2f}")
 
-    def input(self, ear: str, skin: str, eye: str):
-        if len(self.brain.getLogicChobitOutput()) > 0:
-            print("skipping listen")
-            return
-        print("\nSpeak now")
-        try:
-            audio_data = DiSTT.record_chunk()  # Calls static method
+    @staticmethod
+    def run_stt():
+        """ Continuous background STT processing """
+        while not DiSTT.exit_event.is_set():
+            audio_data = DiSTT.record_chunk()
             if audio_data:
-                text = DiSTT.transcribe_chunk(audio_data)  # Calls static method
-                cleaned_text = re.sub(r'[^\w\s]', '', text.lower())
-                self.setSimpleAlg(f"{cleaned_text}")
-                print(f"> {text}")
+                text = DiSTT.transcribe_chunk(audio_data)
+                DiSTT.latest_transcription = text  # Store latest transcription
+                # print(f"> {text}")
 
-        except KeyboardInterrupt:
-            pass
-        finally:
-            print("finished processing")
-            DiSTT.processing = False
+    def input(self, ear: str, skin: str, eye: str):
+        """ Read latest transcription from global var """
+        if len(self.brain.getLogicChobitOutput()) > 0:
+            print("Skipping listen")
+            return
 
+        print("\nSpeak now")
+        DiSTT.latest_transcription = DiSTT.clean_text(DiSTT.latest_transcription)  # Clean the text before printing
+        print(f"> {DiSTT.latest_transcription}")
+        self.setSimpleAlg(DiSTT.latest_transcription)
+        DiSTT.latest_transcription = ""  # Clear after printing
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
