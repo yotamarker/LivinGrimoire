@@ -9,6 +9,8 @@ public class Chobits {
     protected Kokoro kokoro = new Kokoro(new AbsDictionaryDB()); // consciousness
     private boolean isThinking = false;
     private final ArrayList<Skill> awareSkills = new ArrayList<>();
+    public Boolean algTriggered = false;
+    public ArrayList<Skill> cts_skills = new ArrayList<>(); // continuous skills
     public Chobits() {
         // c'tor
         super();
@@ -27,6 +29,14 @@ public class Chobits {
         this.dClasses.add(skill);
         return this;
     }
+    public void addContinuousSkill(Skill skill){
+        // add a skill (builder design patterned func))
+        if (this.isThinking) {
+            return;
+        }
+        skill.setKokoro(this.kokoro);
+        this.cts_skills.add(skill);
+    }
     public Chobits addSkillAware(Skill skill) {
         // add a skill with Chobit Object in their constructor
         skill.setKokoro(this.kokoro);
@@ -39,6 +49,13 @@ public class Chobits {
             return;
         }
         this.dClasses.clear();
+    }
+    public void clearContinuousSkills(){
+        // remove all skills
+        if (this.isThinking) {
+            return;
+        }
+        this.cts_skills.clear();
     }
     public void addSkills(Skill... skills){
         if (this.isThinking) {
@@ -55,11 +72,18 @@ public class Chobits {
         }
         dClasses.remove(skill);
     }
+    public void removeContinuousSkill(Skill skill){
+        if (this.isThinking) {
+            return;
+        }
+        cts_skills.remove(skill);
+    }
     public Boolean containsSkill(Skill skill){
         return dClasses.contains(skill);
     }
     public String think(String ear, String skin, String eye) {
-        this.isThinking = true;
+        this.algTriggered = false;
+        this.isThinking = true; // regular skills loop
         for (Skill dCls : dClasses) {
             inOut(dCls, ear, skin, eye);
         }
@@ -67,6 +91,12 @@ public class Chobits {
         for (Skill dCls2 : awareSkills) {
             inOut(dCls2, ear, skin, eye);
         }
+        this.isThinking = true;
+        for (Skill dCls2 : cts_skills) {
+            if(algTriggered){break;}
+            inOut(dCls2, ear, skin, eye);
+        }
+        this.isThinking = false;
         fusion.loadAlgs(noiron);
         return fusion.runAlgs(ear, skin, eye);
     }
@@ -79,6 +109,9 @@ public class Chobits {
     }
     protected void inOut(Skill dClass, String ear, String skin, String eye) {
         dClass.input(ear, skin, eye); // new
+        if (dClass.pendingAlgorithm()){
+            algTriggered = true;
+        }
         dClass.output(noiron);
     }
 
