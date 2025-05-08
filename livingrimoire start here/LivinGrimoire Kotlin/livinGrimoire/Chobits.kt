@@ -1,24 +1,14 @@
 package livinGrimoire
 
 class Chobits {
-    var dClasses = ArrayList<Skill>()
-    var fusion: Fusion
-        protected set
-    protected var noiron: Neuron
-
-    // use this for telepathic communication between different chobits objects
-    // several chobits can use the same soul
-    // this enables telepathic communications
-    // between chobits in the same project
-    var kokoro = Kokoro(AbsDictionaryDB()) // consciousness
+    var dClasses: ArrayList<Skill> = ArrayList<Skill>()
+    var fusion: Fusion = Fusion()
+    protected var noiron: Neuron = Neuron()
+    var kokoro: Kokoro = Kokoro(AbsDictionaryDB()) // consciousness
     private var isThinking = false
-    private val awareSkills = ArrayList<Skill>()
-
-    init {
-        // c'tor
-        fusion = Fusion()
-        noiron = Neuron()
-    }
+    private val awareSkills: ArrayList<Skill> = ArrayList<Skill>()
+    var algTriggered = false
+    var cts_skills: ArrayList<Skill> = ArrayList<Skill>() // continuous skills
 
     fun setDataBase(absDictionaryDB: AbsDictionaryDB) {
         kokoro.grimoireMemento = absDictionaryDB
@@ -34,6 +24,15 @@ class Chobits {
         return this
     }
 
+    fun addContinuousSkill(skill: Skill) {
+        // add a skill (builder design patterned func))
+        if (isThinking) {
+            return
+        }
+        skill.kokoro = kokoro
+        cts_skills.add(skill)
+    }
+
     fun addSkillAware(skill: Skill): Chobits {
         // add a skill with Chobit Object in their constructor
         skill.kokoro = kokoro
@@ -47,6 +46,14 @@ class Chobits {
             return
         }
         dClasses.clear()
+    }
+
+    fun clearContinuousSkills() {
+        // remove all skills
+        if (isThinking) {
+            return
+        }
+        cts_skills.clear()
     }
 
     fun addSkills(vararg skills: Skill) {
@@ -66,12 +73,20 @@ class Chobits {
         dClasses.remove(skill)
     }
 
+    fun removeContinuousSkill(skill: Skill) {
+        if (isThinking) {
+            return
+        }
+        cts_skills.remove(skill)
+    }
+
     fun containsSkill(skill: Skill): Boolean {
         return dClasses.contains(skill)
     }
 
     fun think(ear: String, skin: String, eye: String): String {
-        isThinking = true
+        algTriggered = false
+        isThinking = true // regular skills loop
         for (dCls in dClasses) {
             inOut(dCls, ear, skin, eye)
         }
@@ -79,6 +94,14 @@ class Chobits {
         for (dCls2 in awareSkills) {
             inOut(dCls2, ear, skin, eye)
         }
+        isThinking = true
+        for (dCls2 in cts_skills) {
+            if (algTriggered) {
+                break
+            }
+            inOut(dCls2, ear, skin, eye)
+        }
+        isThinking = false
         fusion.loadAlgs(noiron)
         return fusion.runAlgs(ear, skin, eye)
     }
@@ -89,8 +112,11 @@ class Chobits {
             // an emotion
             fusion.emot
 
-    protected fun inOut(dClass: Skill, ear: String?, skin: String?, eye: String?) {
-        dClass.input(ear!!, skin!!, eye!!) // new
+    protected fun inOut(dClass: Skill, ear: String, skin: String, eye: String) {
+        dClass.input(ear, skin, eye) // new
+        if (dClass.pendingAlgorithm()) {
+            algTriggered = true
+        }
         dClass.output(noiron)
     }
 

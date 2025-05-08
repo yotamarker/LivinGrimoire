@@ -9,7 +9,7 @@ public class Chobits {
     protected Kokoro kokoro = new Kokoro(new AbsDictionaryDB()); // consciousness
     private boolean isThinking = false;
     private final ArrayList<Skill> awareSkills = new ArrayList<>();
-    public Boolean algTriggered = false;
+    public boolean algTriggered = false;
     public ArrayList<Skill> cts_skills = new ArrayList<>(); // continuous skills
     public Chobits() {
         // c'tor
