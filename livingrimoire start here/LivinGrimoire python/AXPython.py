@@ -2728,6 +2728,9 @@ class OnOffSwitch:
             self._mode = False
         return self._mode
 
+    def off(self):
+        self._mode = False
+
 
 class AXFunnel:
     # funnel all sorts of strings to fewer or other strings

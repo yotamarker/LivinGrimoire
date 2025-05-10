@@ -1755,7 +1755,7 @@ class DiTeaParty(Skill):
     def __init__(self):
         super().__init__()  # Call the parent class constructor
         self.on_off_switch: OnOffSwitch = OnOffSwitch()  # skill stop: "off", "stop", "shut up", "shut it", "whatever", "whateva"
-        self.on_off_switch.setOn(Responder("tea party"))  # triggers, also turns off automatically after 5 minutes or say off
+        self.on_off_switch.setOn(Responder("tea party","lets have a tea party"))  # triggers, also turns off automatically after 5 minutes or say off
         self.drip: PercentDripper = PercentDripper()
         self.sips: UniqueResponder = UniqueResponder("sip", "sips tea", "good tea", "sip sip sip",
                                               "green tea sip", "sip maxing", "mwahaha",
@@ -1766,6 +1766,10 @@ class DiTeaParty(Skill):
 
     def input(self, ear, skin, eye):
         if self.on_off_switch.getMode(ear):
+            if ear.__contains__("stop"):
+                self.setSimpleAlg("tea party has ended")
+                self.on_off_switch.off()
+                return 
             if self.trg.strContainsResponse(ear):
                self.setSimpleAlg(self.evilLaugh.getAResponse())
                return

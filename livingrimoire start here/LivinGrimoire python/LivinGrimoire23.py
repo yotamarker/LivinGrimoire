@@ -405,6 +405,8 @@ class Chobits:
         self._kokoro: Kokoro = Kokoro(AbsDictionaryDB())  # soul
         self._isThinking: bool = False
         self._awareSkills: list[Skill] = []  # self awareness skills. Chobit Object in their c'tor
+        self.alg_triggered: bool = False
+        self.cts_skills: list[Skill] = []
 
     '''set the chobit database
         the database is built as a key value dictionary
@@ -433,6 +435,11 @@ class Chobits:
             return
         self._dClasses.clear()
 
+    def clear_continuous_skills(self):
+        if self._isThinking:
+            return
+        self.cts_skills.clear()
+
     def addSkills(self, *skills: Skill):
         if self._isThinking:
             return
@@ -448,10 +455,18 @@ class Chobits:
             return
         self._dClasses.remove(skill)
 
+    def remove_continuous_skill(self, skill):
+        if self._isThinking:
+            return
+        if skill not in self.cts_skills:
+            return
+        self.cts_skills.remove(skill)
+
     def containsSkill(self, skill: Skill) -> bool:
         return self._dClasses.__contains__(skill)
 
     def think(self, ear: str, skin: str, eye: str) -> str:
+        self.alg_triggered = False
         # main skill loop
         self._isThinking = True
         for dCls in self._dClasses:
@@ -460,6 +475,13 @@ class Chobits:
         # loop for skills with access to the Chobit Object:
         for dCls2 in self._awareSkills:
             self.inOut(dCls2, ear, skin, eye)
+        # continuous skills loop
+        self._isThinking = True
+        for d_cls3 in self.cts_skills:
+            if self.alg_triggered:
+                break
+            self.inOut(d_cls3, ear, skin, eye)
+        self._isThinking = False
         self._fusion.loadAlgs(self._noiron)
         return self._fusion.runAlgs(ear, skin, eye)
 
@@ -468,6 +490,8 @@ class Chobits:
 
     def inOut(self, dClass: Skill, ear: str, skin: str, eye: str):
         dClass.input(ear, skin, eye)  # new
+        if dClass.pendingAlgorithm():
+            self.alg_triggered = True
         dClass.output(self._noiron)
 
     def getKokoro(self) -> Kokoro:
@@ -486,3 +510,9 @@ class Chobits:
         for skill in self._dClasses:
             result.append(skill.__class__.__name__)
         return result
+
+    def add_continuous_skill(self, skill):
+        if self._isThinking:
+            return
+        skill.setKokoro(self._kokoro)
+        self.cts_skills.append(skill)
