@@ -1,0 +1,8 @@
+this version of the livingrimoire core was made without inheritance.
+
+it is not as efficient as the default version, although the dif is negligible.
+
+this version may be easier to port to older programming languages which do
+not support inheritance.
+
+instead of inheritance, this version uses composition and function pointers.
