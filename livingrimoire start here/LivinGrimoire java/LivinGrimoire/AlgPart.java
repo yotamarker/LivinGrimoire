@@ -1,6 +1,6 @@
 package LivinGrimoire;
 
-public abstract class Mutatable {
+public abstract class AlgPart {
     // one part of an algorithm, it is a basic simple action or sub goal
     public Boolean algKillSwitch = false;
     public abstract String action(String ear, String skin, String eye);

@@ -37,11 +37,10 @@ public class Chobits {
         skill.setKokoro(this.kokoro);
         this.cts_skills.add(skill);
     }
-    public Chobits addSkillAware(Skill skill) {
+    public void addSkillAware(Skill skill) {
         // add a skill with Chobit Object in their constructor
         skill.setKokoro(this.kokoro);
         this.awareSkills.add(skill);
-        return this;
     }
     public void clearSkills(){
         // remove all skills

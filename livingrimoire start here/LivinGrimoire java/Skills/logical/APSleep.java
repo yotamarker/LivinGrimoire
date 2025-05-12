@@ -2,9 +2,9 @@ package Skills.logical;
 
 import Auxiliary_Modules.Responder;
 import Auxiliary_Modules.TimeGate;
-import LivinGrimoire.Mutatable;
+import LivinGrimoire.AlgPart;
 
-public class APSleep extends Mutatable {
+public class APSleep extends AlgPart {
     protected TimeGate timeGate = new TimeGate();
     public Responder wakeners;
     public Boolean done = false;

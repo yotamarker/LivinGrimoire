@@ -27,16 +27,14 @@ public class Cerabellum {
     public String getEmot() {
         return emot;
     }
-    public boolean setAlgorithm(Algorithm algorithm) {
+    public void setAlgorithm(Algorithm algorithm) {
         if (!isActive && (!algorithm.getAlgParts().isEmpty())) {
             this.alg = algorithm;
             this.at = 0;
             this.fin = algorithm.getSize();
             this.isActive = true;
             this.emot = alg.getAlgParts().get(at).myName(); // updated line
-            return false;
         }
-        return true;
     }
 
     public boolean isActive() {

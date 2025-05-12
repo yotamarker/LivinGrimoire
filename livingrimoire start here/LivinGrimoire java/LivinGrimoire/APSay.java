@@ -3,7 +3,7 @@ package LivinGrimoire;
  * a most basic skill.
  * also fun to make the chobit say what you want
  * */
-public class APSay extends Mutatable{
+public class APSay extends AlgPart {
     protected String param;
     private int at;
 

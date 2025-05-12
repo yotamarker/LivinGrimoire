@@ -3,7 +3,7 @@ package LivinGrimoire;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class APVerbatim extends Mutatable {
+public class APVerbatim extends AlgPart {
     private ArrayList<String> sentences = new ArrayList<>();
 
     public APVerbatim(String... sentences) {

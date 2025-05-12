@@ -1,7 +1,6 @@
 package LivinGrimoire;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Skill {
     protected Kokoro kokoro = null; // consciousness, shallow ref class to enable interskill communications
@@ -46,7 +45,7 @@ public class Skill {
         this.outAlg = new Algorithm(new APVerbatim(sayThis));
         this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
-    public void algPartsFusion(int priority, Mutatable... algParts) {
+    public void algPartsFusion(int priority, AlgPart... algParts) {
         this.outAlg = new Algorithm(algParts);
         this.outpAlgPriority = priority; // 1->5, 1 is the highest algorithm priority
     }

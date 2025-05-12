@@ -5,16 +5,16 @@ import java.util.Arrays;
 
 // a step-by-step plan to achieve a goal
 public class Algorithm {
-    private ArrayList<Mutatable> algParts = new ArrayList<>();
+    private ArrayList<AlgPart> algParts = new ArrayList<>();
 
-    public Algorithm(ArrayList<Mutatable> algParts) {
+    public Algorithm(ArrayList<AlgPart> algParts) {
         this.algParts = algParts;
     }
-    public Algorithm(Mutatable... algParts) {
+    public Algorithm(AlgPart... algParts) {
         this.algParts = new ArrayList<>(Arrays.asList(algParts));
     }
 
-    public ArrayList<Mutatable> getAlgParts() {
+    public ArrayList<AlgPart> getAlgParts() {
         return algParts;
     }
 
