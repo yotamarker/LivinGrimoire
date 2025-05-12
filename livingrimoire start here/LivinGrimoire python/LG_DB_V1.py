@@ -1,5 +1,5 @@
 import os
-from LivinGrimoire23 import AbsDictionaryDB
+from LivinGrimoire import AbsDictionaryDB
 
 '''
 example usage code:

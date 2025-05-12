@@ -1,14 +1,3 @@
-from __future__ import annotations
-from abc import ABC, abstractmethod
-
-"""CREDITS :
-
-
-the living grimoire was created by Moti Barski
-
-Translation of code from java to python : Marco Vavassori, Moti Barski"""
-
-
 class AbsDictionaryDB:
     def save(self, key: str, value: str):
         """Returns action string"""
@@ -18,21 +7,16 @@ class AbsDictionaryDB:
         return "null"
 
 
-''' MUTATABLE CLASS '''
-
-
-class Mutatable(ABC):
+class AlgPart:
     # one part of an algorithm, it is a basic simple action or sub goal
     def __init__(self):
         # set True to stop the entire running active Algorithm
         self.algKillSwitch: bool = False
 
-    @abstractmethod
     def action(self, ear: str, skin: str, eye: str) -> str:
         """Returns action string"""
         pass
 
-    @abstractmethod
     def completed(self) -> bool:
         """Has finished ?"""
         pass
@@ -42,51 +26,7 @@ class Mutatable(ABC):
         return self.__class__.__name__
 
 
-'''
-the Kokoro clss enables: using a database, inter skill communication and action log monitoring
-'''
-
-
-class Kokoro:
-    def __init__(self, absDictionaryDB: AbsDictionaryDB):
-        self.emot = ""
-        self.grimoireMemento = absDictionaryDB
-        self.toHeart: dict[str, str] = {}
-
-    def getEmot(self) -> str:
-        return self.emot
-
-    def setEmot(self, emot: str):
-        self.emot = emot
-
-
-'''
-speak something x times:
-'''
-
-
-class APSay(Mutatable):
-    def __init__(self, at: int, param: str) -> None:
-        super().__init__()
-        if at > 10:
-            at = 10
-        self.at = at
-        self.param = param
-
-    def action(self, ear: str, skin: str, eye: str) -> str:
-        """TODO Auto-generated method stub"""
-        axnStr = ""
-        if self.at > 0:
-            if ear.lower() != self.param.lower():
-                axnStr = self.param
-                self.at -= 1
-        return axnStr
-
-    def completed(self) -> bool:
-        return self.at < 1
-
-
-class APVerbatim(Mutatable):
+class APVerbatim(AlgPart):
     """this algorithm part says each past param verbatim"""
 
     def __init__(self, *sentences) -> None:
@@ -110,24 +50,35 @@ class APVerbatim(Mutatable):
 # A step-by-step plan to achieve a goal
 class Algorithm:
 
-    def __init__(self, algParts: list[Mutatable]):  # list of Mutatable
+    def __init__(self, algParts: list[AlgPart]):  # list of Mutatable
         super().__init__()
-        self.algParts: list[Mutatable] = algParts
+        self.algParts: list[AlgPart] = algParts
 
     @classmethod
-    def from_varargs(cls, *algParts: Mutatable) -> Algorithm:
+    def from_varargs(cls, *algParts: AlgPart) -> 'Algorithm':
         # Create an instance from varargs
         return cls(list(algParts))
 
     @property
-    def getAlgParts(self) -> list[Mutatable]:
+    def getAlgParts(self) -> list[AlgPart]:
         return self.algParts
 
     def getSize(self) -> int:
         return len(self.algParts)
 
 
-''' NEURON CLASS '''
+# the Kokoro clss enables: using a database, inter skill communication and action log monitoring
+class Kokoro:
+    def __init__(self, absDictionaryDB: AbsDictionaryDB):
+        self.emot = ""
+        self.grimoireMemento = absDictionaryDB
+        self.toHeart: dict[str, str] = {}
+
+    def getEmot(self) -> str:
+        return self.emot
+
+    def setEmot(self, emot: str):
+        self.emot = emot
 
 
 # used to transport algorithms to other classes
@@ -147,9 +98,6 @@ class Neuron:
             temp = self._defcons[defcon].pop(0)
             return temp
         return None
-
-
-''' Skill CLASS '''
 
 
 class Skill:
@@ -204,7 +152,7 @@ class Skill:
         self._outAlg = Algorithm.from_varargs(APVerbatim(sayThis))
         self._outpAlgPriority = priority  # 1->5 1 is the highest algorithm priority
 
-    def algPartsFusion(self, priority: int, *algParts: Mutatable):
+    def algPartsFusion(self, priority: int, *algParts: AlgPart):
         self._outAlg = Algorithm.from_varargs(*algParts)
         self._outpAlgPriority = priority  # 1->5 1 is the highest algorithm priority
 
@@ -228,11 +176,6 @@ class DiHelloWorld(Skill):
         elif param == "triggers":
             return "say hello"
         return "note unavalible"
-
-
-''' ----------------- REGEXUTIL ---------------- '''
-
-''' CERABELLUM CLASS '''
 
 
 class Cerabellum:
@@ -261,15 +204,13 @@ class Cerabellum:
     def getEmot(self) -> str:
         return self.emot
 
-    def setAlgorithm(self, algorithm: Algorithm) -> bool:
+    def setAlgorithm(self, algorithm: Algorithm):
         if not self.isActive and (algorithm.getAlgParts is not None):
             self.alg = algorithm
             self.at = 0
             self.fin = algorithm.getSize()
             self.isActive = True
             self.emot = self.alg.getAlgParts[self.at].myName()  # updated line
-            return False
-        return True
 
     def isActiveMethod(self) -> bool:
         return self.isActive
@@ -288,10 +229,6 @@ class Cerabellum:
     def deActivateAlg(self):
         # stop the entire running active Algorithm
         self.isActive = self.isActive and not self.alg.getAlgParts[self.at].algKillSwitch
-
-
-''' FUSION CLASS '''
-
 
 class Fusion:
     def __init__(self):
@@ -323,78 +260,6 @@ class Fusion:
         return self._result
 
 
-class Brain:
-    # c'tor
-    def __init__(self):
-        self._emotion: str = ""
-        self._logicChobitOutput: str = ""
-        self.logicChobit: Chobits = Chobits()
-        self.hardwareChobit: Chobits = Chobits()
-        #120425 upgrade
-        self.ear: Chobits = Chobits()
-        self.skin: Chobits = Chobits()
-        self.eye: Chobits = Chobits()
-        Brain.imprintSoul(self.logicChobit.getKokoro(), self.hardwareChobit,self.ear,self.skin,self.eye)
-
-    @staticmethod
-    def imprintSoul(kokoro: Kokoro, *args:Chobits):
-        for arg in args:
-            arg.setKokoro(kokoro)
-
-    # ret active alg part representing emotion
-    def getEmotion(self) -> str:
-        return self._emotion
-
-    # ret feedback (last output)
-    def getLogicChobitOutput(self) -> str:
-        return self._logicChobitOutput
-
-    # live
-    def doIt(self, ear: str, skin: str, eye: str):
-        self._logicChobitOutput = self.logicChobit.think(ear, skin, eye)
-        self._emotion = self.logicChobit.getSoulEmotion()
-        self.hardwareChobit.think(self._logicChobitOutput, skin, eye)
-
-    # add regular thinking(logical) skill
-    def add_logical_skill(self, skill: Skill):
-        self.logicChobit.addSkill(skill)
-
-    # add output skill
-    def add_hardware_skill(self, skill: Skill):
-        self.hardwareChobit.addSkill(skill)
-
-    def add_skillAware(self, skill: Skill):
-        # add a skill with Chobit in its c'tor(has Chobit attribute)
-        self.logicChobit.addSkillAware(skill)
-
-    # add audio(ear) input skill
-    def add_ear_skill(self, skill: Skill):
-        self.ear.addSkill(skill)
-
-    # add sensor input skill
-    def add_skin_skill(self, skill: Skill):
-        self.skin.addSkill(skill)
-
-    # add visual input skill
-    def add_eye_skill(self, skill: Skill):
-        self.eye.addSkill(skill)
-
-    def think_default(self, keyIn: str):
-        if bool(keyIn):
-            # handles typed inputs(keyIn)
-            self.doIt(keyIn,"","")  # the string is not empty
-        else:
-            # the string is empty, process with sensory inputs
-            self.doIt(self.ear.think("","",""), self.skin.think("","",""), self.eye.think("","",""))
-
-    def think(self):
-        # overload of think method because Python does not support it
-        self.doIt(self.ear.think("", "", ""), self.skin.think("", "", ""), self.eye.think("", "", ""))
-
-
-''' Chobits CLASS '''
-
-
 class Chobits:
 
     def __init__(self):
@@ -415,7 +280,7 @@ class Chobits:
     def setDatabase(self, absDictionaryDB: AbsDictionaryDB):
         self._kokoro.grimoireMemento = absDictionaryDB
 
-    def addSkill(self, skill: Skill) -> Chobits:
+    def addSkill(self, skill: Skill) -> 'Chobits':
         # add a skill (builder design patterned func))
         if self._isThinking:
             return self
@@ -423,11 +288,10 @@ class Chobits:
         self._dClasses.append(skill)
         return self
 
-    def addSkillAware(self, skill: Skill) -> Chobits:
+    def addSkillAware(self, skill: Skill):
         # add a skill with Chobit Object in their c'tor
         skill.setKokoro(self._kokoro)
         self._awareSkills.append(skill)
-        return self
 
     def clearSkills(self):
         # remove all skills
@@ -516,3 +380,88 @@ class Chobits:
             return
         skill.setKokoro(self._kokoro)
         self.cts_skills.append(skill)
+
+
+class Brain:
+    # c'tor
+    def __init__(self):
+        self._emotion: str = ""
+        self._logicChobitOutput: str = ""
+        self.logicChobit: Chobits = Chobits()
+        self.hardwareChobit: Chobits = Chobits()
+        #120425 upgrade
+        self.ear: Chobits = Chobits()
+        self.skin: Chobits = Chobits()
+        self.eye: Chobits = Chobits()
+        Brain.imprintSoul(self.logicChobit.getKokoro(), self.hardwareChobit,self.ear,self.skin,self.eye)
+
+    @staticmethod
+    def imprintSoul(kokoro: Kokoro, *args:Chobits):
+        for arg in args:
+            arg.setKokoro(kokoro)
+
+    # ret active alg part representing emotion
+    def getEmotion(self) -> str:
+        return self._emotion
+
+    # ret feedback (last output)
+    def getLogicChobitOutput(self) -> str:
+        return self._logicChobitOutput
+
+    # live
+    def doIt(self, ear: str, skin: str, eye: str):
+        self._logicChobitOutput = self.logicChobit.think(ear, skin, eye)
+        self._emotion = self.logicChobit.getSoulEmotion()
+        self.hardwareChobit.think(self._logicChobitOutput, skin, eye)
+
+    # add regular thinking(logical) skill
+    def add_logical_skill(self, skill: Skill):
+        self.logicChobit.addSkill(skill)
+
+    # add output skill
+    def add_hardware_skill(self, skill: Skill):
+        self.hardwareChobit.addSkill(skill)
+
+    def add_skillAware(self, skill: Skill):
+        # add a skill with Chobit in its c'tor(has Chobit attribute)
+        self.logicChobit.addSkillAware(skill)
+
+    # add audio(ear) input skill
+    def add_ear_skill(self, skill: Skill):
+        self.ear.addSkill(skill)
+
+    # add sensor input skill
+    def add_skin_skill(self, skill: Skill):
+        self.skin.addSkill(skill)
+
+    # add visual input skill
+    def add_eye_skill(self, skill: Skill):
+        self.eye.addSkill(skill)
+
+    def think_default(self, keyIn: str):
+        if bool(keyIn):
+            # handles typed inputs(keyIn)
+            self.doIt(keyIn,"","")  # the string is not empty
+        else:
+            # the string is empty, process with sensory inputs
+            self.doIt(self.ear.think("","",""), self.skin.think("","",""), self.eye.think("","",""))
+
+    def think(self):
+        # overload of think method because Python does not support it
+        self.doIt(self.ear.think("", "", ""), self.skin.think("", "", ""), self.eye.think("", "", ""))
+
+
+class DiSysOut(Skill):
+    def __init__(self):
+        super().__init__()
+
+    def input(self, ear: str, skin: str, eye: str):
+        if ear and "#" not in ear:
+            print(ear)
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "prints to console"
+        elif param == "triggers":
+            return "automatic for any input"
+        return "note unavalible"

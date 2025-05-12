@@ -1,6 +1,6 @@
 from __future__ import annotations  # for the builder pattern
 from AXPython import TimeGate
-from LivinGrimoire23 import Skill, Chobits
+from LivinGrimoire import Skill, Chobits
 
 
 class AH1(Skill):

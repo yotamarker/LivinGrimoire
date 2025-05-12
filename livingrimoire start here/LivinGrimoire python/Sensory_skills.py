@@ -5,7 +5,7 @@ import re
 import atexit
 import threading
 from queue import Queue
-from LivinGrimoire23 import Brain, Skill
+from LivinGrimoire import Brain, Skill
 
 
 class DiSTT(Skill):

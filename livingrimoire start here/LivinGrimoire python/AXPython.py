@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from LivinGrimoire23 import *
+from LivinGrimoire import *
 from enum import Enum, auto
 import calendar
 import re

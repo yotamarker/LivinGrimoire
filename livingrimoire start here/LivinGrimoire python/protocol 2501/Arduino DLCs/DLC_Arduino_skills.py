@@ -1,5 +1,5 @@
 from AXPython import RegexUtil
-from LivinGrimoire23 import Skill, Brain
+from LivinGrimoire import Skill, Brain
 import serial
 import time
 import atexit

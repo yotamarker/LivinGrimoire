@@ -1,5 +1,5 @@
 from AXPython import AXCmdBreaker, RegexUtil, DrawRnd
-from LivinGrimoire23 import Brain, Skill
+from LivinGrimoire import Brain, Skill
 import webbrowser
 import requests
 from bs4 import BeautifulSoup
@@ -8,10 +8,10 @@ from typing import List
 import random
 
 exclusions = ['google.com', 'bing.com', 'facebook.com', 'youtube.com']  # sites to exclude from link scouting
-site_seeds = ['https://www.yotamarker.com/']  # site you want to scout for internal/external links
-site_fuel: list[str] = ['', 'yotamarker', 'coding', 'java', 'python', 'cplusplus', 'swift']  # lists used for domain guessing
+site_seeds = ['incels.is']  # site you want to scout for internal/external links
+site_fuel: list[str] = ['', 'incel', 'incels', 'trucels']  # lists used for domain guessing
 site_fuel2: list[str] = ['', 'forum', 'haven']
-site_endings = ['.com', '.org', '.net', '.io', '.co', '.edu', '.gov', '.info', '.biz', '.moe', 'ninja']  # domain endings for URL guessing
+site_endings = ['.com', '.is', '.net', '.io', '.co', '.edu', '.me', '.info', '.biz', '.moe', 'ninja']  # domain endings for URL guessing
 
 
 def check_codephrase(codephrase: str, s: str) -> str:
@@ -203,6 +203,13 @@ class DiBrowser(Skill):
                 webbrowser.open(temp)
                 self.setSimpleAlg("done")
             self._str1 = ""
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "surfs the web"
+        elif param == "triggers":
+            return "Say surf URL"
+        return "Note unavailable."
 
 
 def add_DLC_skills(brain: Brain):

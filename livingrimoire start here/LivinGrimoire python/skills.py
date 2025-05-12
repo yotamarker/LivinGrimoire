@@ -1048,7 +1048,7 @@ class DiNoteTaker(Skill):
         return "note unavailable"
 
 
-class APMad(Mutatable):
+class APMad(AlgPart):
     """this algorithm part says each past param verbatim"""
 
     def __init__(self, *args) -> None:
@@ -1087,11 +1087,11 @@ class APMad(Mutatable):
         return self.at >= len(self.sentences)
 
     # Override
-    def clone(self) -> Mutatable:
+    def clone(self) -> AlgPart:
         return APMad(DeepCopier().copyList(self.sentences))
 
 
-class APShy(Mutatable):
+class APShy(AlgPart):
     """this algorithm part says each past param verbatim"""
 
     def __init__(self, *args) -> None:
@@ -1130,11 +1130,11 @@ class APShy(Mutatable):
         return self.at >= len(self.sentences)
 
     # Override
-    def clone(self) -> Mutatable:
+    def clone(self) -> AlgPart:
         return APShy(DeepCopier().copyList(self.sentences))
 
 
-class APHappy(Mutatable):
+class APHappy(AlgPart):
     """this algorithm part says each past param verbatim"""
 
     def __init__(self, *args) -> None:
@@ -1173,11 +1173,11 @@ class APHappy(Mutatable):
         return self.at >= len(self.sentences)
 
     # Override
-    def clone(self) -> Mutatable:
+    def clone(self) -> AlgPart:
         return APHappy(DeepCopier().copyList(self.sentences))
 
 
-class APSad(Mutatable):
+class APSad(AlgPart):
     """this algorithm part says each past param verbatim"""
 
     def __init__(self, *args) -> None:
@@ -1216,7 +1216,7 @@ class APSad(Mutatable):
         return self.at >= len(self.sentences)
 
     # Override
-    def clone(self) -> Mutatable:
+    def clone(self) -> AlgPart:
         return APSad(DeepCopier().copyList(self.sentences))
 
 
@@ -1618,9 +1618,9 @@ class DiImprint_recorder(Skill):
         return "Note unavailable"
 
 
-class APSleep(Mutatable):
+class APSleep(AlgPart):
     def __init__(self, wakeners, sleep_minutes):
-        super().__init__()  # Call the constructor of the parent class (Mutatable)
+        super().__init__()  # Call the constructor of the parent class (AlgPart)
         self.wakeners: Responder = wakeners
         self.done: bool = False
         self.timeGate: TimeGate = TimeGate(sleep_minutes)
@@ -1769,7 +1769,7 @@ class DiTeaParty(Skill):
             if ear.__contains__("stop"):
                 self.setSimpleAlg("tea party has ended")
                 self.on_off_switch.off()
-                return 
+                return
             if self.trg.strContainsResponse(ear):
                self.setSimpleAlg(self.evilLaugh.getAResponse())
                return
@@ -2394,4 +2394,25 @@ class DiRail(Skill):
         elif param == "triggers":
             return "end input with the word ok"
         return "note unavailable"
+
+
+class APSay(AlgPart):
+    def __init__(self, at: int, param: str) -> None:
+        super().__init__()
+        if at > 10:
+            at = 10
+        self.at = at
+        self.param = param
+
+    def action(self, ear: str, skin: str, eye: str) -> str:
+        """TODO Auto-generated method stub"""
+        axnStr = ""
+        if self.at > 0:
+            if ear.lower() != self.param.lower():
+                axnStr = self.param
+                self.at -= 1
+        return axnStr
+
+    def completed(self) -> bool:
+        return self.at < 1
 
