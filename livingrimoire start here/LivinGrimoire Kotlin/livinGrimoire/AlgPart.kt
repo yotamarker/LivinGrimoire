@@ -1,6 +1,6 @@
 package livinGrimoire
 
-open class Mutatable {
+open class AlgPart {
     // one part of an algorithm, it is a basic simple action or sub goal
     var algKillSwitch = false
     open fun action(ear: String, skin: String, eye: String): String {return  ""}

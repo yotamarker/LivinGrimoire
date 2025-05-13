@@ -1,3 +1,5 @@
-I moti barski, creator of the LivinGrimoire, do not allow anyone and or anybody and or any organization to
-receive monetary profit from this LivinG Grimoire unless approved in writing by me personally.
-you can use this for research.
+I, Moti Barski, creator of the LivinGrimoire (short for LivinG Grimoire), 
+do not allow any individual or organization to receive monetary profit from this LivinGrimoire 
+unless approved in writing by me personally.
+
+This work may be used for research purposes.

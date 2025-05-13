@@ -33,11 +33,10 @@ class Chobits {
         cts_skills.add(skill)
     }
 
-    fun addSkillAware(skill: Skill): Chobits {
+    fun addSkillAware(skill: Skill) {
         // add a skill with Chobit Object in their constructor
         skill.kokoro = kokoro
         awareSkills.add(skill)
-        return this
     }
 
     fun clearSkills() {

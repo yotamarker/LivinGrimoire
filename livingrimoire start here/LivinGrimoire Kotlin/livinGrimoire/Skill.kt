@@ -39,7 +39,7 @@ open class Skill {
         outAlg = Algorithm(APVerbatim(sayThis));
         outpAlgPriority = priority // 1->5 1 is the highest algorithm priority
     }
-    fun algPartsFusion(priority: Int, vararg algParts: Mutatable) {
+    fun algPartsFusion(priority: Int, vararg algParts: AlgPart) {
         this.outAlg = Algorithm(*algParts)
         this.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
     }

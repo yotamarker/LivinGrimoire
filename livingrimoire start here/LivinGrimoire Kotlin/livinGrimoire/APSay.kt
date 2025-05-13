@@ -4,7 +4,7 @@ package livinGrimoire
  * a most basic skill.
  * also fun to make the chobit say what you want
  * */
-class APSay(repetitions: Int, param: String) : Mutatable() {
+class APSay(repetitions: Int, param: String) : AlgPart() {
     protected var param: String
     private var at: Int
 

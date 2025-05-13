@@ -22,16 +22,14 @@ class Cerabellum {
     var emot = ""
         private set
 
-    fun setAlgorithm(algorithm: Algorithm): Boolean {
-        if (!isActive && !algorithm.algParts.isEmpty()) {
+    fun setAlgorithm(algorithm: Algorithm) {
+        if (!isActive && algorithm.algParts.isNotEmpty()) {
             alg = algorithm
             at = 0
             fin = algorithm.size
             isActive = true
-            emot = alg!!.algParts.get(at).myName() // updated line
-            return false
+            emot = alg!!.algParts[at].myName()
         }
-        return true
     }
 
     fun act(ear: String, skin: String, eye: String): String {
@@ -40,9 +38,9 @@ class Cerabellum {
             return axnStr
         }
         if (at < fin) {
-            axnStr = alg!!.algParts.get(at).action(ear, skin, eye)
-            emot = alg!!.algParts.get(at).myName()
-            if (alg!!.algParts.get(at).completed()) {
+            axnStr = alg!!.algParts[at].action(ear, skin, eye)
+            emot = alg!!.algParts[at].myName()
+            if (alg!!.algParts[at].completed()) {
                 incrementAt = true
             }
         }
@@ -50,6 +48,6 @@ class Cerabellum {
     }
 
     fun deActivation() {
-        isActive = isActive && !alg!!.algParts.get(at).algKillSwitch
+        isActive = isActive && !alg!!.algParts[at].algKillSwitch
     }
 }

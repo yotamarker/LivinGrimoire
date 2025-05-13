@@ -2,7 +2,7 @@ package livinGrimoire
 
 import java.util.*
 
-class APVerbatim : Mutatable {
+class APVerbatim : AlgPart {
     private var sentences = ArrayList<String>()
 
     constructor(vararg sentences: String) {
