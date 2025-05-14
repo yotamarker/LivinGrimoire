@@ -9,7 +9,7 @@
             Return "null"
         End Function
     End Class
-    Public MustInherit Class Mutatable
+    Public MustInherit Class AlgPart
         Public algKillSwitch As Boolean = False
 
         Public MustOverride Function Action(ear As String, skin As String, eye As String) As String
@@ -20,7 +20,7 @@
         End Function
     End Class
     Public Class APSay
-        Inherits Mutatable
+        Inherits AlgPart
         ' It speaks something x times
         ' A most basic skill.
         ' Also fun to make the chobit say what you want.
@@ -55,7 +55,7 @@
 
     End Class
     Public Class APVerbatim
-        Inherits Mutatable
+        Inherits AlgPart
 
         Private sentences As New List(Of String)()
 
@@ -88,18 +88,18 @@
     End Class
 
     Public Class Algorithm
-        Private algParts As New List(Of Mutatable)()
+        Private algParts As New List(Of AlgPart)()
 
-        Public Sub New(ByVal algParts As List(Of Mutatable))
+        Public Sub New(ByVal algParts As List(Of AlgPart))
             MyBase.New()
             Me.algParts = algParts
         End Sub
 
         ' Constructor accepting variable arguments
-        Public Sub New(ParamArray algParts() As Mutatable)
-            Me.algParts = New List(Of Mutatable)(algParts)
+        Public Sub New(ParamArray algParts() As AlgPart)
+            Me.algParts = New List(Of AlgPart)(algParts)
         End Sub
-        Public Function GetAlgParts() As List(Of Mutatable)
+        Public Function GetAlgParts() As List(Of AlgPart)
             Return algParts
         End Function
 
@@ -195,7 +195,7 @@
             Me.outpAlgPriority = priority ' DEFCON levels 1->5
         End Sub
 
-        Public Sub AlgPartsFusion(ByVal priority As Integer, ParamArray algParts() As Mutatable)
+        Public Sub AlgPartsFusion(ByVal priority As Integer, ParamArray algParts() As AlgPart)
             Me.outAlg = New Algorithm(algParts)
             Me.outpAlgPriority = priority ' 1->5, 1 is the highest algorithm priority
         End Sub
@@ -260,17 +260,15 @@
             Return emot
         End Function
 
-        Public Function SetAlgorithm(algorithm As Algorithm) As Boolean
+        Public Sub SetAlgorithm(algorithm As Algorithm)
             If Not IsActive() AndAlso Not algorithm.GetAlgParts.Count = 0 Then
                 Me.alg = algorithm
                 Me.at = 0
                 Me.fin = algorithm.GetSize()
                 Me.ia = True
                 Me.emot = alg.GetAlgParts()(at).MyName() ' Updated line
-                Return False
             End If
-            Return True
-        End Function
+        End Sub
 
         Public Function IsActive() As Boolean
             Return ia
@@ -345,6 +343,9 @@
         Protected kokoro As Kokoro = New Kokoro(New AbsDictionaryDB()) ' consciousness
         Private isThinking As Boolean = False
         Private ReadOnly awareSkills As New List(Of Skill)()
+        Public algTriggered As Boolean = False
+        ' Continuous skills list
+        Public cts_skills As New List(Of Skill)() ' Assuming Skill is a class
 
         Public Sub New()
             MyBase.New()
@@ -366,12 +367,27 @@
             Return Me
         End Function
 
-        Public Function AddSkillAware(skill As Skill) As Chobits
+        Public Sub AddSkillAware(skill As Skill)
             ' add a skill with Chobit Object in their constructor
             skill.SetKokoro(Me.kokoro)
             Me.awareSkills.Add(skill)
-            Return Me
-        End Function
+        End Sub
+
+        Public Sub AddContinuousSkill(skill As Skill)
+            If Me.isThinking Then Return
+            skill.SetKokoro(Me.kokoro)
+            Me.cts_skills.Add(skill)
+        End Sub
+
+        Public Sub ClearContinuousSkills()
+            If Me.isThinking Then Return
+            Me.cts_skills.Clear()
+        End Sub
+
+        Public Sub RemoveContinuousSkill(skill As Skill)
+            If Me.isThinking Then Return
+            Me.cts_skills.Remove(skill)
+        End Sub
 
         Public Sub ClearSkills()
             ' Remove all skills
@@ -403,6 +419,7 @@
         End Function
 
         Public Function Think(ear As String, skin As String, eye As String) As String
+            Me.algTriggered = False
             Me.isThinking = True
             For Each dCls As Skill In dClasses
                 InOut(dCls, ear, skin, eye)
@@ -411,6 +428,14 @@
             For Each dCls2 As Skill In Me.awareSkills
                 InOut(dCls2, ear, skin, eye)
             Next
+            Me.isThinking = True
+
+            For Each dCls3 As Skill In Me.cts_skills
+                If Me.algTriggered Then Exit For
+                InOut(dCls3, ear, skin, eye)
+            Next
+
+            Me.isThinking = False
             fusion.LoadAlgs(noiron)
             Return fusion.RunAlgs(ear, skin, eye)
         End Function
@@ -421,6 +446,7 @@
 
         Protected Sub InOut(dClass As Skill, ear As String, skin As String, eye As String)
             dClass.Input(ear, skin, eye) ' New
+            If dClass.PendingAlgorithm() Then Me.algTriggered = True
             dClass.Output(noiron)
         End Sub
 
@@ -526,5 +552,15 @@
             End If
             Console.WriteLine(ear)
         End Sub
+        Public Overrides Function SkillNotes(ByVal param As String) As String
+            Select Case param
+                Case "notes"
+                    Return "prints to console"
+                Case "triggers"
+                    Return "automatic for any input"
+                Case Else
+                    Return "note unavailable"
+            End Select
+        End Function
     End Class
 End Module
