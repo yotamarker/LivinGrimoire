@@ -16,7 +16,7 @@ open class AbsDictionaryDB{
         return "null"
     }
 }
-open class Mutatable{
+open class AlgPart{
     var algKillSwitch:Bool = false
     func action(ear: String, skin: String, eye: String) -> String{
         return ""
@@ -33,7 +33,7 @@ open class Mutatable{
  it speaks something x times
  a most basic skill.
  also fun to make the chobit say what you want */
-class APsay:Mutatable{
+class APsay:AlgPart{
     var at:Int=10
     var param:String="hmm"
     convenience init(repetitions:Int, param:String) {
@@ -56,7 +56,7 @@ class APsay:Mutatable{
     }
 }
 
-class APVerbatim:Mutatable{
+class APVerbatim:AlgPart{
     // this algorithm part says each past param verbatim
     var sentences: Array<String> = [String]()
     init(_ sentences:String...){
@@ -78,11 +78,11 @@ class APVerbatim:Mutatable{
 
 // a step by step plan to achieve a goal
 class Algorithm{
-    var algParts: Array<Mutatable> = [Mutatable]()
-    init(algParts: Array<Mutatable>) {
+    var algParts: Array<AlgPart> = [AlgPart]()
+    init(algParts: Array<AlgPart>) {
         self.algParts = algParts
     }
-    init(_ algParts: Mutatable...) {
+    init(_ algParts: AlgPart...) {
         self.algParts = algParts
     }
     func getSize() -> Int {
@@ -164,7 +164,7 @@ open class Skill{
         self.outAlg = Algorithm(APVerbatim(sentences: sayThis))
         self.outpAlgPriority = 4 // Default priority of 4
     }
-    func algPartsFusion(priority:Int, algParts: Mutatable...) {
+    func algPartsFusion(priority:Int, algParts: AlgPart...) {
         self.outAlg = Algorithm(algParts: algParts)
         self.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
     }
@@ -230,7 +230,7 @@ class Cerabellum{
         if !isActive1 {return ""}
         var axnStr:String = ""
         if at < fin {
-        let algPart:Mutatable = alg!.algParts[at]
+        let algPart:AlgPart = alg!.algParts[at]
             axnStr = algPart.action(ear: ear, skin: skin, eye: eye)
             self.emot = algPart.myName()
             if algPart.completed(){
@@ -280,16 +280,18 @@ class Chobits {
     var kokoro: Kokoro = Kokoro(absDictionaryDB: AbsDictionaryDB()) // consciousness
     private var isThinking: Bool = false
     private var awareSkills: [Skill] = []
-
+    var algTriggered: Bool = false
+    var ctsSkills: [Skill] = []  // continuous skills
+    
     init() {
         self.fusion = Fusion()
         self.noiron = Neuron()
     }
-
+    
     func setDataBase(absDictionaryDB: AbsDictionaryDB) {
         self.kokoro.grimoireMemento = absDictionaryDB
     }
-
+    
     @discardableResult
     func addSkill(skill: Skill) -> Chobits {
         // add a skill (builder design patterned func)
@@ -300,15 +302,13 @@ class Chobits {
         self.dClasses.append(skill)
         return self
     }
-
-    @discardableResult
-    func addSkillAware(skill: Skill) -> Chobits {
+    
+    func addSkillAware(skill: Skill){
         // add a skill with Chobit Object in their constructor
         skill.setKokoro(kokoro: self.kokoro)
         self.awareSkills.append(skill)
-        return self
     }
-
+    
     func clearSkills() {
         // remove all skills
         if self.isThinking {
@@ -316,7 +316,7 @@ class Chobits {
         }
         self.dClasses.removeAll()
     }
-
+    
     func addSkills(skills: Skill...) {
         if self.isThinking {
             return
@@ -326,7 +326,7 @@ class Chobits {
             self.dClasses.append(skill)
         }
     }
-
+    
     func removeSkill(skill: Skill) {
         if self.isThinking {
             return
@@ -335,12 +335,13 @@ class Chobits {
             self.dClasses.remove(at: index)
         }
     }
-
+    
     func containsSkill(skill: Skill) -> Bool {
         return self.dClasses.contains(where: { $0 === skill })
     }
     @discardableResult
     func think(ear: String, skin: String, eye: String) -> String {
+        algTriggered = false
         self.isThinking = true
         for dCls in self.dClasses {
             inOut(dClass: dCls, ear: ear, skin: skin, eye: eye)
@@ -349,37 +350,57 @@ class Chobits {
         for dCls2 in self.awareSkills {
             inOut(dClass: dCls2, ear: ear, skin: skin, eye: eye)
         }
+        isThinking = true
+        for dCls3 in ctsSkills {
+            if algTriggered { break }
+            inOut(dClass: dCls3, ear: ear, skin: skin, eye: eye)
+        }
+        isThinking = false
         fusion.loadAlgs(neuron: noiron)
         return fusion.runAlgs(ear: ear, skin: skin, eye: eye)
     }
-
+    
     func getSoulEmotion() -> String {
         return fusion.getEmot()
     }
-
+    
     private func inOut(dClass: Skill, ear: String, skin: String, eye: String) {
-        dClass.input(ear: ear, skin: skin, eye: eye) // new
+        dClass.input(ear: ear, skin: skin, eye: eye)
+        if dClass.pendingAlgorithm() { algTriggered = true }
         dClass.output(noiron: noiron)
     }
-
+    
     func getKokoro() -> Kokoro {
         return kokoro
     }
-
+    
     func setKokoro(kokoro: Kokoro) {
         self.kokoro = kokoro
     }
-
+    
     func getFusion() -> Fusion {
         return fusion
     }
-
+    
     func getSkillList() -> [String] {
         var result: [String] = []
         for skill in self.dClasses {
             result.append(String(describing: type(of: skill)))
         }
         return result
+    }
+    func addContinuousSkill(skill: Skill) {
+        if isThinking { return }
+        skill.setKokoro(kokoro: kokoro)
+        ctsSkills.append(skill)
+    }
+    func clearContinuousSkills() {
+        if isThinking { return }
+        ctsSkills.removeAll()
+    }
+    func removeContinuousSkill(skill: Skill) {
+        if isThinking { return }
+        ctsSkills.removeAll { $0 === skill }
     }
 }
 
@@ -462,5 +483,13 @@ class DiSysOut:Skill{
         if(!ear.isEmpty && !ear.contains("#")){
             print(ear)
         }
+    }
+    override func skillNotes(param: String) -> String {
+        if param == "notes" {
+            return "prints to console"
+        } else if param == "triggers" {
+            return "automatic for any input"
+        }
+        return "note unavailable"
     }
 }
