@@ -11,7 +11,7 @@ class AbsDictionaryDB {
     }
 }
 
-class Mutatable {
+class AlgPart {
     constructor() {
         this.algKillSwitch = false;
     }
@@ -31,7 +31,7 @@ class Mutatable {
     }
 }
 
-class APSay extends Mutatable {
+class APSay extends AlgPart {
     constructor(repetitions, param) {
         super();
         this.param = param;
@@ -54,7 +54,7 @@ class APSay extends Mutatable {
     }
 }
 
-class APVerbatim extends Mutatable {
+class APVerbatim extends AlgPart {
     constructor(...sentences) {
         super();
         this.sentences = Array.isArray(sentences[0]) ? [...sentences[0]] : [...sentences];
@@ -242,9 +242,7 @@ class Cerabellum {
             this.fin = algorithm.GetSize();
             this.ia = true;
             this.emot = this.alg.GetAlgParts()[this.at].MyName(); // Updated line
-            return false;
         }
-        return true;
     }
 
     IsActive() {
@@ -318,6 +316,10 @@ class Chobits {
         this.kokoro = new Kokoro(new AbsDictionaryDB()); // consciousness
         this.isThinking = false;
         this.awareSkills = [];
+        this.algTriggered = false;
+        // Continuous skills list (assuming Skill is a class)
+        this.cts_skills = [];
+
     }
 
     SetDataBase(absDictionaryDB) {
@@ -333,12 +335,16 @@ class Chobits {
         this.dClasses.push(skill);
         return this;
     }
+    addContinuousSkill(skill) {
+        if (this.isThinking) return;
+        skill.setKokoro(this.kokoro);
+        this.cts_skills.push(skill);
+    }
 
     AddSkillAware(skill) {
         // add a skill with Chobit Object in their constructor
         skill.SetKokoro(this.kokoro);
         this.awareSkills.push(skill);
-        return this;
     }
 
     ClearSkills() {
@@ -347,6 +353,10 @@ class Chobits {
             return;
         }
         this.dClasses = [];
+    }
+    clearContinuousSkills() {
+        if (this.isThinking) return;
+        this.cts_skills = [];
     }
 
     AddSkills(...skills) {
@@ -368,12 +378,17 @@ class Chobits {
             this.dClasses.splice(index, 1);
         }
     }
+    removeContinuousSkill(skill) {
+        if (this.isThinking) return;
+        this.cts_skills = this.cts_skills.filter(s => s !== skill);
+    }
 
     ContainsSkill(skill) {
         return this.dClasses.includes(skill);
     }
 
     Think(ear, skin, eye) {
+        this.algTriggered = false;
         this.isThinking = true;
         for (const dCls of this.dClasses) {
             this.InOut(dCls, ear, skin, eye);
@@ -382,6 +397,12 @@ class Chobits {
         for (const dCls2 of this.awareSkills) {
             this.InOut(dCls2, ear, skin, eye);
         }
+        this.isThinking = true;
+        for (let dCls3 of this.cts_skills) {
+            if (this.algTriggered) break;
+            this.inOut(dCls3, ear, skin, eye);
+        }
+        this.isThinking = false;
         this.fusion.LoadAlgs(this.noiron);
         return this.fusion.RunAlgs(ear, skin, eye);
     }
@@ -395,6 +416,7 @@ class Chobits {
 
     InOut(dClass, ear, skin, eye) {
         dClass.Input(ear, skin, eye); // new
+        if (dClass.PendingAlgorithm()) this.algTriggered = true;
         dClass.Output(this.noiron);
     }
 
@@ -505,7 +527,17 @@ class DiPrinter extends Skill {
         }
         console.log(ear);
     }
+    SkillNotes(param) {
+        switch (param) {
+            case "notes":
+                return "prints to console";
+            case "triggers":
+                return "automatic for any input";
+            default:
+                return "note unavailable";
+        }
+    }
 }
 
 
-module.exports = { AbsDictionaryDB, Mutatable, APSay, APVerbatim, Algorithm, Kokoro, Neuron, Skill, DiHelloWorld, Cerabellum, Fusion, Chobits, Brain, DiPrinter };
+module.exports = { AbsDictionaryDB, AlgPart, APSay, APVerbatim, Algorithm, Kokoro, Neuron, Skill, DiHelloWorld, Cerabellum, Fusion, Chobits, Brain, DiPrinter };
