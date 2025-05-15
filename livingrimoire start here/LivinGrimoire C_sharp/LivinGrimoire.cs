@@ -14,7 +14,7 @@ public class AbsDictionaryDB
         return "null";
     }
 }
-public abstract class Mutatable
+public abstract class AlgPart
 {
     public bool algKillSwitch = false;
 
@@ -27,7 +27,7 @@ public abstract class Mutatable
         return GetType().Name;
     }
 }
-public class APSay : Mutatable
+public class APSay : AlgPart
 {
     // It speaks something x times
     // A most basic skill.
@@ -68,7 +68,7 @@ public class APSay : Mutatable
     }
 
 }
-public class APVerbatim : Mutatable
+public class APVerbatim : AlgPart
 {
     private List<string> sentences = new List<string>();
 
@@ -102,19 +102,19 @@ public class APVerbatim : Mutatable
 }
 public class Algorithm
 {
-    private List<Mutatable> algParts = new List<Mutatable>();
+    private List<AlgPart> algParts = new List<AlgPart>();
 
-    public Algorithm(List<Mutatable> algParts)
+    public Algorithm(List<AlgPart> algParts)
     {
         this.algParts = algParts;
     }
-    public Algorithm(params Mutatable[] algParts)
+    public Algorithm(params AlgPart[] algParts)
     {
-        this.algParts = new List<Mutatable>(algParts);
+        this.algParts = new List<AlgPart>(algParts);
     }
 
 
-    public List<Mutatable> GetAlgParts()
+    public List<AlgPart> GetAlgParts()
     {
         return algParts;
     }
@@ -234,7 +234,7 @@ public class Skill
         this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
 
-    public void AlgPartsFusion(int priority, params Mutatable[] algParts)
+    public void AlgPartsFusion(int priority, params AlgPart[] algParts)
     {
         this.outAlg = new Algorithm(algParts);
         this.outpAlgPriority = priority; // 1->5, 1 is the highest algorithm priority
@@ -315,7 +315,7 @@ public class Cerabellum
         return emot;
     }
 
-    public bool SetAlgorithm(Algorithm algorithm)
+    public void SetAlgorithm(Algorithm algorithm)
     {
         if (!IsActive() && algorithm.GetAlgParts().Count != 0)
         {
@@ -324,9 +324,7 @@ public class Cerabellum
             fin = algorithm.GetSize();
             ia = true;
             emot = alg.GetAlgParts()[at].MyName(); // Updated line
-            return false;
         }
-        return true;
     }
 
     public bool IsActive()
@@ -419,6 +417,10 @@ public class Chobits
     protected Kokoro kokoro = new Kokoro(new AbsDictionaryDB()); // consciousness
     private bool isThinking = false;
     private readonly List<Skill> awareSkills = new List<Skill>();
+    public bool algTriggered = false;
+    // Continuous skills list
+    public List<Skill> cts_skills = new List<Skill>(); // Assuming Skill is a class
+
 
     public Chobits()
     {
@@ -444,12 +446,11 @@ public class Chobits
         return this;
     }
 
-    public Chobits AddSkillAware(Skill skill)
+    public void AddSkillAware(Skill skill)
     {
         // add a skill with Chobit Object in their constructor
         skill.SetKokoro(this.kokoro);
         this.awareSkills.Add(skill);
-        return this;
     }
 
     public void ClearSkills()
@@ -474,6 +475,22 @@ public class Chobits
             this.dClasses.Add(skill);
         }
     }
+    public void AddContinuousSkill(Skill skill)
+    {
+        if (this.isThinking) return;
+        skill.SetKokoro(this.kokoro);
+        this.cts_skills.Add(skill);
+    }
+    public void ClearContinuousSkills()
+    {
+        if (this.isThinking) return;
+        this.cts_skills.Clear();
+    }
+    public void RemoveContinuousSkill(Skill skill)
+    {
+        if (this.isThinking) return;
+        this.cts_skills.Remove(skill);
+    }
 
     public void RemoveSkill(Skill skill)
     {
@@ -491,6 +508,7 @@ public class Chobits
 
     public string Think(string ear, string skin, string eye)
     {
+        this.algTriggered = false;
         this.isThinking = true;
         foreach (Skill dCls in this.dClasses)
         {
@@ -501,6 +519,15 @@ public class Chobits
         {
             InOut(dCls2, ear, skin, eye);
         }
+        this.isThinking = true;
+
+        foreach (Skill dCls3 in this.cts_skills)
+        {
+            if (this.algTriggered) break;
+            InOut(dCls3, ear, skin, eye);
+        }
+
+        this.isThinking = false;
         this.fusion.LoadAlgs(this.noiron);
         return this.fusion.RunAlgs(ear, skin, eye);
     }
@@ -516,6 +543,7 @@ public class Chobits
     protected void InOut(Skill dClass, string ear, string skin, string eye)
     {
         dClass.Input(ear, skin, eye); // new
+        if (dClass.PendingAlgorithm()) this.algTriggered = true;
         dClass.Output(this.noiron);
     }
 
@@ -643,4 +671,17 @@ public class DiPrinter : Skill
         }
         Console.WriteLine(ear);
     }
+    public override string SkillNotes(string param)
+    {
+        switch (param)
+        {
+            case "notes":
+                return "prints to console";
+            case "triggers":
+                return "automatic for any input";
+            default:
+                return "note unavailable";
+        }
+    }
+
 }
