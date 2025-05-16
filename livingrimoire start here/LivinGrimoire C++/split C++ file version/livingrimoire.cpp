@@ -1,7 +1,7 @@
 #include "LivinGrimoire.h"
 
 //APSay:Mutatable
-APSay::APSay(int repetitions, const std::string& szParam) : Mutable(), param(szParam) {
+APSay::APSay(int repetitions, const std::string& szParam) : AlgPart(), param(szParam) {
 	if (repetitions > 10) {
 		repetitions = 10;
 	}
@@ -25,17 +25,17 @@ std::string APSay::action(const std::string& ear, const std::string& skin, const
 }
 
 //Algorithm
-Algorithm::Algorithm(std::vector<std::shared_ptr<Mutable>>& vecAlgParts) {
+Algorithm::Algorithm(std::vector<std::shared_ptr<AlgPart>>& vecAlgParts) {
 	algParts.insert(algParts.begin(), vecAlgParts.begin(), vecAlgParts.end());
 }
 
-Algorithm::Algorithm(std::initializer_list<std::shared_ptr<Mutable>> vecAlgParts) {
+Algorithm::Algorithm(std::initializer_list<std::shared_ptr<AlgPart>> vecAlgParts) {
 	for (auto& word : vecAlgParts) {
 		algParts.push_back(word);
 	}
 }
 
-std::vector<std::shared_ptr<Mutable>>& Algorithm::getAlgParts() {
+std::vector<std::shared_ptr<AlgPart>>& Algorithm::getAlgParts() {
 	return algParts;
 }
 
@@ -45,13 +45,13 @@ int Algorithm::getSize() {
 
 //APVerbatim:APVerbatim
 
-APVerbatim::APVerbatim(std::initializer_list<std::string> initlist) : Mutable() {
+APVerbatim::APVerbatim(std::initializer_list<std::string> initlist) : AlgPart() {
 	for (auto& word : initlist) {
 		sentences.push(word);
 	}
 }
 
-APVerbatim::APVerbatim(std::vector<std::string>& list1) : Mutable() {
+APVerbatim::APVerbatim(std::vector<std::string>& list1) : AlgPart() {
 	for (auto& word : list1) {
 		sentences.push(word);
 	}
@@ -118,7 +118,7 @@ void Skill::setVerbatimAlg(int priority, std::initializer_list<std::string> sayT
 	// build a simple output algorithm to speak std::string by std::string per think cycle
 	// uses varargs param
 	std::shared_ptr<APVerbatim> mut = std::make_shared<APVerbatim>(sayThis);
-	std::initializer_list<std::shared_ptr<Mutable>> list = { mut };
+	std::initializer_list<std::shared_ptr<AlgPart>> list = { mut };
 	outAlg = std::make_shared<Algorithm>(list);
 	outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
 }
@@ -128,7 +128,7 @@ void Skill::setSimpleAlg(std::initializer_list<std::string> sayThis) {
 	// build a simple output algorithm to speak std::string by std::string per think cycle
 	// uses varargs param
 	std::shared_ptr<APVerbatim> mut = std::make_shared<APVerbatim>(sayThis);
-	std::initializer_list<std::shared_ptr<Mutable>> list = { mut };
+	std::initializer_list<std::shared_ptr<AlgPart>> list = { mut };
 	outAlg = std::make_shared<Algorithm>(list);
 	outpAlgPriority = 4; // 1->5 1 is the highest algorithm priority
 }
@@ -137,12 +137,12 @@ void Skill::setVerbatimAlgFromList(int priority, std::vector<std::string> sayThi
 	// build a simple output algorithm to speak std::string by std::string per think cycle
 	// uses list param
 	std::shared_ptr<APVerbatim> mut = std::make_shared<APVerbatim>(sayThis);
-	std::initializer_list<std::shared_ptr<Mutable>> list = { mut };
+	std::initializer_list<std::shared_ptr<AlgPart>> list = { mut };
 	outAlg = std::make_shared<Algorithm>(list);
 	outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
 }
 
-void Skill::algPartsFusion(int priority, std::initializer_list<std::shared_ptr<Mutable>> algParts) {
+void Skill::algPartsFusion(int priority, std::initializer_list<std::shared_ptr<AlgPart>> algParts) {
 	// build a custom algorithm out of a chain of algorithm parts(actions)
 	outAlg = std::make_shared<Algorithm>(algParts);
 	outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
@@ -172,6 +172,16 @@ void DiSysOut::input(const std::string& ear, const std::string& skin, const std:
 	if (!ear.empty() && ear.find("#") == std::string::npos) {
 		std::cout << ear << std::endl;
 	}
+}
+
+std::string DiSysOut::skillNotes(std::string& param) {
+	if (param == "notes") {
+		return "console print skill";
+	}
+	else if ("triggers" == param) {
+		return "prints any string input";
+	}
+	return "note unavailable";
 }
 
 //DiHelloWorld:Skill
@@ -210,16 +220,14 @@ std::string Cerabellum::getEmot() {
 	return emot;
 }
 
-bool Cerabellum::setAlgorithm(const std::shared_ptr<Algorithm> algorithm) {
+void Cerabellum::setAlgorithm(const std::shared_ptr<Algorithm> algorithm) {
 	if (!bIsActive && (!algorithm->getAlgParts().empty())) {
 		alg = algorithm;
 		at = 0;
 		fin = algorithm->getSize();
 		bIsActive = true;
 		emot = alg->getAlgParts().at(at)->myName(); // updated line
-		return false;
 	}
-	return true;
 }
 
 bool Cerabellum::isActive() {
@@ -232,7 +240,7 @@ std::string Cerabellum::act(const std::string& ear, const std::string& skin, con
 		return axnStr;
 	}
 	if (at < fin) {
-		std::shared_ptr<Mutable> mut = alg->getAlgParts().at(at);
+		std::shared_ptr<AlgPart> mut = alg->getAlgParts().at(at);
 		axnStr = mut->action(ear, skin, eye);
 		emot = alg->getAlgParts().at(at)->myName();
 		if (alg->getAlgParts().at(at)->completed()) {
@@ -281,7 +289,7 @@ std::string Fusion::runAlgs(const std::string& ear, const std::string& skin, con
 }
 
 //Chobits
-Chobits::Chobits() : isThinking(false), fusion(std::make_unique<Fusion>()), neuron(std::make_unique<Neuron>()) {
+Chobits::Chobits() : isThinking(false),algTriggered(false), fusion(std::make_unique<Fusion>()), neuron(std::make_unique<Neuron>()) {
 	kokoro = std::make_shared<Kokoro>(std::make_shared<AbsDictionaryDB>());
 }
 
@@ -301,10 +309,14 @@ Chobits* Chobits::addSkill(Skill* skill) {
 	return this;
 }
 
-Chobits* Chobits::addSkillAware(Skill* skill) {
+void Chobits::addContinuousSkill(Skill* skill) {
+	skill->setKokoro(kokoro.get());
+	ctsSkills.push_back(skill);
+}
+
+void Chobits::addSkillAware(Skill* skill) {
 	skill->setKokoro(kokoro.get());
 	awareSkills.push_back(skill);
-	return this;
 }
 
 void Chobits::clearSkills() {
@@ -312,6 +324,13 @@ void Chobits::clearSkills() {
 
 	for_each(dClasses.begin(), dClasses.end(), [](Skill* lpSkill) { delete lpSkill; });
 	dClasses.clear();
+}
+
+void Chobits::clearContinuousSkills() {
+	if (isThinking) return;
+
+	for_each(ctsSkills.begin(), ctsSkills.end(), [](Skill* lpSkill) { delete lpSkill; });
+	ctsSkills.clear();
 }
 
 void Chobits::addSkills(std::initializer_list<Skill*> skills) {
@@ -333,11 +352,22 @@ void Chobits::removeSkill(Skill* skill) {
 	}
 }
 
+void Chobits::removeContinuousSkill(Skill* skill) {
+	if (isThinking) return;
+	if (skill != nullptr) {
+		auto it = find(ctsSkills.begin(), ctsSkills.end(), skill);
+		if (it != ctsSkills.end())
+			delete* it;
+		ctsSkills.erase(it);
+	}
+}
+
 bool Chobits::containsSkill(Skill* skill) {
 	return (skill != nullptr && find(dClasses.begin(), dClasses.end(), skill) != dClasses.end());
 }
 
 std::string Chobits::think(const std::string& ear, const std::string& skin, const std::string& eye) {
+	algTriggered = false;
 	isThinking = true;
 	for (Skill* dCls : dClasses) {
 		inOut(dCls, ear, skin, eye);
@@ -346,6 +376,11 @@ std::string Chobits::think(const std::string& ear, const std::string& skin, cons
 	for (Skill* dCls : awareSkills) {
 		inOut(dCls, ear, skin, eye);
 	}
+	isThinking = true;
+	for (Skill* dCls : ctsSkills) {
+		inOut(dCls, ear, skin, eye);
+	}
+	isThinking = false;
 	fusion->loadAlgs(neuron.get());
 	return fusion->runAlgs(ear, skin, eye);
 }
@@ -380,7 +415,8 @@ std::string Skill::myName() {
 }
 
 void Chobits::inOut(Skill* dClass, const std::string& ear, const std::string& skin, const std::string& eye) {
-	dClass->input(ear, skin, eye); // new
+	dClass->input(ear, skin, eye);
+	if (dClass->pendingAlgorithm()) { algTriggered = true; }
 	dClass->output(neuron.get());
 }
 

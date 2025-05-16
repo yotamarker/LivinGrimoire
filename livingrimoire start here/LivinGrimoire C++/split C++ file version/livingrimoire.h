@@ -45,10 +45,10 @@ public:
 };
 
 //Mutatable
-class Mutable {
+class AlgPart {
 public:
-	Mutable() : algKillSwitch(false) {}
-	virtual ~Mutable() {}
+	AlgPart() : algKillSwitch(false) {}
+	virtual ~AlgPart() {}
 
 	virtual std::string action(const std::string& ear, const std::string& skin, const std::string& eye) = 0;
 	virtual bool completed() = 0;
@@ -61,7 +61,7 @@ public:
 };
 
 //APSay:Mutatable
-class APSay : public Mutable {
+class APSay : public AlgPart {
 public:
 	APSay(int repetitions, const std::string& param);
 
@@ -76,7 +76,7 @@ private:
 };
 
 //APVerbatim:Mutatable
-class APVerbatim : public Mutable {
+class APVerbatim : public AlgPart {
 public:
 	APVerbatim(std::initializer_list<std::string> initlist);
 	APVerbatim(std::vector<std::string>& list1);
@@ -91,13 +91,13 @@ private:
 // a step-by-step plan to achieve a goal
 class Algorithm {
 public:
-	Algorithm(std::vector<std::shared_ptr<Mutable>>& algParts);
-	Algorithm(std::initializer_list<std::shared_ptr<Mutable>> algParts);
+	Algorithm(std::vector<std::shared_ptr<AlgPart>>& algParts);
+	Algorithm(std::initializer_list<std::shared_ptr<AlgPart>> algParts);
 
-	std::vector<std::shared_ptr<Mutable>>& getAlgParts();
+	std::vector<std::shared_ptr<AlgPart>>& getAlgParts();
 	int getSize();
 private:
-	std::vector<std::shared_ptr<Mutable>> algParts;
+	std::vector<std::shared_ptr<AlgPart>> algParts;
 };
 
 //Kokoro
@@ -150,7 +150,7 @@ protected:
 	void setVerbatimAlg(int priority, std::initializer_list<std::string> sayThis);
 	void setSimpleAlg(std::initializer_list<std::string> sayThis);
 	void setVerbatimAlgFromList(int priority, std::vector<std::string> sayThis);
-	void algPartsFusion(int priority, std::initializer_list<std::shared_ptr<Mutable>> algParts);
+	void algPartsFusion(int priority, std::initializer_list<std::shared_ptr<AlgPart>> algParts);
 
 	Kokoro* kokoro; // consciousness, shallow ref class to enable interskill communications
 	std::shared_ptr<Algorithm> outAlg; // skills output
@@ -162,6 +162,7 @@ private:
 class DiSysOut : public Skill {
 public:
 	virtual void input(const std::string& ear, const std::string& skin, const std::string& eye);
+	virtual std::string skillNotes(std::string& param);
 };
 
 //DiHelloWorld:Skill
@@ -182,7 +183,7 @@ public:
 	int getAt();
 	void advanceInAlg();
 	std::string getEmot();
-	bool setAlgorithm(const std::shared_ptr<Algorithm> algorithm);
+	void setAlgorithm(const std::shared_ptr<Algorithm> algorithm);
 	bool isActive();
 	std::string act(const std::string& ear, const std::string& skin, const std::string& eye);
 
@@ -225,10 +226,13 @@ public:
 
 	void setDataBase(std::shared_ptr<AbsDictionaryDB> absDictionaryDB);
 	Chobits* addSkill(Skill* skill);
-	Chobits* addSkillAware(Skill* skill);
+	void addContinuousSkill(Skill* skill);
+	void addSkillAware(Skill* skill);
 	void clearSkills();
+	void clearContinuousSkills();
 	void addSkills(std::initializer_list<Skill*> skills);
 	void removeSkill(Skill* skill);
+	void removeContinuousSkill(Skill* skill);
 	bool containsSkill(Skill* skill);
 	std::string think(const std::string& ear, const std::string& skin, const std::string& eye);
 	std::string getSoulEmotion();
@@ -236,6 +240,8 @@ public:
 	void setKokoro(std::shared_ptr<Kokoro> kokoro);
 	Fusion* getFusion();
 	std::vector<std::string> getSkillList(std::vector<std::string>&);
+	bool algTriggered;
+	std::vector<Skill*> ctsSkills;
 protected:
 	void inOut(Skill* dClass, const std::string& ear, const std::string& skin, const std::string& eye);
 
