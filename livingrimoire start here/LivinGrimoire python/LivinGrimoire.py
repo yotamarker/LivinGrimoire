@@ -1,3 +1,5 @@
+from collections import deque  # for APVerbatim cls
+
 class AbsDictionaryDB:
     def save(self, key: str, value: str):
         """Returns action string"""
@@ -27,22 +29,17 @@ class AlgPart:
 
 
 class APVerbatim(AlgPart):
-    """this algorithm part says each past param verbatim"""
-
-    def __init__(self, *sentences) -> None:
+    def __init__(self, *sentences: str):
         super().__init__()
+        self.sentences = deque(sentences)
+        # Handle the case where a single list is passed (like the ArrayList constructor in Java)
         if len(sentences) == 1 and isinstance(sentences[0], list):
-            self.sentences = list(sentences[0])  # Initialize with a copy of the list
-        else:
-            self.sentences = list(sentences)
+            self.sentences = deque(sentences[0])
 
-    # Override
     def action(self, ear: str, skin: str, eye: str) -> str:
-        if self.sentences:
-            return self.sentences.pop(0)
-        return ""
+        # Use deque.popleft() safely without try-except
+        return self.sentences.popleft() if self.sentences else ""
 
-    # Override
     def completed(self) -> bool:
         return not self.sentences
 

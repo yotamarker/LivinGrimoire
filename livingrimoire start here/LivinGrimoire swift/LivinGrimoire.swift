@@ -56,23 +56,38 @@ class APsay:AlgPart{
     }
 }
 
-class APVerbatim:AlgPart{
-    // this algorithm part says each past param verbatim
-    var sentences: Array<String> = [String]()
-    init(_ sentences:String...){
-        self.sentences.append(contentsOf: sentences)
+class APVerbatim: AlgPart {
+    private var buffer: [String]
+    private var headIndex: Int = 0
+    
+    init(_ sentences: String...) {
+        self.buffer = sentences
     }
-    init(sentences: Array<String>){
-        self.sentences = sentences
+    
+    init(_ list1: [String]) {
+        self.buffer = list1
     }
+    
+    @inline(__always)
     override func action(ear: String, skin: String, eye: String) -> String {
-        if !self.sentences.isEmpty {
-                    return self.sentences.removeFirst()
-                }
-                return ""
+        // Branchless O(1) dequeue
+        let result = headIndex < buffer.count ? buffer[headIndex] : ""
+        headIndex &+= 1  // Overflow-safe (unlikely but correct)
+        return result
     }
+    
+    @inline(__always)
     override func completed() -> Bool {
-        return self.sentences.isEmpty
+        // Single branch (compiler optimizes this aggressively)
+        headIndex >= buffer.count
+    }
+    
+    /// Optional: Manual memory cleanup for very large queues
+    func compact() {
+        if headIndex > 1024 {  // Only reclaim memory after significant consumption
+            buffer.removeFirst(headIndex)
+            headIndex = 0
+        }
     }
 }
 
@@ -148,20 +163,20 @@ open class Skill{
     func setVerbatimAlgFromList(priority:Int,  sayThis: Array<String>) {
         // build a simple output algorithm to speak string by string per think cycle
         // uses list param
-        self.outAlg = Algorithm(APVerbatim(sentences: sayThis))
+        self.outAlg = Algorithm(APVerbatim(sayThis))
         self.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
     }
     func setVerbatimAlg(priority:Int,  sayThis:String...) {
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
-        self.outAlg = Algorithm(APVerbatim(sentences: sayThis))
+        self.outAlg = Algorithm(APVerbatim(sayThis))
         self.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
     }
     func setSimpleAlg(sayThis:String...) {
         // based on the setVerbatimAlg method
         // build a simple output algorithm to speak string by string per think cycle
         // uses varargs param
-        self.outAlg = Algorithm(APVerbatim(sentences: sayThis))
+        self.outAlg = Algorithm(APVerbatim(sayThis))
         self.outpAlgPriority = 4 // Default priority of 4
     }
     func algPartsFusion(priority:Int, algParts: AlgPart...) {

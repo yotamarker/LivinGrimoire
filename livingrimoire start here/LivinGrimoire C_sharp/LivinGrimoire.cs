@@ -68,36 +68,33 @@ public class APSay : AlgPart
     }
 
 }
+
 public class APVerbatim : AlgPart
 {
-    private List<string> sentences = new List<string>();
+    private readonly Queue<string> _sentences;
 
+    // Constructor for params
     public APVerbatim(params string[] sentences)
     {
-        this.sentences.AddRange(sentences);
+        _sentences = new Queue<string>(sentences);
     }
 
+    // Constructor for List
     public APVerbatim(List<string> list1)
     {
-        this.sentences = new List<string>(list1);
+        _sentences = new Queue<string>(list1);
     }
 
+    // O(1) dequeue
     public override string Action(string ear, string skin, string eye)
     {
-        // Return the next sentence and remove it from the list
-        if (this.sentences.Count > 0)
-        {
-            string sentence = this.sentences[0];
-            this.sentences.RemoveAt(0);
-            return sentence;
-        }
-        return ""; // Return empty string if no sentences left
+        return _sentences.Count > 0 ? _sentences.Dequeue() : "";
     }
 
+    // O(1) completed check
     public override bool Completed()
     {
-        // Check if all sentences have been processed
-        return this.sentences.Count == 0;
+        return _sentences.Count == 0;
     }
 }
 public class Algorithm

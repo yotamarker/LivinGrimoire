@@ -3,6 +3,7 @@ from __future__ import annotations
 import string
 
 from AXPython import *
+import sys  # used for shutoff skill
 
 
 class DiMisser(Skill):
@@ -2415,4 +2416,20 @@ class APSay(AlgPart):
 
     def completed(self) -> bool:
         return self.at < 1
+
+class DiShutOff(Skill):
+    def __init__(self):
+        super().__init__()  # Call the parent class constructor
+
+    def input(self, ear, skin, eye):
+        if ear == "shut it down":
+            print("Shutting down...")  # Optional confirmation message
+            sys.exit()  # Properly terminate the script
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "This skill shuts down the program when triggered with 'shut it down'."
+        elif param == "triggers":
+            return "say shut it down to close the program"
+        return "Note unavailable"
 

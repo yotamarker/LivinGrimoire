@@ -70,7 +70,7 @@ class DiSTT(Skill):
     def record_chunk():
         frames = []
         silent_frames = 0
-        max_silent_frames = int(DiSTT.RATE / DiSTT.CHUNK * 1.5)
+        max_silent_frames = int(DiSTT.RATE / DiSTT.CHUNK * 1.0)  # recognition inits after 1 sec of shut up time
 
         while not DiSTT.exit_event.is_set():
             data = DiSTT.stream.read(DiSTT.CHUNK, exception_on_overflow=False)

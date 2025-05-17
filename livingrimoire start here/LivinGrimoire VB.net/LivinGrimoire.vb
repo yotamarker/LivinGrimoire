@@ -57,33 +57,26 @@
     Public Class APVerbatim
         Inherits AlgPart
 
-        Private sentences As New List(Of String)()
+        Private sentences As New Queue(Of String)()
 
-        ' Constructor accepting variable arguments
+        ' Constructor for params
         Public Sub New(ParamArray sentences() As String)
-            Me.sentences.AddRange(sentences)
+            Me.sentences = New Queue(Of String)(sentences)
         End Sub
 
-        ' Constructor accepting a List(Of String)
+        ' Constructor for List
         Public Sub New(list1 As List(Of String))
-            Me.sentences = New List(Of String)(list1)
+            Me.sentences = New Queue(Of String)(list1)
         End Sub
 
-        ' Overrides action method
+        ' O(1) dequeue
         Public Overrides Function Action(ear As String, skin As String, eye As String) As String
-            ' Return the next sentence and remove it from the list
-            If Me.sentences.Count > 0 Then
-                Dim nextSentence As String = Me.sentences(0)
-                Me.sentences.RemoveAt(0)
-                Return nextSentence
-            End If
-            Return "" ' Return empty string if no sentences left
+            Return If(sentences.Count > 0, sentences.Dequeue(), "")
         End Function
 
-        ' Overrides completed method
+        ' O(1) completed check
         Public Overrides Function Completed() As Boolean
-            ' Check if all sentences have been processed
-            Return Me.sentences.Count = 0
+            Return sentences.Count = 0
         End Function
     End Class
 
