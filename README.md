@@ -15,6 +15,9 @@ buy me a green tea:
 7. **Multistep Algorithms**: Can form multistep algorithms and abort algorithms while they run.
 8. **Built-In Skill Catalog**: Features a built-in skill catalog (see wiki to learn more).
 9. **Dynamic Skill Management**: Can use self-aware skills, enabling them to add or remove other skills while the program is running, similar to a command terminal (see AI hormones wiki).
+10. **Reflexive Skills processing**: Enables immediate AI reactions to sensory input, allowing real-time reflex responses to critical inputs alongside structured thought processing.
+11. **Backseat Skill Execution**: Allows continuous AI skills to temporarily go dormant when non-continuous skills are triggered, ensuring smooth execution flow, bypassing censorship, and 
+maintaining adaptive responsiveness without abrupt interruptions.(see backseat skills wiki)
 
 to learn how to use the LivinGrimoire:
 
