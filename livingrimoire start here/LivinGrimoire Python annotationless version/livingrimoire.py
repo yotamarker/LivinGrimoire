@@ -258,7 +258,7 @@ class Fusion:
 class Chobits:
     def __init__(self):
         super().__init__()
-        self._dClasses = []  # _ is a private access modifier
+        self.dClasses = []  # _ is a private access modifier
         self._fusion = Fusion()
         self._noiron = Neuron()
         self._kokoro = Kokoro(AbsDictionaryDB())  # soul
@@ -279,7 +279,7 @@ class Chobits:
         if self._isThinking:
             return self
         skill.setKokoro(self._kokoro)
-        self._dClasses.append(skill)
+        self.dClasses.append(skill)
         return self
 
     def addSkillAware(self, skill):
@@ -291,7 +291,7 @@ class Chobits:
         # remove all skills
         if self._isThinking:
             return
-        self._dClasses.clear()
+        self.dClasses.clear()
 
     def clear_continuous_skills(self):
         if self._isThinking:
@@ -303,14 +303,14 @@ class Chobits:
             return
         for skill in skills:
             skill.setKokoro(self._kokoro)
-            self._dClasses.append(skill)
+            self.dClasses.append(skill)
 
     def removeSkill(self, skill):
         if self._isThinking:
             return
-        if skill not in self._dClasses:
+        if skill not in self.dClasses:
             return
-        self._dClasses.remove(skill)
+        self.dClasses.remove(skill)
 
     def remove_continuous_skill(self, skill):
         if self._isThinking:
@@ -320,13 +320,13 @@ class Chobits:
         self.cts_skills.remove(skill)
 
     def containsSkill(self, skill):
-        return skill in self._dClasses
+        return skill in self.dClasses
 
     def think(self, ear, skin, eye):
         self.alg_triggered = False
         # main skill loop
         self._isThinking = True
-        for dCls in self._dClasses:
+        for dCls in self.dClasses:
             self.inOut(dCls, ear, skin, eye)
         self._isThinking = False
         # loop for skills with access to the Chobit Object:
@@ -364,7 +364,7 @@ class Chobits:
 
     def get_skill_list(self):
         result = []
-        for skill in self._dClasses:
+        for skill in self.dClasses:
             result.append(skill.__class__.__name__)
         return result
 

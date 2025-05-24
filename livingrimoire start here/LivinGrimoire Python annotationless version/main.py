@@ -1,17 +1,28 @@
-from livingrimoire import Brain, DiHelloWorld, DiSysOut
+import sched
+import time
+from livingrimoire import Brain
+import os
 
+def tick(scheduler1):
+    """Runs at intervals without blocking."""
+    user_input = input("> ")
+    if user_input.lower() == "exit":
+        print("Exiting program...")
+        return  # Stop scheduling
+    b1.think_default(user_input)
+    scheduler1.enter(2, 1, tick, (scheduler1,))  # Schedule next tick in 2 seconds
 
-# Press the green button in the gutter to run the script.
+def call_add_DLC_skills(brain: Brain):
+    for file in os.listdir('.'):
+        if file.endswith('.py') and 'DLC' in file:
+            module_name = file[:-3]
+            exec(f"import {module_name}")
+            exec(f"{module_name}.add_DLC_skills(brain)")
+
 if __name__ == '__main__':
-    brain = Brain()  # Create your Brain instance
-    brain.add_logical_skill(DiHelloWorld())
-    brain.hardwareChobit.add_continuous_skill(DiSysOut())
-    while True:
-        user_input = input("> ")  # Get user input
+    b1 = Brain()
+    call_add_DLC_skills(b1)  # dynamic dispatch
 
-        if user_input.lower() == "exit":
-            print("Exiting program...")
-            break
-
-        # Process the input through the brain
-        brain.think_default(user_input)
+    scheduler = sched.scheduler(time.time, time.sleep)
+    scheduler.enter(0, 1, tick, (scheduler,))  # Start loop immediately
+    scheduler.run()
