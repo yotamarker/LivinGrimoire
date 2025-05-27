@@ -3,7 +3,6 @@ from collections import deque  # for APVerbatim cls
 
 class AbsDictionaryDB:
     def save(self, key, value):
-        """Returns action string"""
         pass
 
     def load(self, key):
@@ -79,7 +78,7 @@ class Kokoro:
         self.emot = emot
 
 
-# used to transport algorithms to other classes
+# used to transport algorithms
 class Neuron:
     def __init__(self):
         self._defcons = {}
@@ -104,6 +103,8 @@ class Skill:
         self._kokoro = None  # consciousness, shallow ref for interskill comms
         self._outAlg = None  # skills output
         self._outpAlgPriority = -1  # defcon 1->5
+        self._skill_type = 1  # 1:regular, 2:aware_skill, 3:continuous_skill
+        self._skill_lobe = 1  # 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
 
     def setOutalg(self, alg):
         self._outAlg = alg
@@ -119,9 +120,9 @@ class Skill:
         pass
 
     # extraction of skill algorithm to run (if there is one)
-    def output(self, noiron):
+    def output(self, neuron):
         if self._outAlg is not None:
-            noiron.insertAlg(self._outpAlgPriority, self._outAlg)
+            neuron.insertAlg(self._outpAlgPriority, self._outAlg)
             self._outpAlgPriority = -1
             self._outAlg = None
 
@@ -160,6 +161,22 @@ class Skill:
     def skillNotes(self, param):
         return "notes unknown"
 
+    # Getter and Setter for skill_type
+    def get_skill_type(self):
+        return self._skill_type
+
+    def set_skill_type(self, skill_type):
+        if 1 <= skill_type <= 3:
+            self._skill_type = skill_type
+
+    # Getter and Setter for skill_lobe
+    def get_skill_lobe(self):
+        return self._skill_lobe
+
+    def set_skill_lobe(self, skill_lobe):
+        if 1 <= skill_lobe <= 5:
+            self._skill_lobe = skill_lobe
+
 
 class DiHelloWorld(Skill):
     # Override
@@ -175,7 +192,7 @@ class DiHelloWorld(Skill):
         return "note unavalible"
 
 
-class Cerabellum:
+class Cerebellum:
     # runs an algorithm
     def __init__(self):
         self.fin = None
@@ -228,7 +245,7 @@ class Cerabellum:
 class Fusion:
     def __init__(self):
         self._emot = ""
-        self.ceraArr = [Cerabellum() for _ in range(5)]
+        self.ceraArr = [Cerebellum() for _ in range(5)]
         self._result = ""
 
     def getEmot(self):
@@ -249,7 +266,7 @@ class Fusion:
             self._result = self.ceraArr[i].act(ear, skin, eye)
             self.ceraArr[i].advanceInAlg()
             self._emot = self.ceraArr[i].getEmot()
-            self.ceraArr[i].deActivateAlg()  # deactivation if Mutatable.algkillswitch = true
+            self.ceraArr[i].deActivateAlg()  # deactivation if AlgPart.algkillswitch = true
             return self._result
         self._emot = ""
         return self._result
@@ -260,21 +277,17 @@ class Chobits:
         super().__init__()
         self.dClasses = []  # _ is a private access modifier
         self._fusion = Fusion()
-        self._noiron = Neuron()
+        self._neuron = Neuron()
         self._kokoro = Kokoro(AbsDictionaryDB())  # soul
         self._isThinking = False
         self._awareSkills = []  # self awareness skills. Chobit Object in their c'tor
         self.alg_triggered = False
         self.cts_skills = []
 
-    '''set the chobit database
-        the database is built as a key value dictionary
-        the database can be using the kokoro attribute'''
-
     def setDatabase(self, absDictionaryDB):
         self._kokoro.grimoireMemento = absDictionaryDB
 
-    def addSkill(self, skill):
+    def add_regular_skill(self, skill):
         # add a skill (builder design patterned func))
         if self._isThinking:
             return self
@@ -339,7 +352,7 @@ class Chobits:
                 break
             self.inOut(d_cls3, ear, skin, eye)
         self._isThinking = False
-        self._fusion.loadAlgs(self._noiron)
+        self._fusion.loadAlgs(self._neuron)
         return self._fusion.runAlgs(ear, skin, eye)
 
     def getSoulEmotion(self):
@@ -349,7 +362,7 @@ class Chobits:
         dClass.input(ear, skin, eye)  # new
         if dClass.pendingAlgorithm():
             self.alg_triggered = True
-        dClass.output(self._noiron)
+        dClass.output(self._neuron)
 
     def getKokoro(self):
         # several chobits can use the same soul
@@ -373,6 +386,20 @@ class Chobits:
             return
         skill.setKokoro(self._kokoro)
         self.cts_skills.append(skill)
+
+    def add_skill(self, skill):
+        """
+        Automatically adds a skill to the correct category based on its type.
+        No manual classification needed—just pass the skill and let the system handle it.
+        """
+        match skill.get_skill_type():
+            case 1:  # Regular Skill
+                self.add_regular_skill(skill)
+            case 2:  # Aware Skill
+                self.addSkillAware(skill)
+            case 3:  # Continuous Skill
+                self.add_continuous_skill(skill)
+
 
 class Brain:
     # c'tor
@@ -406,13 +433,30 @@ class Brain:
         self._emotion = self.logicChobit.getSoulEmotion()
         self.hardwareChobit.think(self._logicChobitOutput, skin, eye)
 
+    def add_skill(self, skill):
+        """
+        Adds a skill to the correct Chobits based on its skill_lobe attribute.
+        Just pass the skill—the Brain handles where it belongs.
+        """
+        match skill.get_skill_lobe():
+            case 1:  # Logical skill
+                self.logicChobit.add_skill(skill)
+            case 2:  # Hardware skill
+                self.hardwareChobit.add_skill(skill)
+            case 3:  # Ear skill
+                self.ear.add_skill(skill)
+            case 4:  # Skin skill
+                self.skin.add_skill(skill)
+            case 5:  # Eye skill
+                self.eye.add_skill(skill)
+
     # add regular thinking(logical) skill
     def add_logical_skill(self, skill):
-        self.logicChobit.addSkill(skill)
+        self.logicChobit.add_regular_skill(skill)
 
     # add output skill
     def add_hardware_skill(self, skill):
-        self.hardwareChobit.addSkill(skill)
+        self.hardwareChobit.add_regular_skill(skill)
 
     def add_skillAware(self, skill):
         # add a skill with Chobit in its c'tor(has Chobit attribute)
@@ -420,17 +464,21 @@ class Brain:
 
     # add audio(ear) input skill
     def add_ear_skill(self, skill):
-        self.ear.addSkill(skill)
+        self.ear.add_regular_skill(skill)
 
     # add sensor input skill
     def add_skin_skill(self, skill):
-        self.skin.addSkill(skill)
+        self.skin.add_regular_skill(skill)
 
     # add visual input skill
     def add_eye_skill(self, skill):
-        self.eye.addSkill(skill)
+        self.eye.add_regular_skill(skill)
 
     def think_default(self, keyIn):
+        """
+        The primary thinking method—automatically processes input whether it's
+        typed or received through sensory channels.
+        """
         if bool(keyIn):
             # handles typed inputs(keyIn)
             self.doIt(keyIn, "", "")  # the string is not empty
@@ -446,6 +494,7 @@ class Brain:
 class DiSysOut(Skill):
     def __init__(self):
         super().__init__()
+        self._skill_lobe = 2  # hardware chobit skill
 
     def input(self, ear, skin, eye):
         if ear and "#" not in ear:
