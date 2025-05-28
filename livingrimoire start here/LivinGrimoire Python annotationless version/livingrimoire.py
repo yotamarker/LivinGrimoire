@@ -5,6 +5,7 @@ class AbsDictionaryDB:
     def save(self, key, value):
         pass
 
+    # noinspection PyMethodMayBeStatic
     def load(self, key):
         return "null"
 
@@ -275,12 +276,12 @@ class Fusion:
 class Chobits:
     def __init__(self):
         super().__init__()
-        self.dClasses = []  # _ is a private access modifier
+        self.dClasses = []  # regular skills
         self._fusion = Fusion()
         self._neuron = Neuron()
         self._kokoro = Kokoro(AbsDictionaryDB())  # soul
         self._isThinking = False
-        self._awareSkills = []  # self awareness skills. Chobit Object in their c'tor
+        self._awareSkills = []  # self awareness skills. Chobit Object ref attribute.
         self.alg_triggered = False
         self.cts_skills = []
 
@@ -291,17 +292,27 @@ class Chobits:
         # add a skill (builder design patterned func))
         if self._isThinking:
             return self
+        skill.set_skill_type(1)
         skill.setKokoro(self._kokoro)
         self.dClasses.append(skill)
         return self
 
     def addSkillAware(self, skill):
         # add a skill with Chobit Object in their c'tor
+        skill.set_skill_type(2)
         skill.setKokoro(self._kokoro)
         self._awareSkills.append(skill)
 
+    def add_continuous_skill(self, skill):
+        # recommended for skills that trigger non stop or even burst mode triggered.
+        if self._isThinking:
+            return
+        skill.set_skill_type(3)
+        skill.setKokoro(self._kokoro)
+        self.cts_skills.append(skill)
+
     def clearSkills(self):
-        # remove all skills
+        # remove all logical(regular) skills
         if self._isThinking:
             return
         self.dClasses.clear()
@@ -318,7 +329,7 @@ class Chobits:
             skill.setKokoro(self._kokoro)
             self.dClasses.append(skill)
 
-    def removeSkill(self, skill):
+    def remove_logical_skill(self, skill):
         if self._isThinking:
             return
         if skill not in self.dClasses:
@@ -331,6 +342,13 @@ class Chobits:
         if skill not in self.cts_skills:
             return
         self.cts_skills.remove(skill)
+
+    def remove_skill(self, skill):
+        """remove any type of skill (except aware skills)"""
+        if skill.get_skill_type() == 1:
+            self.remove_logical_skill(skill)
+        else:
+            self.remove_continuous_skill(skill)
 
     def containsSkill(self, skill):
         return skill in self.dClasses
@@ -356,6 +374,7 @@ class Chobits:
         return self._fusion.runAlgs(ear, skin, eye)
 
     def getSoulEmotion(self):
+        # get AlgPart class name representing emotion
         return self._fusion.getEmot()
 
     def inOut(self, dClass, ear, skin, eye):
@@ -372,20 +391,12 @@ class Chobits:
         # use this for telepathic communication between different chobits objects
         self._kokoro = kokoro
 
-    def getFusion(self):
-        return self._fusion
-
     def get_skill_list(self):
+        # get skill list of names(str)
         result = []
         for skill in self.dClasses:
             result.append(skill.__class__.__name__)
         return result
-
-    def add_continuous_skill(self, skill):
-        if self._isThinking:
-            return
-        skill.setKokoro(self._kokoro)
-        self.cts_skills.append(skill)
 
     def add_skill(self, skill):
         """
@@ -412,10 +423,10 @@ class Brain:
         self.ear = Chobits()
         self.skin = Chobits()
         self.eye = Chobits()
-        Brain.imprintSoul(self.logicChobit.getKokoro(), self.hardwareChobit, self.ear, self.skin, self.eye)
+        Brain.__imprintSoul(self.logicChobit.getKokoro(), self.hardwareChobit, self.ear, self.skin, self.eye)
 
     @staticmethod
-    def imprintSoul(kokoro, *args):
+    def __imprintSoul(kokoro, *args):
         for arg in args:
             arg.setKokoro(kokoro)
 
@@ -452,27 +463,32 @@ class Brain:
 
     # add regular thinking(logical) skill
     def add_logical_skill(self, skill):
+        skill.set_skill_lobe(1)
         self.logicChobit.add_regular_skill(skill)
 
     # add output skill
     def add_hardware_skill(self, skill):
+        skill.set_skill_lobe(2)
         self.hardwareChobit.add_regular_skill(skill)
 
     def add_skillAware(self, skill):
-        # Check if skill has any attribute of type Chobits
-        if any(isinstance(getattr(skill, attr, None), Chobits) for attr in vars(skill)):
-            self.logicChobit.addSkillAware(skill)
+        # add skill with a Chobits reference attribute.
+        skill.set_skill_lobe(1)
+        self.logicChobit.addSkillAware(skill)
 
     # add audio(ear) input skill
     def add_ear_skill(self, skill):
+        skill.set_skill_lobe(3)
         self.ear.add_regular_skill(skill)
 
     # add sensor input skill
     def add_skin_skill(self, skill):
+        skill.set_skill_lobe(4)
         self.skin.add_regular_skill(skill)
 
     # add visual input skill
     def add_eye_skill(self, skill):
+        skill.set_skill_lobe(5)
         self.eye.add_regular_skill(skill)
 
     def think_default(self, keyIn):
