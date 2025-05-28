@@ -459,8 +459,9 @@ class Brain:
         self.hardwareChobit.add_regular_skill(skill)
 
     def add_skillAware(self, skill):
-        # add a skill with Chobit in its c'tor(has Chobit attribute)
-        self.logicChobit.addSkillAware(skill)
+        # Check if skill has any attribute of type Chobits
+        if any(isinstance(getattr(skill, attr, None), Chobits) for attr in vars(skill)):
+            self.logicChobit.addSkillAware(skill)
 
     # add audio(ear) input skill
     def add_ear_skill(self, skill):
