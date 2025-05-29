@@ -7,6 +7,8 @@ from math import sqrt
 import datetime
 import calendar
 
+from livingrimoire import Neuron, Kokoro, AbsDictionaryDB
+
 
 # string converters
 class AXFunnel:
@@ -427,7 +429,7 @@ class RegexUtil:
 
 
 # end Utility
-# triggers:
+# triggers section:
 class TimeGate:
     """A gate that only opens X minutes after being set."""
 
@@ -538,4 +540,542 @@ class UniqueItemsPriorityQue(LGFIFO):
                 return True
         return False
 
-# end Triggers
+
+class UniqueItemSizeLimitedPriorityQueue(UniqueItemsPriorityQue):
+    # items in the queue are unique and do not repeat
+    # the size of the queue is limited
+    # this cls can also be used to detect repeated elements (nagging or reruns)
+    def __init__(self, limit):
+        super().__init__()
+        self._limit = limit
+
+    def getLimit(self):
+        return self._limit
+
+    def setLimit(self, limit):
+        self._limit = limit
+
+    # override
+    def insert(self, data):
+        if super().size() == self._limit:
+            super().poll()
+        super().insert(data)
+
+    # override
+    def poll(self):
+        # returns string
+        temp = super().poll()
+        if temp is None:
+            return ""
+        return temp
+
+    # override
+    def getRNDElement(self):
+        temp = super().getRNDElement()
+        if temp is None:
+            return ""
+        return temp
+
+    def getAsList(self):
+        return self.queue
+
+
+class RefreshQ(UniqueItemSizeLimitedPriorityQueue):
+    def __init__(self, limit):
+        super().__init__(limit)
+
+    def removeItem(self, item):
+        super().getAsList().remove(item)
+
+    def insert(self, data):
+        # FILO 1st in last out
+        if super().contains(data):
+            self.removeItem(data)
+        super().insert(data)
+
+    def stuff(self, data):
+        # FILO 1st in last out
+        if super().size() == self._limit:
+            super().poll()
+        self.queue.append(data)
+
+class AnnoyedQ:
+    def __init__(self, queLim):
+        self._q1 = RefreshQ(queLim)
+        self._q2 = RefreshQ(queLim)
+        self._stuffedQue = RefreshQ(queLim)
+
+    def learn(self, ear):
+        if self._q1.contains(ear):
+            self._q2.insert(ear)
+            self._stuffedQue.stuff(ear)
+            return
+        self._q1.insert(ear)
+
+    def isAnnoyed(self, ear):
+        return self._q2.strContainsResponse(ear)
+
+    def reset(self):
+        # Insert unique throwaway strings to reset the state
+        for i in range(self._q1.getLimit()):
+            self.learn(f"throwaway_string_{i}")
+
+    def AnnoyedLevel(self, ear, level):
+        return self._stuffedQue.queue.count(ear) > level
+
+
+class TrgTolerance:
+    # this boolean gate will return true till depletion or reset()
+    def __init__(self, maxrepeats):
+        self._maxrepeats = maxrepeats
+        self._repeates = 0
+
+    def setMaxRepeats(self, maxRepeats):
+        self._maxrepeats = maxRepeats
+        self.reset()
+
+    def reset(self):
+        # refill trigger
+        self._repeates = self._maxrepeats
+
+    def trigger(self):
+        # will return true till depletion or reset()
+        self._repeates -= 1
+        if self._repeates > 0:
+            return True
+        return False
+
+    def disable(self):
+        self._repeates = 0
+
+
+class AXCmdBreaker:
+    def __init__(self, conjuration):
+        self.conjuration = conjuration
+
+    def extractCmdParam(self, s1):
+        if self.conjuration in s1:
+            return s1.replace(self.conjuration, "").strip()
+        return ""
+
+
+class AXContextCmd:
+    """
+    Engage commands within a contextual framework.
+
+    - Commands can trigger context commands.
+    - Context commands influence engagement behavior.
+    """
+
+    def __init__(self):
+        self.commands = UniqueItemSizeLimitedPriorityQueue(5)
+        self.context_commands = UniqueItemSizeLimitedPriorityQueue(5)
+        self.trg_tolerance = False
+
+    def engage_command(self, s1):
+        """Engage a command and determine context activation."""
+        if not s1:
+            return False
+
+        if self.context_commands.contains(s1):
+            self.trg_tolerance = True
+            return True
+
+        if self.trg_tolerance and not self.commands.contains(s1):
+            self.trg_tolerance = False
+            return False
+
+        return self.trg_tolerance
+
+    def engage_command_ret_int(self, s1):
+        """Returns an integer status for engagement."""
+        if not s1:
+            return 0
+
+        if self.context_commands.contains(s1):
+            self.trg_tolerance = True
+            return 1
+
+        if self.trg_tolerance and not self.commands.contains(s1):
+            self.trg_tolerance = False
+            return 0
+
+        return 2 if self.trg_tolerance else 0
+
+    def disable(self):
+        """Disables context commands until next engagement."""
+        self.trg_tolerance = False
+
+# end Triggers section
+
+# special skills dependencies
+
+class TimedMessages:
+    """
+        check for new messages if you get any input, and it feels like
+        the code was waiting for you to tell you something.
+        tm = TimedMessages()
+        # Print the initial message status (should be False)
+        print(tm.getMsg())
+        # Add reminders
+        tm.addMSG("remind me to work out at 1:24")
+        tm.addMSG("remind me to drink water at 11:25")
+        # Check if any reminders match the current time
+        tm.tick()
+        # make sure a fresh new message was loaded before using it
+        print(tm.getMsg())
+        # Get the last reminder message
+        print(tm.getLastMSG())
+        # tick each think cycle to load new reminders
+        tm.tick()
+        print(tm.getMsg()) # becomes true after .getLastMSG
+        # Get the last reminder message again
+        print(tm.getLastMSG())
+    """
+
+    def __init__(self):
+        self.messages = {}
+        self.lastMSG = "nothing"
+        self.msg = False
+
+    def addMSG(self, ear):
+        tempMSG = RegexUtil.extractRegex(r"(?<=remind me to).*?(?=at)", ear)
+        if tempMSG:
+            timeStamp = RegexUtil.extractEnumRegex(enumRegexGrimoire.simpleTimeStamp, ear)
+            if timeStamp:
+                self.messages[timeStamp] = tempMSG
+
+    def addMSGV2(self, timeStamp, msg):
+        self.messages[timeStamp] = msg
+
+    def sprinkleMSG(self, msg, amount):
+        for _ in range(amount):
+            self.messages[self.generateRandomTimestamp()] = msg
+
+    @staticmethod
+    def generateRandomTimestamp():
+        minutes = random.randint(0, 59)
+        m = f"{minutes:02d}"
+        hours = random.randint(0, 11)
+        return f"{hours}:{m}"
+
+    def clear(self):
+        self.messages.clear()
+
+    def tick(self):
+        now = TimeUtils.getCurrentTimeStamp()
+        if now in self.messages:
+            if self.lastMSG != self.messages[now]:
+                self.lastMSG = self.messages[now]
+                self.msg = True
+
+    def getLastMSG(self):
+        self.msg = False
+        return self.lastMSG
+
+    def getMsg(self):
+        return self.msg
+
+
+class AXLearnability:
+    def __init__(self, tolerance):
+        self.algSent = False
+        # Problems that may result because of the last deployed algorithm:
+        self.defcons = set()
+        # Major chaotic problems that may result because of the last deployed algorithm:
+        self.defcon5 = set()
+        # Goals the last deployed algorithm aims to achieve:
+        self.goals = set()
+        # How many failures / problems till the algorithm needs to mutate (change)
+        self.trgTolerance = TrgTolerance(tolerance)
+        self.trgTolerance.reset()
+
+    def pendAlg(self):
+        # An algorithm has been deployed
+        # Call this method when an algorithm is deployed (in a DiSkillV2 object)
+        self.algSent = True
+        self.trgTolerance.trigger()
+
+    def pendAlgWithoutConfirmation(self):
+        # An algorithm has been deployed
+        self.algSent = True
+        # No need to await for a thank you or check for goal manifestation:
+        # self.trgTolerance.trigger()
+        # Using this method instead of the default "pendAlg" is the same as
+        # giving importance to the stick and not the carrot when learning
+        # This method is mostly fitting workplace situations
+
+    def mutateAlg(self, input1):
+        # Recommendation to mutate the algorithm? true/false
+        if not self.algSent:
+            return False  # No alg sent => no reason to mutate
+        if input1 in self.goals:
+            self.trgTolerance.reset()
+            self.algSent = False
+            return False
+        # Goal manifested; the sent algorithm is good => no need to mutate the alg
+        if input1 in self.defcon5:
+            self.trgTolerance.reset()
+            self.algSent = False
+            return True
+        # ^ Something bad happened probably because of the sent alg
+        # Recommend alg mutation
+        if input1 in self.defcons:
+            self.algSent = False
+            mutate = not self.trgTolerance.trigger()
+            if mutate:
+                self.trgTolerance.reset()
+            return mutate
+        # ^ Negative result, mutate the alg if this occurs too much
+        return False
+
+    def resetTolerance(self):
+        # Use when you run code to change algorithms regardless of learnability
+        self.trgTolerance.reset()
+
+class AlgorithmV2:
+    def __init__(self, priority, alg):
+        self.priority = priority
+        self.alg = alg
+
+    def get_priority(self):
+        return self.priority
+
+    def set_priority(self, priority):
+        self.priority = priority
+
+    def get_alg(self):
+        return self.alg
+
+    def set_alg(self, alg):
+        self.alg = alg
+
+
+class SkillHubAlgDispenser:
+    # Superclass to output an algorithm out of a selection of skills
+    """
+    Engage the hub with dispenseAlg and return the value to outAlg attribute
+    of the containing skill (which houses the skill hub).
+
+    This module enables using a selection of one skill for triggers instead of having the triggers engage multiple skills.
+    The method is ideal for learnability and behavioral modifications.
+    Use a learnability auxiliary module as a condition to run an active skill shuffle or change method
+    (rndAlg, cycleAlg).
+
+    Moods can be used for specific cases to change behavior of the AGI, for example, low-energy state.
+    For that, use (moodAlg).
+    """
+
+    def __init__(self, *skillsParams):
+        super().__init__()
+        self._skills = []
+        self._activeSkill = 0
+        self._tempN = Neuron()
+        self._kokoro = Kokoro(AbsDictionaryDB())
+
+        for i in range(len(skillsParams)):
+            skillsParams[i].setKokoro(self._kokoro)
+            self._skills.append(skillsParams[i])
+
+    def set_kokoro(self, kokoro):
+        self._kokoro = kokoro
+        for skill in self._skills:
+            skill.setKokoro(self._kokoro)
+
+    def addSkill(self, skill):
+        # Builder pattern
+        skill.setKokoro(self._kokoro)
+        self._skills.append(skill)
+        return self
+
+    def dispenseAlgorithm(self, ear, skin, eye):
+        # Returns Algorithm? (or None)
+        # Return value to outAlg param of (external) summoner DiskillV2
+        self._skills[self._activeSkill].input(ear, skin, eye)
+        self._skills[self._activeSkill].output(self._tempN)
+
+        for i in range(1, 6):
+            temp = self._tempN.getAlg(i)
+            if temp:
+                return AlgorithmV2(i, temp)
+
+        return None
+
+    def randomizeActiveSkill(self):
+        self._activeSkill = random.randint(0, len(self._skills) - 1)
+
+    def setActiveSkillWithMood(self, mood):
+        # Mood integer represents active skill
+        # Different mood = different behavior
+        if -1 < mood < len(self._skills) - 1:
+            self._activeSkill = mood
+
+    def cycleActiveSkill(self):
+        # Changes active skill
+        # I recommend this method be triggered with a Learnability or SpiderSense object
+        self._activeSkill += 1
+        if self._activeSkill == len(self._skills):
+            self._activeSkill = 0
+
+    def getSize(self):
+        return len(self._skills)
+
+    def active_skill_ref(self):
+        return self._skills[self._activeSkill]
+
+
+class UniqueRandomGenerator:
+    def __init__(self, n1: int):
+        self.n1 = n1
+        self.numbers = list(range(n1))
+        self.remaining_numbers = []  # Declare here to avoid the error
+        self.reset()
+
+    def reset(self):
+        self.remaining_numbers = self.numbers.copy()
+        random.shuffle(self.remaining_numbers)
+
+    def get_unique_random(self) -> int:
+        if not self.remaining_numbers:
+            self.reset()
+        return self.remaining_numbers.pop()
+
+
+class UniqueResponder:
+    # simple random response dispenser
+    def __init__(self, *replies):
+        # Ensure replies is not empty to avoid range issues
+        self.responses = []
+        self.urg = UniqueRandomGenerator(len(replies))
+        for response in replies:
+            self.responses.append(response)
+
+    def getAResponse(self):
+        if not self.responses:
+            return ""
+        return self.responses[self.urg.get_unique_random()]
+
+    def responsesContainsStr(self, item):
+        return item in self.responses
+
+    def strContainsResponse(self, item):
+        for response in self.responses:
+            if len(response) == 0:
+                continue
+            if response in item:
+                return True
+        return False
+
+    def addResponse(self, s1):
+        if s1 not in self.responses:
+            self.responses.append(s1)
+            self.urg = UniqueRandomGenerator(len(self.responses))
+
+
+class AXSkillBundle:
+    def __init__(self, *skills_params):
+        self.skills = []
+        self.tempN = Neuron()
+        self.kokoro = Kokoro(AbsDictionaryDB())
+
+        for skill in skills_params:
+            skill.setKokoro(self.kokoro)
+            self.skills.append(skill)
+
+    def set_kokoro(self, kokoro):
+        self.kokoro = kokoro
+        for skill in self.skills:
+            skill.setKokoro(self.kokoro)
+
+    def add_skill(self, skill):
+        # Builder pattern
+        skill.setKokoro(self.kokoro)
+        self.skills.append(skill)
+        return self
+
+    def dispense_algorithm(self, ear, skin, eye):
+        for skill in self.skills:
+            skill.input(ear, skin, eye)
+            skill.output(self.tempN)
+            for j in range(1, 6):
+                temp = self.tempN.getAlg(j)
+                if temp:
+                    return AlgorithmV2(j, temp)
+
+        return None
+
+    def get_size(self):
+        return len(self.skills)
+
+
+class AXGamification:
+    # this auxiliary module can add fun to tasks, skills, and abilities simply by
+    # tracking their usage, and maximum use count.
+    def __init__(self):
+        self._counter = 0
+        self._max = 0
+
+    def getCounter(self):
+        return self._counter
+
+    def getMax(self):
+        return self._max
+
+    def resetCount(self):
+        self._counter = 0
+
+    def resetAll(self):
+        self._counter = 0
+        self._max = 0
+
+    def increment(self):
+        self._counter += 1
+        if self._counter > self._max:
+            self._max = self._counter
+
+    def incrementBy(self, n):
+        self._counter += n
+        if self._counter > self._max:
+            self._max = self._counter
+
+    def reward(self, cost):
+        # game grind points used for rewards
+        # consumables, items or upgrades this makes games fun
+        if cost < self._counter:
+            self._counter -= cost
+            return True
+        return False
+
+    def surplus(self, cost):
+        if cost < self._counter:
+            return True
+        return False
+
+
+class Responder:
+    # simple random response dispenser
+    def __init__(self, *replies):
+        self.responses = []
+        for response in replies:
+            self.responses.append(response)
+
+    def getAResponse(self):
+        if not self.responses:
+            return ""
+        return self.responses[random.randint(0, len(self.responses) - 1)]
+
+    def responsesContainsStr(self, item):
+        return item in self.responses
+
+    def strContainsResponse(self, item):
+        for response in self.responses:
+            if len(response) == 0:
+                continue
+            if response in item:
+                return True
+        return False
+
+    def addResponse(self, s1):
+        self.responses.append(s1)
+
+ # special skills dependencies end

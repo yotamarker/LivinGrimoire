@@ -1864,7 +1864,7 @@ class AXCmdBreaker:
 
 class AXContextCmd:
     # engage on commands
-    # when commands are engaged, context commans can also engage
+    # when commands are engaged, context commands can also engage
     def __init__(self):
         self.commands: UniqueItemSizeLimitedPriorityQueue = UniqueItemSizeLimitedPriorityQueue(5)
         self.contextCommands: UniqueItemSizeLimitedPriorityQueue = UniqueItemSizeLimitedPriorityQueue(5)
@@ -1882,6 +1882,21 @@ class AXContextCmd:
             self.trgTolerance = False
             return False
         return self.trgTolerance
+
+    def engageCommandRetInt(self, s1: str) -> int:
+        if len(s1) == 0:
+            return 0
+        # active context
+        if self.contextCommands.contains(s1):
+            self.trgTolerance = True
+            return 1
+        # exit context:
+        if self.trgTolerance and not self.commands.contains(s1):
+            self.trgTolerance = False
+            return 0
+        if self.trgTolerance:
+            return 2
+        return 0
 
     def disable(self):
         # context commands are disabled till next engagement with a command
