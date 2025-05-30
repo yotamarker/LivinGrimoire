@@ -311,7 +311,7 @@ class Chobits:
         skill.setKokoro(self._kokoro)
         self.cts_skills.append(skill)
 
-    def clearSkills(self):
+    def clear_regular_skills(self):
         # remove all logical(regular) skills
         if self._isThinking:
             return
@@ -321,6 +321,10 @@ class Chobits:
         if self._isThinking:
             return
         self.cts_skills.clear()
+
+    def clear_all_skills(self):
+        self.clear_regular_skills()
+        self.clear_continuous_skills()
 
     def addSkills(self, *skills):
         if self._isThinking:

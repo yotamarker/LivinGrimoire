@@ -10,7 +10,7 @@ import calendar
 from livingrimoire import Neuron, Kokoro, AbsDictionaryDB
 
 
-# string converters
+# string converters section start
 class AXFunnel:
     # funnel all sorts of strings to fewer or other strings
     def __init__(self, default="default"):
@@ -104,8 +104,8 @@ class AXStringSplit:
         return self._separator.join(l1)  # Simplified!
 
 
-# end string converters
-#utility
+# string converters section end
+#utility section start
 class TimeUtils:
     week_days = {
         1: 'sunday',
@@ -428,8 +428,8 @@ class RegexUtil:
         return ""
 
 
-# end Utility
-# triggers section:
+# Utility section end
+# triggers section start
 class TimeGate:
     """A gate that only opens X minutes after being set."""
 
@@ -467,6 +467,12 @@ class TimeGate:
 
     def close(self):
         self.openedGate = datetime.datetime.now()
+
+    def get_elapsed_seconds(self):
+        """Returns seconds since last checkpoint"""
+        if self.isClosed():
+            return 0
+        return (datetime.datetime.now() - self.checkPoint).total_seconds()
 
 
 class LGFIFO:
@@ -706,9 +712,441 @@ class AXContextCmd:
         """Disables context commands until next engagement."""
         self.trg_tolerance = False
 
-# end Triggers section
 
-# special skills dependencies
+class AXInputWaiter:
+    # wait for any input
+    def __init__(self, tolerance):
+        self._trgTolerance = TrgTolerance(tolerance)
+        self._trgTolerance.reset()
+
+    def reset(self):
+        self._trgTolerance.reset()
+
+    def wait(self, s1):
+        # return true till any input detected or till x times of no input detection
+        if not s1 == "":
+            self._trgTolerance.disable()
+            return False
+        return self._trgTolerance.trigger()
+
+    def setWait(self, timesToWait):
+        self._trgTolerance.setMaxRepeats(timesToWait)
+
+
+class LGTypeConverter:
+    @staticmethod
+    def convertToInt(v1):
+        temp = RegexUtil.extractEnumRegex(enumRegexGrimoire.integer, v1)
+        if temp == "":
+            return 0
+        return int(temp)
+
+    @staticmethod
+    def convertToDouble(v1):
+        temp = RegexUtil.extractEnumRegex(enumRegexGrimoire.double_num, v1)
+        if temp == "":
+            return 0.0
+        return float(temp)
+
+    @staticmethod
+    def convertToFloat(v1):
+        temp = RegexUtil.extractEnumRegex(enumRegexGrimoire.double_num, v1)
+        if temp == "":
+            return 0
+        return float(temp)
+
+    @staticmethod
+    def convertToFloatV2(v1, precision):
+        # precision: how many numbers after the .
+        temp = RegexUtil.extractEnumRegex(enumRegexGrimoire.double_num, v1)
+        if temp == "":
+            return 0
+        return round(float(temp), precision)
+
+
+class DrawRnd:
+    # draw a random element, then take said element out
+    def __init__(self, *values):
+        self.strings = LGFIFO()
+        self._stringsSource = []
+        for i in range(0, len(values)):
+            self.strings.insert(values[i])
+            self._stringsSource.append(values[i])
+
+    def addElement(self, element):
+        self.strings.insert(element)
+        self._stringsSource.append(element)
+
+    def drawAndRemove(self):
+        if len(self.strings.queue) == 0:
+            return ""
+        temp = self.strings.getRNDElement()
+        self.strings.removeItem(temp)
+        return temp
+
+    def drawAsIntegerAndRemove(self):
+        temp = self.strings.getRNDElement()
+        if temp is None:
+            return 0
+        self.strings.removeItem(temp)
+        return LGTypeConverter.convertToInt(temp)
+
+    @staticmethod
+    def getSimpleRNDNum(lim):
+        return random.randint(0, lim)
+
+    def reset(self):
+        self.strings.clear()
+        for t in self._stringsSource:
+            self.strings.insert(t)
+
+    def isEmptied(self):
+        return self.strings.size() == 0
+
+    def renewableDraw(self):
+        if len(self.strings.queue) == 0:
+            self.reset()
+        temp = self.strings.getRNDElement()
+        self.strings.removeItem(temp)
+        return temp
+
+
+class AXPassword:
+    """ code # to open the gate
+     while gate is open, code can be changed with: code new_number"""
+
+    def __init__(self):
+        self._isOpen = False
+        self._maxAttempts = 3
+        self._loginAttempts = self._maxAttempts
+        self._code = 0
+
+    def codeUpdate(self, ear):
+        # while the gate is toggled on, the password code can be changed
+        if not self._isOpen:
+            return False
+        if ear.__contains__("code"):
+            temp = RegexUtil.extractEnumRegex(enumRegexGrimoire.integer, ear)
+            if not temp == "":
+                # if not temp.isEmpty
+                self._code = int(temp)
+                return True
+        return False
+
+    def openGate(self, ear):
+        if ear.__contains__("code") and self._loginAttempts > 0:
+            tempCode = RegexUtil.extractEnumRegex(enumRegexGrimoire.integer, ear)
+            if not tempCode == "":
+                code_x = int(tempCode)
+                if code_x == self._code:
+                    self._loginAttempts = self._maxAttempts
+                    self._isOpen = True
+                else:
+                    self._loginAttempts -= 1
+
+    def isOpen(self):
+        return self._isOpen
+
+    def resetAttempts(self):
+        # should happen once a day or hour to prevent hacking
+        self._loginAttempts = self._maxAttempts
+
+    def getLoginAttempts(self):
+        # return remaining login attempts
+        return self._loginAttempts
+
+    def closeGate(self):
+        self._isOpen = False
+
+    def closeGateV2(self, ear):
+        if ear.__contains__("close"):
+            self._isOpen = False
+
+    def setMaxAttempts(self, maximum):
+        self._maxAttempts = maximum
+
+    def getCode(self):
+        if self._isOpen:
+            return self._code
+        return -1
+
+    def randomizeCode(self, lim, minimumLim):
+        # event feature
+        self._code = DrawRnd().getSimpleRNDNum(lim) + minimumLim
+
+    def getCodeEvent(self):
+        # event feature
+        # get the code during weekly/monthly event after it has been randomized
+        return self._code
+
+
+class TrgTime:
+    def __init__(self):
+        super().__init__()
+        self._t = "null"
+        self._alarm = True
+
+    def setTime(self, v1):
+        if v1.startswith("0"):
+            v1 = v1[1:]
+        self._t = RegexUtil.extractEnumRegex(enumRegexGrimoire.simpleTimeStamp, v1)
+
+    def alarm(self):
+        now = TimeUtils.getCurrentTimeStamp()
+        if self._alarm:
+            if now == self._t:
+                self._alarm = False
+                return True
+        if now != self._t:
+            self._alarm = True
+        return False
+
+
+class Cron:
+    # triggers true, limit times, after initial time, and every minutes interval
+    # counter resets at initial time, assuming trigger method was run
+    def __init__(self, startTime, minutes, limit):
+        self._minutes = minutes  # minute interval between triggerings
+        self._timeStamp = startTime
+        self._initial_time_stamp = startTime
+        self._trgTime = TrgTime()
+        self._trgTime.setTime(startTime)
+        self._counter = 0
+        self._limit = limit
+        if limit < 1:
+            self._limit = 1
+
+    def setMinutes(self, minutes):
+        if minutes > -1:
+            self._minutes = minutes
+
+    def getLimit(self):
+        return self._limit
+
+    def setLimit(self, limit):
+        if limit > 0:
+            self._limit = limit
+
+    def getCounter(self):
+        return self._counter
+
+    # override
+    def trigger(self):
+        # delete counter = 0 if you don't want the trigger to work the next day
+        if self._counter == self._limit:
+            self._trgTime.setTime(self._initial_time_stamp)
+            self._counter = 0
+            return False
+        if self._trgTime.alarm():
+            self._timeStamp = TimeUtils.getFutureInXMin(self._minutes)
+            self._trgTime.setTime(self._timeStamp)
+            self._counter += 1
+            return True
+        return False
+
+    def triggerWithoutRenewal(self):
+        if self._counter == self._limit:
+            self._trgTime.setTime(self._initial_time_stamp)
+            return False
+        if self._trgTime.alarm():
+            self._timeStamp = TimeUtils.getFutureInXMin(self._minutes)
+            self._trgTime.setTime(self._timeStamp)
+            self._counter += 1
+            return True
+        return False
+
+    # override
+    def reset(self):
+        # manual trigger reset
+        self._counter = 0
+
+    def setStartTime(self, t1):
+        self._initial_time_stamp = t1
+        self._timeStamp = t1
+        self._trgTime.setTime(t1)
+        self._counter = 0
+
+    def turnOff(self):
+        self._counter = self._limit
+
+
+class AXStandBy:
+    def __init__(self, pause):
+        self._tg = TimeGate(pause)
+        self._tg.openForPauseMinutes()
+
+    def standBy(self, ear):
+        # only returns true after pause minutes of no input
+        if len(ear) > 0:
+            # restart count
+            self._tg.openForPauseMinutes()
+            return False
+        if self._tg.isClosed():
+            # time out without input, stand by is true
+            self._tg.openForPauseMinutes()
+            return True
+        return False
+
+
+class Cycler:
+    # cycles through numbers limit to 0 non-stop
+    def __init__(self, limit):
+        self.limit = limit
+        self._cycler = limit
+
+    def cycleCount(self):
+        self._cycler -= 1
+        if self._cycler < 0:
+            self._cycler = self.limit
+        return self._cycler
+
+    def reset(self):
+        self._cycler = self.limit
+
+    def setToZero(self):
+        self._cycler = 0
+
+    def sync(self, n):
+        if n < -1 or n > self.limit:
+            return
+        self._cycler = n
+
+    def getMode(self):
+        return self._cycler
+
+
+class OnOffSwitch:
+    def __init__(self):
+        self._mode = False
+        self._timeGate = TimeGate(5)
+        self._on = Responder("on", "talk to me")
+        self._off = Responder("off", "stop", "shut up", "shut it", "whatever")
+
+    def setPause(self, minutes):
+        self._timeGate.setPause(minutes)
+
+    def setOn(self, on):
+        self._on = on
+
+    def setOff(self, off):
+        self._off = off
+
+    def getMode(self, ear):
+        if self._on.responsesContainsStr(ear):
+            self._timeGate.openForPauseMinutes()
+            self._mode = True
+            return True
+        elif self._off.responsesContainsStr(ear):
+            self._timeGate.close()
+            self._mode = False
+        if self._timeGate.isClosed():
+            self._mode = False
+        return self._mode
+
+    def off(self):
+        self._mode = False
+
+
+class SpiderSense:
+    # enables event prediction
+    def __init__(self, lim):
+        super().__init__()
+        self._spiderSense = False
+        self._events = UniqueItemSizeLimitedPriorityQueue(lim)
+        self._alerts = UniqueItemSizeLimitedPriorityQueue(lim)
+        self._prev = "null"
+
+    def addEvent(self, event):
+        # builder pattern
+        self._events.insert(event)
+        return self
+
+    def learn(self, in1):
+        if len(in1) == 0:
+            return
+        # simple prediction of an event from the events que :
+        if self._alerts.contains(in1):
+            self._spiderSense = True
+            return
+        # event has occured, remember what lead to it
+        if self._events.contains(in1):
+            self._alerts.insert(self._prev)
+            return
+        # nothing happend
+        self._prev = in1
+
+    def getSpiderSense(self):
+        # spider sense is tingling? event predicted?
+        temp = self._spiderSense
+        self._spiderSense = False
+        return temp
+
+    def getAlertsShallowCopy(self):
+        # return shallow copy of alerts list
+        return self._alerts.queue
+
+    def getAlertsClone(self):
+        # return deep copy of alerts list
+        l_temp = []
+        for item in self._alerts.queue:
+            l_temp.append(item)
+        return l_temp
+
+    def clearAlerts(self):
+        """this can for example prevent war, because say once a month or a year you stop
+         being on alert against a rival"""
+        self._alerts.clear()
+
+    def eventTriggered(self, in1):
+        return self._events.contains(in1)
+
+
+class TimeAccumulator:
+    # accumulator ++ each tick minutes interval
+    def __init__(self, tick):
+        # accumulation ticker
+        self._timeGate = TimeGate(tick)
+        self._accumulator = 0
+        self._timeGate.openForPauseMinutes()
+
+    def setTick(self, tick):
+        self._timeGate.setPause(tick)
+
+    def getAccumulator(self):
+        return self._accumulator
+
+    def reset(self):
+        self._accumulator = 0
+
+    def tick(self):
+        if self._timeGate.isClosed():
+            self._timeGate.openForPauseMinutes()
+            self._accumulator += 1
+
+    def decAccumulator(self):
+        if self._accumulator > 0:
+            self._accumulator -= 1
+
+
+class KeyWords:
+    def __init__(self, *keywords):
+        self._keywords = set(keywords)  # Changed to protected member
+
+    def add_keyword(self, keyword):
+        self._keywords.add(keyword)
+
+    def extract_keyword(self, text):  # Renamed for clarity
+        for keyword in self._keywords:
+            if keyword in text:
+                return keyword
+        return ""
+
+    def contains_keyword(self, text):  # Renamed for clarity
+        return any(keyword in text for keyword in self._keywords)
+
+# Triggers section end
+
+# special skills dependencies section start
 
 class TimedMessages:
     """
@@ -1078,4 +1516,4 @@ class Responder:
     def addResponse(self, s1):
         self.responses.append(s1)
 
- # special skills dependencies end
+ # special skills dependencies section end
