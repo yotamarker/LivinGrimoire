@@ -972,19 +972,19 @@ class AHAware(Skill):
                 if self.skillDex is None:
                     self.skillDex = UniqueRandomGenerator(len(self.chobit.get_skill_list()))
                 self.skill_for_info = self.skillDex.get_unique_random()
-                self.setSimpleAlg(f'{self.chobit._dClasses[self.skill_for_info].__class__.__name__} {self.chobit._dClasses[self.skill_for_info].skillNotes("notes")}')
+                self.setSimpleAlg(f'{self.chobit.dClasses[self.skill_for_info].__class__.__name__} {self.chobit.dClasses[self.skill_for_info].skillNotes("notes")}')
             case "skill triggers":
-                self.setSimpleAlg(self.chobit._dClasses[self.skill_for_info].skillNotes("triggers"))
+                self.setSimpleAlg(self.chobit.dClasses[self.skill_for_info].skillNotes("triggers"))
             case "remove skill":
-                skillToRemove = self.chobit._dClasses[self.skill_for_info]
-                self.chobit.removeSkill(skillToRemove)
+                skillToRemove = self.chobit.dClasses[self.skill_for_info]
+                self.chobit.remove_logical_skill(skillToRemove)
                 self._removedSkills.append(skillToRemove)
                 self.skillDex = UniqueRandomGenerator(len(self.chobit.get_skill_list()))
                 self.skill_for_info = self.skillDex.get_unique_random()
                 self.setSimpleAlg("skill removed")
             case "restore skills":
                 for skill in self._removedSkills:
-                    self.chobit.addSkill(skill)
+                    self.chobit.add_regular_skill(skill)
                 self._removedSkills.clear()
                 self.setSimpleAlg("all skills have been restored")
             case "what is your name":

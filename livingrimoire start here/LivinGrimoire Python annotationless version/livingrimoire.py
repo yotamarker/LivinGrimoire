@@ -327,11 +327,8 @@ class Chobits:
         self.clear_continuous_skills()
 
     def addSkills(self, *skills):
-        if self._isThinking:
-            return
         for skill in skills:
-            skill.setKokoro(self._kokoro)
-            self.dClasses.append(skill)
+            self.add_skill(skill)
 
     def remove_logical_skill(self, skill):
         if self._isThinking:
@@ -401,6 +398,13 @@ class Chobits:
         for skill in self.dClasses:
             result.append(skill.__class__.__name__)
         return result
+
+    def get_fused_skills(self):
+        """
+        Returns a fusion list containing both dClasses (regular skills)
+        and cts_skills (continuous skills).
+        """
+        return self.dClasses + self.cts_skills
 
     def add_skill(self, skill):
         """

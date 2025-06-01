@@ -25,7 +25,7 @@ class AH1(Skill):
         if self._isActive and self._tg.isClosed():
             self._isActive = False
             for skill in self._skills:
-                self._chobit.removeSkill(skill)
+                self._chobit.remove_logical_skill(skill)
             self.setSimpleAlg("hormone disengaged")
 
     def add_skill(self, skill: Skill) -> AH1:
