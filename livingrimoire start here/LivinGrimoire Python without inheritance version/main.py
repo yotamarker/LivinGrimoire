@@ -1,5 +1,5 @@
 # This is a sample Python script.
-from LivinGrimoire_func_pointer_ver import APVerbatim, Brain, DiHelloWorld, DiSysOut
+from LivinGrimoire_func_pointer_ver import Brain, DiHelloWorld, DiSysOut
 
 
 # Press Shift+F10 to execute it or replace it with your code.

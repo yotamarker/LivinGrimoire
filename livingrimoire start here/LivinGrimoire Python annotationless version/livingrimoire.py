@@ -147,7 +147,7 @@ class Skill:
 
     def setVebatimAlgFromList(self, priority, sayThis):
         # list version of verbatim
-        self._outAlg = Algorithm.from_varargs(APVerbatim(sayThis))
+        self._outAlg = Algorithm.from_varargs(APVerbatim(*sayThis))
         self._outpAlgPriority = priority
 
     def algPartsFusion(self, priority, *algParts):

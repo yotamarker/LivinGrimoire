@@ -148,7 +148,7 @@ class Skill:
     def setVebatimAlgFromList(self, priority: int, sayThis: list[str]):
         # build a simple output algorithm to speak string by string per think cycle
         # uses list param
-        self._outAlg = Algorithm.from_varargs(APVerbatim(sayThis))
+        self._outAlg = Algorithm.from_varargs(APVerbatim(*sayThis))
         self._outpAlgPriority = priority  # 1->5 1 is the highest algorithm priority
 
     def algPartsFusion(self, priority: int, *algParts: AlgPart):
