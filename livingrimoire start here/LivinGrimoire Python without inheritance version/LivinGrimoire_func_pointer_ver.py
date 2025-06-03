@@ -297,14 +297,13 @@ class Chobits:
     def setDatabase(self, absDictionaryDB: AbsDictionaryDB):
         self._kokoro.grimoireMemento = absDictionaryDB
 
-    def add_regular_skill(self, skill: Skill) -> 'Chobits':
+    def add_regular_skill(self, skill: Skill):
         # add a skill (builder design patterned func))
         if self._isThinking:
-            return self
+            return
         skill.set_skill_type(1)
         skill.setKokoro(self._kokoro)
         self.dClasses.append(skill)
-        return self
 
     def addSkillAware(self, skill: Skill):
         # add a skill with Chobit Object in their c'tor
@@ -476,6 +475,11 @@ class Brain:
             case 5:  # Eye skill
                 self.eye.add_skill(skill)
 
+    def chained(self, skill: Skill)-> 'Brain':
+        # chained add skill
+        self.add_skill(skill)
+        return self
+
     # add regular thinking(logical) skill
     def add_logical_skill(self, skill: Skill):
         self.logicChobit.add_regular_skill(skill)
@@ -516,6 +520,8 @@ class DiSysOut:
     def __init__(self):
         self.skill = Skill()
         inheritSkill(self.skill, self)
+        self.skill.set_skill_type(3)  # continuous skill
+        self.skill.set_skill_lobe(2)  # hardware chobits
 
     # noinspection PyMethodMayBeStatic
     def input(self, ear: str, skin: str, eye: str):

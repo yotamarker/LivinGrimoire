@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class Chobits {
     public ArrayList<Skill> dClasses = new ArrayList<>();
     protected Fusion fusion;
-    protected Neuron noiron;
+    protected Neuron neuron;
     protected Kokoro kokoro = new Kokoro(new AbsDictionaryDB()); // consciousness
     private boolean isThinking = false;
     private final ArrayList<Skill> awareSkills = new ArrayList<>();
@@ -15,34 +15,37 @@ public class Chobits {
         // c'tor
         super();
         this.fusion = new Fusion();
-        noiron = new Neuron();
+        neuron = new Neuron();
     }
     public void setDataBase(AbsDictionaryDB absDictionaryDB) {
         this.kokoro.grimoireMemento = absDictionaryDB;
     }
-    public Chobits addSkill(Skill skill){
+    public void addRegularSkill(Skill skill){
         // add a skill (builder design patterned func))
         if (this.isThinking) {
-            return this;
+            return;
         }
+        skill.setSkillType(1);
         skill.setKokoro(this.kokoro);
         this.dClasses.add(skill);
-        return this;
+    }
+    public void addSkillAware(Skill skill) {
+        // add a skill with Chobit Object in their constructor
+        skill.setSkillType(2);
+        skill.setKokoro(this.kokoro);
+        this.awareSkills.add(skill);
     }
     public void addContinuousSkill(Skill skill){
         // add a skill (builder design patterned func))
         if (this.isThinking) {
             return;
         }
+        skill.setSkillType(3);
         skill.setKokoro(this.kokoro);
         this.cts_skills.add(skill);
     }
-    public void addSkillAware(Skill skill) {
-        // add a skill with Chobit Object in their constructor
-        skill.setKokoro(this.kokoro);
-        this.awareSkills.add(skill);
-    }
-    public void clearSkills(){
+
+    public void clearRegularSkills(){
         // remove all skills
         if (this.isThinking) {
             return;
@@ -56,16 +59,17 @@ public class Chobits {
         }
         this.cts_skills.clear();
     }
-    public void addSkills(Skill... skills){
-        if (this.isThinking) {
-            return;
-        }
-        for(Skill skill:skills){
-            skill.setKokoro(this.kokoro);
-            this.dClasses.add(skill);
+
+    public void clearAllSkills() {
+        this.clearRegularSkills();
+        this.clearContinuousSkills();
+    }
+    public void addSkills(Skill... skills) {
+        for (Skill skill : skills) {
+            this.addSkill(skill);
         }
     }
-    public void removeSkill(Skill skill){
+    public void removeLogicalSkill(Skill skill){
         if (this.isThinking) {
             return;
         }
@@ -77,6 +81,15 @@ public class Chobits {
         }
         cts_skills.remove(skill);
     }
+    public void removeSkill(Skill skill) {
+        /* remove any type of skill (except aware skills) */
+        if (skill.getSkillType() == 1) {
+            this.removeLogicalSkill(skill);
+        } else {
+            this.removeContinuousSkill(skill);
+        }
+    }
+
     public Boolean containsSkill(Skill skill){
         return dClasses.contains(skill);
     }
@@ -96,7 +109,7 @@ public class Chobits {
             inOut(dCls2, ear, skin, eye);
         }
         this.isThinking = false;
-        fusion.loadAlgs(noiron);
+        fusion.loadAlgs(neuron);
         return fusion.runAlgs(ear, skin, eye);
     }
 
@@ -111,7 +124,7 @@ public class Chobits {
         if (dClass.pendingAlgorithm()){
             algTriggered = true;
         }
-        dClass.output(noiron);
+        dClass.output(neuron);
     }
 
     public Kokoro getKokoro() {
@@ -125,14 +138,37 @@ public class Chobits {
         // use this for telepathic communication between different chobits objects
         this.kokoro = kokoro;
     }
-    public Fusion getFusion() {
-        return fusion;
-    }
     public ArrayList<String> getSkillList(){
         ArrayList<String> result = new ArrayList<>();
         for (Skill skill: this.dClasses) {
             result.add(skill.getClass().getSimpleName());
         }
         return result;
+    }
+    public ArrayList<Skill> getFusedSkills() {
+    /*
+    Returns a fusion list containing both dClasses (regular skills)
+    and cts_skills (continuous skills).
+    */
+        ArrayList<Skill> combined = new ArrayList<>(this.dClasses);
+        combined.addAll(this.cts_skills);
+        return combined;
+    }
+    public void addSkill(Skill skill) {
+        /*
+        Automatically adds a skill to the correct category based on its type.
+        No manual classification needed—just pass the skill and let the system handle it.
+        */
+        switch (skill.getSkillType()) {
+            case 1:  // Regular Skill
+                this.addRegularSkill(skill);
+                break;
+            case 2:  // Aware Skill
+                this.addSkillAware(skill);
+                break;
+            case 3:  // Continuous Skill
+                this.addContinuousSkill(skill);
+                break;
+        }
     }
 }

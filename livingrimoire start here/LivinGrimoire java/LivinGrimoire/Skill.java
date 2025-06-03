@@ -6,6 +6,8 @@ public class Skill {
     protected Kokoro kokoro = null; // consciousness, shallow ref class to enable interskill communications
     protected Algorithm outAlg = null; // skills output
     protected int outpAlgPriority = -1; // defcon 1->5
+    protected int skill_type = 1; // 1:regular, 2:aware_skill, 3:continuous_skill
+    protected int skill_lobe = 1; // 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
 
     public Skill() {
         super();
@@ -53,6 +55,30 @@ public class Skill {
     public Boolean pendingAlgorithm(){
         // is an algorithm pending?
         return this.outAlg != null;
+    }
+
+    // Getter and Setter for skill_type
+    public int getSkillType() {
+        return skill_type;
+    }
+
+    public void setSkillType(int skill_type) {
+        // 1:regular, 2:aware_skill, 3:continuous_skill
+        if (skill_type >= 1 && skill_type <= 3) {
+            this.skill_type = skill_type;
+        }
+    }
+
+    // Getter and Setter for skill_lobe
+    public int getSkillLobe() {
+        return skill_lobe;
+    }
+
+    public void setSkillLobe(int skill_lobe) {
+        // 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
+        if (skill_lobe >= 1 && skill_lobe <= 5) {
+            this.skill_lobe = skill_lobe;
+        }
     }
     public String skillNotes(String param) {
         return "notes unknown";

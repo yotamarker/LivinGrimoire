@@ -14,8 +14,8 @@ def print_hi(name):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     b = Brain()
-    b.add_logical_skill(DiHelloWorld().skill)
-    b.hardwareChobit.add_continuous_skill(DiSysOut().skill)
+    b.chained(DiHelloWorld().skill).chained(DiSysOut().skill)
+    b.think_default("hello")
     b.think_default("hello")
     b.think_default("")
 

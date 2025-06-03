@@ -167,6 +167,7 @@ class Skill:
         return self._skill_type
 
     def set_skill_type(self, skill_type):
+        # 1:regular, 2:aware_skill, 3:continuous_skill
         if 1 <= skill_type <= 3:
             self._skill_type = skill_type
 
@@ -175,6 +176,7 @@ class Skill:
         return self._skill_lobe
 
     def set_skill_lobe(self, skill_lobe):
+        # 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
         if 1 <= skill_lobe <= 5:
             self._skill_lobe = skill_lobe
 
@@ -291,11 +293,10 @@ class Chobits:
     def add_regular_skill(self, skill):
         # add a skill (builder design patterned func))
         if self._isThinking:
-            return self
+            return
         skill.set_skill_type(1)
         skill.setKokoro(self._kokoro)
         self.dClasses.append(skill)
-        return self
 
     def addSkillAware(self, skill):
         # add a skill with Chobit Object in their c'tor
@@ -469,6 +470,11 @@ class Brain:
             case 5:  # Eye skill
                 self.eye.add_skill(skill)
 
+    def chained(self, skill: Skill):
+        #  chained add skill
+        self.add_skill(skill)
+        return self
+
     # add regular thinking(logical) skill
     def add_logical_skill(self, skill):
         skill.set_skill_lobe(1)
@@ -519,7 +525,8 @@ class Brain:
 class DiSysOut(Skill):
     def __init__(self):
         super().__init__()
-        self._skill_lobe = 2  # hardware chobit skill
+        self.set_skill_type(3)  # continuous skill
+        self.set_skill_lobe(2)  # hardware chobits
 
     def input(self, ear, skin, eye):
         if ear and "#" not in ear:

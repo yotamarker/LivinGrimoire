@@ -1,6 +1,6 @@
 package LivinGrimoire;
 
-public class Cerabellum {
+public class Cerebellum {
     // runs an algorithm
     private int fin;
     private int at;

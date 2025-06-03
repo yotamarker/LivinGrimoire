@@ -1,6 +1,11 @@
 package LivinGrimoire;
 
 public class DiSysOut extends Skill {
+    public DiSysOut() {
+        setSkillType(3); // continuous skill
+        setSkillLobe(2); // hardware chobit
+    }
+
     @Override
     public void input(String ear, String skin, String eye) {
         if (!ear.isEmpty() & !ear.contains("#")){
