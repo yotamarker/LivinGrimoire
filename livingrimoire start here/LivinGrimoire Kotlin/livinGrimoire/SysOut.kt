@@ -1,8 +1,13 @@
 package livinGrimoire
 
 class SysOut : Skill() {
+    init {
+        skillType = 3 // continuous skill
+        skillLobe = 2 // hardware chobit
+    }
+
     override fun input(ear: String, skin: String, eye: String) {
-        if (ear.isNotEmpty() and !ear.contains("#")) {
+        if (!ear.isEmpty() and !ear.contains("#")) {
             println(ear)
         }
     }

@@ -23,33 +23,53 @@ class Brain {
     // live
     fun doIt(ear: String, skin: String, eye: String) {
         logicChobitOutput = logicChobit.think(ear, skin, eye)
-        emotion = logicChobit.soulEmotion
+        emotion = logicChobit.getSoulEmotion()
         hardwareChobit.think(logicChobitOutput, skin, eye)
+    }
+
+    fun addSkill(skill: Skill) {
+        /*
+        Adds a skill to the correct Chobits based on its skill_lobe attribute.
+        Just pass the skill—the Brain handles where it belongs.
+        */
+        when (skill.skillLobe) {
+            1 -> logicChobit.addSkill(skill)
+            2 -> hardwareChobit.addSkill(skill)
+            3 -> ear.addSkill(skill)
+            4 -> skin.addSkill(skill)
+            5 -> eye.addSkill(skill)
+        }
+    }
+
+    fun chained(skill: Skill): Brain {
+        // chained add skill
+        addSkill(skill)
+        return this
     }
 
     // add regular thinking(logical) skill
     fun addLogicalSkill(skill: Skill) {
-        logicChobit.addSkill(skill)
+        logicChobit.addRegularSkill(skill)
     }
 
     // add output skill
     fun addHardwareSkill(skill: Skill) {
-        hardwareChobit.addSkill(skill)
+        hardwareChobit.addRegularSkill(skill)
     }
 
     // add audio(ear) input skill
     fun addEarSkill(skill: Skill) {
-        ear.addSkill(skill)
+        ear.addRegularSkill(skill)
     }
 
     // add sensor input skill
     fun addSkinSkill(skill: Skill) {
-        skin.addSkill(skill)
+        skin.addRegularSkill(skill)
     }
 
     // add visual input skill
     fun addEyeSkill(skill: Skill) {
-        eye.addSkill(skill)
+        eye.addRegularSkill(skill)
     }
 
     fun think(keyIn: String) {

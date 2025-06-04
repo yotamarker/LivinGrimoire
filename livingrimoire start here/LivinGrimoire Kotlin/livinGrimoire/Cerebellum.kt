@@ -1,6 +1,6 @@
 package livinGrimoire
 
-class Cerabellum {
+class Cerebellum {
     // runs an algorithm
     private var fin = 0
     var at = 0

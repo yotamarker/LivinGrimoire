@@ -1,82 +1,64 @@
 package livinGrimoire
 
 class Chobits {
-    var dClasses: ArrayList<Skill> = ArrayList<Skill>()
-    var fusion: Fusion = Fusion()
-    protected var noiron: Neuron = Neuron()
+    val dClasses = ArrayList<Skill>()
+    protected val fusion = Fusion()
+    protected val neuron = Neuron()
     var kokoro: Kokoro = Kokoro(AbsDictionaryDB()) // consciousness
     private var isThinking = false
-    private val awareSkills: ArrayList<Skill> = ArrayList<Skill>()
+    private val awareSkills = ArrayList<Skill>()
     var algTriggered = false
-    var cts_skills: ArrayList<Skill> = ArrayList<Skill>() // continuous skills
+    val ctsSkills = ArrayList<Skill>() // continuous skills
 
     fun setDataBase(absDictionaryDB: AbsDictionaryDB) {
         kokoro.grimoireMemento = absDictionaryDB
     }
 
-    fun addSkill(skill: Skill): Chobits {
-        // add a skill (builder design patterned func))
-        if (isThinking) {
-            return this
-        }
+    fun addRegularSkill(skill: Skill) {
+        if (isThinking) return
+        skill.skillType = 1
         skill.kokoro = kokoro
         dClasses.add(skill)
-        return this
-    }
-
-    fun addContinuousSkill(skill: Skill) {
-        // add a skill (builder design patterned func))
-        if (isThinking) {
-            return
-        }
-        skill.kokoro = kokoro
-        cts_skills.add(skill)
     }
 
     fun addSkillAware(skill: Skill) {
-        // add a skill with Chobit Object in their constructor
+        skill.skillType = 2
         skill.kokoro = kokoro
         awareSkills.add(skill)
     }
 
-    fun clearSkills() {
-        // remove all skills
-        if (isThinking) {
-            return
-        }
+    fun addContinuousSkill(skill: Skill) {
+        if (isThinking) return
+        skill.skillType = 3
+        skill.kokoro = kokoro
+        ctsSkills.add(skill)
+    }
+
+    fun clearRegularSkills() {
+        if (isThinking) return
         dClasses.clear()
     }
 
     fun clearContinuousSkills() {
-        // remove all skills
-        if (isThinking) {
-            return
-        }
-        cts_skills.clear()
+        if (isThinking) return
+        ctsSkills.clear()
+    }
+
+    fun clearAllSkills() {
+        clearRegularSkills()
+        clearContinuousSkills()
     }
 
     fun addSkills(vararg skills: Skill) {
-        if (isThinking) {
-            return
-        }
-        for (skill in skills) {
-            skill.kokoro = kokoro
-            dClasses.add(skill)
-        }
+        skills.forEach { addSkill(it) }
     }
 
     fun removeSkill(skill: Skill) {
-        if (isThinking) {
-            return
+        if (isThinking) return
+        when (skill.skillType) {
+            1 -> dClasses.remove(skill)
+            3 -> ctsSkills.remove(skill)
         }
-        dClasses.remove(skill)
-    }
-
-    fun removeContinuousSkill(skill: Skill) {
-        if (isThinking) {
-            return
-        }
-        cts_skills.remove(skill)
     }
 
     fun containsSkill(skill: Skill): Boolean {
@@ -85,46 +67,45 @@ class Chobits {
 
     fun think(ear: String, skin: String, eye: String): String {
         algTriggered = false
-        isThinking = true // regular skills loop
-        for (dCls in dClasses) {
-            inOut(dCls, ear, skin, eye)
-        }
-        isThinking = false
-        for (dCls2 in awareSkills) {
-            inOut(dCls2, ear, skin, eye)
-        }
         isThinking = true
-        for (dCls2 in cts_skills) {
-            if (algTriggered) {
-                break
-            }
-            inOut(dCls2, ear, skin, eye)
+        dClasses.forEach { inOut(it, ear, skin, eye) }
+        isThinking = false
+        awareSkills.forEach { inOut(it, ear, skin, eye) }
+        isThinking = true
+        for (skill in ctsSkills) {
+            if (algTriggered) break
+            inOut(skill, ear, skin, eye)
         }
         isThinking = false
-        fusion.loadAlgs(noiron)
+        fusion.loadAlgs(neuron)
         return fusion.runAlgs(ear, skin, eye)
     }
 
-    val soulEmotion: String
-        get() =// get the last active AlgPart name
-        // the AP is an action, and it also represents
-            // an emotion
-            fusion.emot
-
-    protected fun inOut(dClass: Skill, ear: String, skin: String, eye: String) {
-        dClass.input(ear, skin, eye) // new
-        if (dClass.pendingAlgorithm()) {
-            algTriggered = true
-        }
-        dClass.output(noiron)
+    fun getSoulEmotion(): String {
+        return fusion.emot
     }
 
-    val skillList: ArrayList<String>
-        get() {
-            val result = ArrayList<String>()
-            for (skill in dClasses) {
-                result.add(skill.javaClass.simpleName)
-            }
-            return result
+    private fun inOut(skill: Skill, ear: String, skin: String, eye: String) {
+        skill.input(ear, skin, eye)
+        if (skill.pendingAlgorithm()) {
+            algTriggered = true
         }
+        skill.output(neuron)
+    }
+
+    fun getSkillList(): ArrayList<String> {
+        return ArrayList(dClasses.map { it::class.simpleName ?: "UnknownSkill" })
+    }
+
+    fun getFusedSkills(): ArrayList<Skill> {
+        return ArrayList(dClasses + ctsSkills)
+    }
+
+    fun addSkill(skill: Skill) {
+        when (skill.skillType) {
+            1 -> addRegularSkill(skill)
+            2 -> addSkillAware(skill)
+            3 -> addContinuousSkill(skill)
+        }
+    }
 }
