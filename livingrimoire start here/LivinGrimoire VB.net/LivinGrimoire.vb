@@ -79,7 +79,6 @@
             Return sentences.Count = 0
         End Function
     End Class
-
     Public Class Algorithm
         Private algParts As New List(Of AlgPart)()
 
@@ -150,7 +149,8 @@
         Protected kokoro As Kokoro = Nothing ' consciousness, shallow ref class to enable interskill communications
         Protected outAlg As Algorithm = Nothing ' skills output
         Protected outpAlgPriority As Integer = -1 ' defcon 1->5
-
+        Protected skill_type As Integer = 1 ' 1:regular, 2:aware_skill, 3:continuous_skill
+        Protected skill_lobe As Integer = 1 ' 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
         Public Sub New()
             MyBase.New()
         End Sub
@@ -197,6 +197,29 @@
             Return Me.outAlg IsNot Nothing
         End Function
 
+        ' Getter and Setter for skill_type
+        Public Function getSkillType() As Integer
+            Return skill_type
+        End Function
+
+        Public Sub setSkillType(skill_type As Integer)
+            ' 1:regular, 2:aware_skill, 3:continuous_skill
+            If skill_type >= 1 AndAlso skill_type <= 3 Then
+                Me.skill_type = skill_type
+            End If
+        End Sub
+
+        ' Getter and Setter for skill_lobe
+        Public Function getSkillLobe() As Integer
+            Return skill_lobe
+        End Function
+
+        Public Sub setSkillLobe(skill_lobe As Integer)
+            ' 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
+            If skill_lobe >= 1 AndAlso skill_lobe <= 5 Then
+                Me.skill_lobe = skill_lobe
+            End If
+        End Sub
         Public Overridable Function SkillNotes(param As String) As String
             Return "notes unknown"
         End Function
@@ -226,7 +249,7 @@
         End Function
 
     End Class
-    Public Class Cerabellum
+    Public Class Cerebellum
         ' Runs an algorithm
         Private fin As Integer
         Private at As Integer
@@ -289,11 +312,11 @@
     Public Class Fusion
         Private emot As String = ""
         Private result As String = ""
-        Private ceraArr(4) As Cerabellum
+        Private ceraArr(4) As Cerebellum
 
         Public Sub New()
             For i As Integer = 0 To 4
-                ceraArr(i) = New Cerabellum()
+                ceraArr(i) = New Cerebellum()
             Next
         End Sub
 
@@ -329,136 +352,180 @@
         End Function
     End Class
     Public Class Chobits
-
         Public dClasses As New List(Of Skill)()
         Protected fusion As Fusion
-        Protected noiron As Neuron
-        Protected kokoro As Kokoro = New Kokoro(New AbsDictionaryDB()) ' consciousness
+        Protected neuron As Neuron
+        Protected kokoro As New Kokoro(New AbsDictionaryDB()) ' consciousness
         Private isThinking As Boolean = False
         Private ReadOnly awareSkills As New List(Of Skill)()
         Public algTriggered As Boolean = False
-        ' Continuous skills list
-        Public cts_skills As New List(Of Skill)() ' Assuming Skill is a class
+        Public cts_skills As New List(Of Skill)() ' continuous skills
 
         Public Sub New()
             MyBase.New()
             Me.fusion = New Fusion()
-            noiron = New Neuron()
+            neuron = New Neuron()
         End Sub
 
-        Public Sub SetDataBase(absDictionaryDB As AbsDictionaryDB)
+        Public Sub setDataBase(absDictionaryDB As AbsDictionaryDB)
             Me.kokoro.grimoireMemento = absDictionaryDB
         End Sub
 
-        Public Function AddSkill(skill As Skill) As Chobits
+        Public Sub addRegularSkill(skill As Skill)
             ' add a skill (builder design patterned func)
             If Me.isThinking Then
-                Return Me
+                Return
             End If
+            skill.setSkillType(1)
             skill.SetKokoro(Me.kokoro)
             Me.dClasses.Add(skill)
-            Return Me
-        End Function
+        End Sub
 
-        Public Sub AddSkillAware(skill As Skill)
+        Public Sub addSkillAware(skill As Skill)
             ' add a skill with Chobit Object in their constructor
+            skill.setSkillType(2)
             skill.SetKokoro(Me.kokoro)
             Me.awareSkills.Add(skill)
         End Sub
 
-        Public Sub AddContinuousSkill(skill As Skill)
-            If Me.isThinking Then Return
+        Public Sub addContinuousSkill(skill As Skill)
+            ' add a skill (builder design patterned func)
+            If Me.isThinking Then
+                Return
+            End If
+            skill.setSkillType(3)
             skill.SetKokoro(Me.kokoro)
             Me.cts_skills.Add(skill)
         End Sub
 
-        Public Sub ClearContinuousSkills()
-            If Me.isThinking Then Return
-            Me.cts_skills.Clear()
-        End Sub
-
-        Public Sub RemoveContinuousSkill(skill As Skill)
-            If Me.isThinking Then Return
-            Me.cts_skills.Remove(skill)
-        End Sub
-
-        Public Sub ClearSkills()
-            ' Remove all skills
+        Public Sub clearRegularSkills()
+            ' remove all skills
             If Me.isThinking Then
                 Return
             End If
             Me.dClasses.Clear()
         End Sub
 
-        Public Sub AddSkills(ParamArray skills As Skill())
+        Public Sub clearContinuousSkills()
+            ' remove all skills
             If Me.isThinking Then
                 Return
             End If
+            Me.cts_skills.Clear()
+        End Sub
+
+        Public Sub clearAllSkills()
+            Me.clearRegularSkills()
+            Me.clearContinuousSkills()
+        End Sub
+
+        Public Sub addSkills(ParamArray skills As Skill())
             For Each skill As Skill In skills
-                skill.SetKokoro(Me.kokoro)
-                Me.dClasses.Add(skill)
+                Me.addSkill(skill)
             Next
         End Sub
 
-        Public Sub RemoveSkill(skill As Skill)
+        Public Sub removeLogicalSkill(skill As Skill)
             If Me.isThinking Then
                 Return
             End If
             dClasses.Remove(skill)
         End Sub
 
-        Public Function ContainsSkill(skill As Skill) As Boolean
+        Public Sub removeContinuousSkill(skill As Skill)
+            If Me.isThinking Then
+                Return
+            End If
+            cts_skills.Remove(skill)
+        End Sub
+
+        Public Sub removeSkill(skill As Skill)
+            ' remove any type of skill (except aware skills)
+            If skill.getSkillType() = 1 Then
+                Me.removeLogicalSkill(skill)
+            Else
+                Me.removeContinuousSkill(skill)
+            End If
+        End Sub
+
+        Public Function containsSkill(skill As Skill) As Boolean
             Return dClasses.Contains(skill)
         End Function
 
-        Public Function Think(ear As String, skin As String, eye As String) As String
+        Public Function think(ear As String, skin As String, eye As String) As String
             Me.algTriggered = False
-            Me.isThinking = True
+            Me.isThinking = True ' regular skills loop
             For Each dCls As Skill In dClasses
-                InOut(dCls, ear, skin, eye)
+                inOut(dCls, ear, skin, eye)
             Next
             Me.isThinking = False
-            For Each dCls2 As Skill In Me.awareSkills
-                InOut(dCls2, ear, skin, eye)
+            For Each dCls2 As Skill In awareSkills
+                inOut(dCls2, ear, skin, eye)
             Next
             Me.isThinking = True
-
-            For Each dCls3 As Skill In Me.cts_skills
-                If Me.algTriggered Then Exit For
-                InOut(dCls3, ear, skin, eye)
+            For Each dCls2 As Skill In cts_skills
+                If algTriggered Then Exit For
+                inOut(dCls2, ear, skin, eye)
             Next
-
             Me.isThinking = False
-            fusion.LoadAlgs(noiron)
+            fusion.LoadAlgs(neuron)
             Return fusion.RunAlgs(ear, skin, eye)
         End Function
 
-        Public Function GetSoulEmotion() As String
+        Public Function getSoulEmotion() As String
+            ' get the last active AlgPart name
+            ' the AP is an action, and it also represents
+            ' an emotion
             Return fusion.GetEmot()
         End Function
 
-        Protected Sub InOut(dClass As Skill, ear As String, skin As String, eye As String)
-            dClass.Input(ear, skin, eye) ' New
-            If dClass.PendingAlgorithm() Then Me.algTriggered = True
-            dClass.Output(noiron)
+        Protected Sub inOut(dClass As Skill, ear As String, skin As String, eye As String)
+            dClass.Input(ear, skin, eye) ' new
+            If dClass.PendingAlgorithm() Then
+                algTriggered = True
+            End If
+            dClass.Output(neuron)
         End Sub
 
-        Public Function GetFusion() As Fusion
-            Return fusion
+        Public Function getKokoro() As Kokoro
+            ' several chobits can use the same soul
+            ' this enables telepathic communications
+            ' between chobits in the same project
+            Return kokoro
         End Function
 
-        Public Function GetSkillList() As List(Of String)
+        Public Sub setKokoro(kokoro As Kokoro)
+            ' use this for telepathic communication between different chobits objects
+            Me.kokoro = kokoro
+        End Sub
+
+        Public Function getSkillList() As List(Of String)
             Dim result As New List(Of String)()
             For Each skill As Skill In Me.dClasses
-                result.Add(skill.GetType().Name)
+                result.Add(skill.[GetType]().Name)
             Next
             Return result
         End Function
-        Public Function GetKokoro() As Kokoro
-            Return kokoro
+
+        Public Function getFusedSkills() As List(Of Skill)
+            ' Returns a fusion list containing both dClasses (regular skills)
+            ' and cts_skills (continuous skills).
+            Dim combined As New List(Of Skill)(Me.dClasses)
+            combined.AddRange(Me.cts_skills)
+            Return combined
         End Function
-        Public Sub SetKokoro(kokoro As Kokoro)
-            Me.kokoro = kokoro
+
+        Public Sub addSkill(skill As Skill)
+            ' Automatically adds a skill to the correct category based on its type.
+            ' No manual classification needed—just pass the skill and let the system handle it.
+            Select Case skill.getSkillType()
+                Case 1 ' Regular Skill
+                    Me.addRegularSkill(skill)
+                Case 2 ' Aware Skill
+                    Me.addSkillAware(skill)
+                Case 3 ' Continuous Skill
+                    Me.addContinuousSkill(skill)
+            End Select
         End Sub
     End Class
     Public Class Brain
@@ -466,69 +533,99 @@
         Private emotion As String = ""
         Private logicChobitOutput As String = ""
         Public hardwareChobit As New Chobits()
-        Public ear As New Chobits() ' 120425 upgrade
+        Public ear As New Chobits()
         Public skin As New Chobits()
         Public eye As New Chobits()
 
-        Public Function GetEmotion() As String
+        ' ret active alg part representing emotion
+        Public Function getEmotion() As String
             Return emotion
         End Function
+
         ' ret feedback (last output)
-        Public Function GetLogicChobitOutput() As String
+        Public Function getLogicChobitOutput() As String
             Return logicChobitOutput
         End Function
+
         ' c'tor
         Public Sub New()
-            Brain.ImprintSoul(logicChobit.GetKokoro(), hardwareChobit, ear, skin, eye)
+            Brain.imprintSoul(Me.logicChobit.getKokoro(), Me.hardwareChobit, Me.ear, Me.skin, Me.eye)
         End Sub
 
-        Public Shared Sub ImprintSoul(kokoro As Kokoro, ParamArray args As Chobits())
+        Private Shared Sub imprintSoul(kokoro As Kokoro, ParamArray args As Chobits())
             For Each arg As Chobits In args
-                arg.SetKokoro(kokoro)
+                arg.setKokoro(kokoro)
             Next
         End Sub
+
         ' live
-        Public Sub DoIt(ear As String, skin As String, eye As String)
-            logicChobitOutput = logicChobit.Think(ear, skin, eye)
-            emotion = logicChobit.GetSoulEmotion()
-            ' output thoughts and account for reflexes(with skin or eye) in respective skills if needed
-            hardwareChobit.Think(logicChobitOutput, skin, eye)
-        End Sub
-        'add regular thinking(logical) skill
-        Public Sub AddLogicalSkill(skill As Skill)
-            logicChobit.AddSkill(skill)
+        Public Sub doIt(ear As String, skin As String, eye As String)
+            logicChobitOutput = logicChobit.think(ear, skin, eye)
+            emotion = logicChobit.getSoulEmotion()
+            hardwareChobit.think(logicChobitOutput, skin, eye)
         End Sub
 
-        Public Sub AddHardwareSkill(skill As Skill)
-            hardwareChobit.AddSkill(skill)
+        Public Sub addSkill(skill As Skill)
+            ' Adds a skill to the correct Chobits based on its skill_lobe attribute.
+            ' Just pass the skill—the Brain handles where it belongs.
+            Select Case skill.getSkillLobe()
+                Case 1 ' Logical skill
+                    Me.logicChobit.addSkill(skill)
+                Case 2 ' Hardware skill
+                    Me.hardwareChobit.addSkill(skill)
+                Case 3 ' Ear skill
+                    Me.ear.addSkill(skill)
+                Case 4 ' Skin skill
+                    Me.skin.addSkill(skill)
+                Case 5 ' Eye skill
+                    Me.eye.addSkill(skill)
+            End Select
+        End Sub
+
+        Public Function chained(skill As Skill) As Brain
+            ' chained add skill
+            addSkill(skill)
+            Return Me
+        End Function
+
+        ' add regular thinking(logical) skill
+        Public Sub addLogicalSkill(skill As Skill)
+            logicChobit.addRegularSkill(skill)
+        End Sub
+
+        ' add output skill
+        Public Sub addHardwareSkill(skill As Skill)
+            hardwareChobit.addRegularSkill(skill)
         End Sub
 
         ' add audio(ear) input skill
-        Public Sub AddEarSkill(skill As Skill)
-            ear.AddSkill(skill)
-        End Sub
-        ' add sensor input skill
-        Public Sub AddSkinSkill(skill As Skill)
-            skin.AddSkill(skill)
-        End Sub
-        ' add visual input skill
-        Public Sub AddEyeSkill(skill As Skill)
-            eye.AddSkill(skill)
+        Public Sub addEarSkill(skill As Skill)
+            Me.ear.addRegularSkill(skill)
         End Sub
 
-        Public Sub Think(keyIn As String)
+        ' add sensor input skill
+        Public Sub addSkinSkill(skill As Skill)
+            Me.skin.addRegularSkill(skill)
+        End Sub
+
+        ' add visual input skill
+        Public Sub addEyeSkill(skill As Skill)
+            Me.eye.addRegularSkill(skill)
+        End Sub
+
+        Public Sub think(keyIn As String)
             If Not String.IsNullOrEmpty(keyIn) Then
                 ' handles typed inputs(keyIn)
-                DoIt(keyIn, "", "")
+                Me.doIt(keyIn, "", "")
             Else
-                ' Accounts for sensory inputs
-                DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""))
+                ' accounts for sensory inputs
+                Me.doIt(ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""))
             End If
         End Sub
 
-        Public Sub Think()
-            ' Accounts for sensory inputs
-            DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""))
+        Public Sub think()
+            ' accounts for sensory inputs only. use this overload for tick events(where it is certain no typed inputs are to be processed)
+            Me.doIt(ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""))
         End Sub
     End Class
     Public Class DiPrinter
@@ -537,6 +634,8 @@
         ' hello world skill for testing purposes
         Public Sub New()
             MyBase.New()
+            setSkillType(3) ' continuous skill
+            setSkillLobe(2) ' hardware chobit
         End Sub
 
         Public Overrides Sub Input(ear As String, skin As String, eye As String)
