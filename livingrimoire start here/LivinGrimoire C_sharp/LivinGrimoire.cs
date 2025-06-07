@@ -182,6 +182,8 @@ public class Skill
     protected Kokoro? kokoro = null; // consciousness, shallow ref class to enable interskill communications
     protected Algorithm? outAlg = null; // skills output
     protected int outpAlgPriority = -1; // defcon 1->5
+    protected int skill_type = 1; // 1:regular, 2:aware_skill, 3:continuous_skill
+    protected int skill_lobe = 1; // 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
 
     public Skill()
     {
@@ -243,6 +245,35 @@ public class Skill
         return outAlg != null;
     }
 
+    // Getter and Setter for skill_type
+    public int getSkillType()
+    {
+        return skill_type;
+    }
+
+    public void setSkillType(int skill_type)
+    {
+        // 1:regular, 2:aware_skill, 3:continuous_skill
+        if (skill_type >= 1 && skill_type <= 3)
+        {
+            this.skill_type = skill_type;
+        }
+    }
+
+    // Getter and Setter for skill_lobe
+    public int getSkillLobe()
+    {
+        return skill_lobe;
+    }
+
+    public void setSkillLobe(int skill_lobe)
+    {
+        // 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
+        if (skill_lobe >= 1 && skill_lobe <= 5)
+        {
+            this.skill_lobe = skill_lobe;
+        }
+    }
     public virtual string SkillNotes(string param)
     {
         return "notes unknown";
@@ -279,7 +310,7 @@ public class DiHelloWorld : Skill
     }
 
 }
-public class Cerabellum
+public class Cerebellum
 {
     // Runs an algorithm
     private int fin;
@@ -357,13 +388,13 @@ public class Fusion
 {
     private string emot = "";
     private string result = "";
-    private Cerabellum[] ceraArr = new Cerabellum[5];
+    private Cerebellum[] ceraArr = new Cerebellum[5];
 
     public Fusion()
     {
         for (int i = 0; i < 5; i++)
         {
-            ceraArr[i] = new Cerabellum();
+            ceraArr[i] = new Cerebellum();
         }
     }
 
@@ -406,164 +437,153 @@ public class Fusion
         return result;
     }
 }
+
 public class Chobits
 {
     public List<Skill> dClasses = new List<Skill>();
     protected Fusion fusion;
-    protected Neuron noiron;
+    protected Neuron neuron;
     protected Kokoro kokoro = new Kokoro(new AbsDictionaryDB()); // consciousness
     private bool isThinking = false;
     private readonly List<Skill> awareSkills = new List<Skill>();
     public bool algTriggered = false;
-    // Continuous skills list
-    public List<Skill> cts_skills = new List<Skill>(); // Assuming Skill is a class
-
+    public List<Skill> cts_skills = new List<Skill>(); // continuous skills
 
     public Chobits()
     {
-        // c'tor
         this.fusion = new Fusion();
-        this.noiron = new Neuron();
+        this.neuron = new Neuron();
     }
 
-    public void SetDataBase(AbsDictionaryDB absDictionaryDB)
+    public void setDataBase(AbsDictionaryDB absDictionaryDB)
     {
         this.kokoro.grimoireMemento = absDictionaryDB;
     }
 
-    public Chobits AddSkill(Skill skill)
+    public void addRegularSkill(Skill skill)
     {
-        // add a skill (builder design patterned func)
-        if (this.isThinking)
-        {
-            return this;
-        }
+        if (this.isThinking) return;
+        skill.setSkillType(1);
         skill.SetKokoro(this.kokoro);
         this.dClasses.Add(skill);
-        return this;
     }
 
-    public void AddSkillAware(Skill skill)
+    public void addSkillAware(Skill skill)
     {
-        // add a skill with Chobit Object in their constructor
+        skill.setSkillType(2);
         skill.SetKokoro(this.kokoro);
         this.awareSkills.Add(skill);
     }
 
-    public void ClearSkills()
-    {
-        // remove all skills
-        if (this.isThinking)
-        {
-            return;
-        }
-        this.dClasses.Clear();
-    }
-
-    public void AddSkills(params Skill[] skills)
-    {
-        if (this.isThinking)
-        {
-            return;
-        }
-        foreach (Skill skill in skills)
-        {
-            skill.SetKokoro(this.kokoro);
-            this.dClasses.Add(skill);
-        }
-    }
-    public void AddContinuousSkill(Skill skill)
+    public void addContinuousSkill(Skill skill)
     {
         if (this.isThinking) return;
+        skill.setSkillType(3);
         skill.SetKokoro(this.kokoro);
         this.cts_skills.Add(skill);
     }
-    public void ClearContinuousSkills()
+
+    public void clearRegularSkills()
+    {
+        if (this.isThinking) return;
+        this.dClasses.Clear();
+    }
+
+    public void clearContinuousSkills()
     {
         if (this.isThinking) return;
         this.cts_skills.Clear();
     }
-    public void RemoveContinuousSkill(Skill skill)
+
+    public void clearAllSkills()
+    {
+        clearRegularSkills();
+        clearContinuousSkills();
+    }
+
+    public void addSkills(params Skill[] skills)
+    {
+        foreach (Skill skill in skills)
+        {
+            this.addSkill(skill);
+        }
+    }
+
+    public void removeLogicalSkill(Skill skill)
     {
         if (this.isThinking) return;
-        this.cts_skills.Remove(skill);
+        dClasses.Remove(skill);
     }
 
-    public void RemoveSkill(Skill skill)
+    public void removeContinuousSkill(Skill skill)
     {
-        if (this.isThinking)
-        {
-            return;
-        }
-        this.dClasses.Remove(skill);
+        if (this.isThinking) return;
+        cts_skills.Remove(skill);
     }
 
-    public bool ContainsSkill(Skill skill)
+    public void removeSkill(Skill skill)
     {
-        return this.dClasses.Contains(skill);
+        if (skill.getSkillType() == 1)
+            this.removeLogicalSkill(skill);
+        else
+            this.removeContinuousSkill(skill);
     }
 
-    public string Think(string ear, string skin, string eye)
+    public bool containsSkill(Skill skill)
+    {
+        return dClasses.Contains(skill);
+    }
+
+    public string think(string ear, string skin, string eye)
     {
         this.algTriggered = false;
-        this.isThinking = true;
-        foreach (Skill dCls in this.dClasses)
+        this.isThinking = true; // regular skills loop
+        foreach (Skill dCls in dClasses)
         {
-            InOut(dCls, ear, skin, eye);
+            inOut(dCls, ear, skin, eye);
         }
         this.isThinking = false;
-        foreach (Skill dCls2 in this.awareSkills)
+        foreach (Skill dCls2 in awareSkills)
         {
-            InOut(dCls2, ear, skin, eye);
+            inOut(dCls2, ear, skin, eye);
         }
         this.isThinking = true;
-
-        foreach (Skill dCls3 in this.cts_skills)
+        foreach (Skill dCls2 in cts_skills)
         {
-            if (this.algTriggered) break;
-            InOut(dCls3, ear, skin, eye);
+            if (algTriggered) break;
+            inOut(dCls2, ear, skin, eye);
         }
-
         this.isThinking = false;
-        this.fusion.LoadAlgs(this.noiron);
-        return this.fusion.RunAlgs(ear, skin, eye);
+        fusion.LoadAlgs(neuron);
+        return fusion.RunAlgs(ear, skin, eye);
     }
 
-    public string GetSoulEmotion()
+    public string getSoulEmotion()
     {
-        // get the last active AlgPart name
-        // the AP is an action, and it also represents
-        // an emotion
-        return this.fusion.GetEmot();
+        return fusion.GetEmot();
     }
 
-    protected void InOut(Skill dClass, string ear, string skin, string eye)
+    protected void inOut(Skill dClass, string ear, string skin, string eye)
     {
-        dClass.Input(ear, skin, eye); // new
-        if (dClass.PendingAlgorithm()) this.algTriggered = true;
-        dClass.Output(this.noiron);
+        dClass.Input(ear, skin, eye);
+        if (dClass.PendingAlgorithm())
+        {
+            algTriggered = true;
+        }
+        dClass.Output(neuron);
     }
 
-    public Kokoro GetKokoro()
+    public Kokoro getKokoro()
     {
-        // several chobits can use the same soul
-        // this enables telepathic communications
-        // between chobits in the same project
-        return this.kokoro;
+        return kokoro;
     }
 
-    public void SetKokoro(Kokoro kokoro)
+    public void setKokoro(Kokoro kokoro)
     {
-        // use this for telepathic communication between different chobits objects
         this.kokoro = kokoro;
     }
 
-    public Fusion GetFusion()
-    {
-        return this.fusion;
-    }
-
-    public List<string> GetSkillList()
+    public List<string> getSkillList()
     {
         List<string> result = new List<string>();
         foreach (Skill skill in this.dClasses)
@@ -572,7 +592,31 @@ public class Chobits
         }
         return result;
     }
+
+    public List<Skill> getFusedSkills()
+    {
+        List<Skill> combined = new List<Skill>(this.dClasses);
+        combined.AddRange(this.cts_skills);
+        return combined;
+    }
+
+    public void addSkill(Skill skill)
+    {
+        switch (skill.getSkillType())
+        {
+            case 1: // Regular Skill
+                this.addRegularSkill(skill);
+                break;
+            case 2: // Aware Skill
+                this.addSkillAware(skill);
+                break;
+            case 3: // Continuous Skill
+                this.addContinuousSkill(skill);
+                break;
+        }
+    }
 }
+
 public class Brain
 {
     public Chobits logicChobit = new Chobits();
@@ -583,91 +627,138 @@ public class Brain
     public Chobits skin = new Chobits();
     public Chobits eye = new Chobits();
 
-    public string GetEmotion => emotion;
-    public string GetLogicChobitOutput => logicChobitOutput;
-
-
-    public Brain()
+    // Returns active algorithm part representing emotion
+    public string getEmotion()
     {
-        // c'tor
-        Brain.ImprintSoul(logicChobit.GetKokoro(), hardwareChobit, ear, skin, eye);
+        return emotion;
     }
 
-    public static void ImprintSoul(Kokoro kokoro, params Chobits[] args)
+    // Returns feedback (last output)
+    public string getLogicChobitOutput()
+    {
+        return logicChobitOutput;
+    }
+
+    // Constructor
+    public Brain()
+    {
+        Brain.imprintSoul(this.logicChobit.getKokoro(), this.hardwareChobit, this.ear, this.skin, this.eye);
+    }
+
+    private static void imprintSoul(Kokoro kokoro, params Chobits[] args)
     {
         foreach (Chobits arg in args)
         {
-            arg.SetKokoro(kokoro);
+            arg.setKokoro(kokoro);
         }
     }
-    // live
-    public void DoIt(string ear, string skin, string eye)
+
+    // Live processing
+    public void doIt(string ear, string skin, string eye)
     {
-        logicChobitOutput = logicChobit.Think(ear, skin, eye);
-        emotion = logicChobit.GetSoulEmotion();
-        hardwareChobit.Think(logicChobitOutput, skin, eye);
-    }
-    // add a skill (builder design patterned func))
-    public void AddLogicalSkill(Skill skill)
-    {
-        logicChobit.AddSkill(skill);
-    }
-    // add output skill
-    public void AddHardwareSkill(Skill skill)
-    {
-        hardwareChobit.AddSkill(skill);
-    }
-    // add audio(ear) input skill
-    public void AddEarSkill(Skill skill)
-    {
-        ear.AddSkill(skill);
-    }
-    // add sensor input skill
-    public void AddSkinSkill(Skill skill)
-    {
-        skin.AddSkill(skill);
-    }
-    // add visual input skill
-    public void AddEyeSkill(Skill skill)
-    {
-        eye.AddSkill(skill);
+        logicChobitOutput = logicChobit.think(ear, skin, eye);
+        emotion = logicChobit.getSoulEmotion();
+        hardwareChobit.think(logicChobitOutput, skin, eye);
     }
 
-    public void Think(string keyIn)
+    public void addSkill(Skill skill)
+    {
+        // Adds a skill to the correct Chobits based on its skill_lobe attribute
+        switch (skill.getSkillLobe())
+        {
+            case 1: // Logical skill
+                this.logicChobit.addSkill(skill);
+                break;
+            case 2: // Hardware skill
+                this.hardwareChobit.addSkill(skill);
+                break;
+            case 3: // Ear skill
+                this.ear.addSkill(skill);
+                break;
+            case 4: // Skin skill
+                this.skin.addSkill(skill);
+                break;
+            case 5: // Eye skill
+                this.eye.addSkill(skill);
+                break;
+        }
+    }
+
+    public Brain chained(Skill skill)
+    {
+        // Chained add skill
+        addSkill(skill);
+        return this;
+    }
+
+    // Add regular thinking (logical) skill
+    public void addLogicalSkill(Skill skill)
+    {
+        logicChobit.addRegularSkill(skill);
+    }
+
+    // Add output skill
+    public void addHardwareSkill(Skill skill)
+    {
+        hardwareChobit.addRegularSkill(skill);
+    }
+
+    // Add audio (ear) input skill
+    public void addEarSkill(Skill skill)
+    {
+        this.ear.addRegularSkill(skill);
+    }
+
+    // Add sensor input skill
+    public void addSkinSkill(Skill skill)
+    {
+        this.skin.addRegularSkill(skill);
+    }
+
+    // Add visual input skill
+    public void addEyeSkill(Skill skill)
+    {
+        this.eye.addRegularSkill(skill);
+    }
+
+    public void think(string keyIn)
     {
         if (!string.IsNullOrEmpty(keyIn))
         {
-            // handles typed inputs(keyIn)
-            DoIt(keyIn, "", "");
+            // Handles typed inputs (keyIn)
+            this.doIt(keyIn, "", "");
         }
         else
         {
-            // accounts for sensory inputs
-            DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""));
+            // Accounts for sensory inputs
+            this.doIt(ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""));
         }
     }
 
-    public void Think()
+    public void think()
     {
-        // accounts for sensory inputs only. use this overload for tick events(where it is certain no typed inputs are to be processed)
-        DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""));
+        // Accounts for sensory inputs only
+        this.doIt(ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""));
     }
 }
 public class DiPrinter : Skill
 {
-    // hello world skill for testing purposes
-    public DiPrinter() : base()
+    // Hello world skill for testing purposes
+    public DiPrinter()
     {
+        base.setSkillType(3); // continuous skill
+        base.setSkillLobe(2); // hardware chobit
     }
 
     public override void Input(string ear, string skin, string eye)
     {
-        if (ear == "")
+        if (string.IsNullOrEmpty(ear))
         {
             return;
         }
         Console.WriteLine(ear);
     }
+
     public override string SkillNotes(string param)
     {
         switch (param)
@@ -680,5 +771,4 @@ public class DiPrinter : Skill
                 return "note unavailable";
         }
     }
-
 }
