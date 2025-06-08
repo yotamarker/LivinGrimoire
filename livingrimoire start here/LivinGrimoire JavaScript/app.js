@@ -5,12 +5,12 @@ const { AbsDictionaryDB, Mutatable, APSay, APVerbatim, Algorithm, Kokoro, Neuron
 const brain = new Brain();
 
 // Add logical and hardware skills
-brain.AddLogicalSkill(new DiHelloWorld());
-brain.AddHardwareSkill(new DiPrinter());
+brain.addSkill(new DiHelloWorld());
+brain.addSkill(new DiPrinter());
 
 // Execute the DoIt method
-brain.DoIt("hello", "", "");
-brain.Think_Default("hello");
+brain.doIt("hello", "", "");
+brain.think_default("hello");
 
 // Keep the console open
 const readline = require('readline');
