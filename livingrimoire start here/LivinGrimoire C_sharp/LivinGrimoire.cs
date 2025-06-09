@@ -379,7 +379,7 @@ public class Cerebellum
         return axnStr;
     }
 
-    public void DeActivation()
+    public void DeActivate()
     {
         ia = IsActive() && !alg!.GetAlgParts()[at].algKillSwitch;
     }
@@ -430,7 +430,7 @@ public class Fusion
             result = ceraArr[i].Act(ear, skin, eye);
             ceraArr[i].AdvanceInAlg();
             emot = ceraArr[i].GetEmot();
-            ceraArr[i].DeActivation(); // Deactivation if Mutatable.algkillswitch = true
+            ceraArr[i].DeActivate(); // Deactivation if Mutatable.algkillswitch = true
             return result;
         }
         emot = "";
@@ -455,7 +455,7 @@ public class Chobits
         this.neuron = new Neuron();
     }
 
-    public void setDataBase(AbsDictionaryDB absDictionaryDB)
+    public void setDatabase(AbsDictionaryDB absDictionaryDB)
     {
         this.kokoro.grimoireMemento = absDictionaryDB;
     }

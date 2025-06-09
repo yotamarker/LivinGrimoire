@@ -55,7 +55,7 @@ public class Cerebellum {
         }
         return axnStr;
     }
-    public void deActivation(){
+    public void deactivate(){
         this.isActive = this.isActive && !alg.getAlgParts().get(at).algKillSwitch;
     }
 }

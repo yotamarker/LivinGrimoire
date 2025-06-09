@@ -305,7 +305,7 @@
             Return axnStr
         End Function
 
-        Public Sub DeActivation()
+        Public Sub Deactivate()
             Me.ia = Me.IsActive AndAlso Not alg.GetAlgParts()(at).algKillSwitch
         End Sub
     End Class
@@ -344,7 +344,7 @@
                 result = ceraArr(i).Act(ear, skin, eye)
                 ceraArr(i).AdvanceInAlg()
                 emot = ceraArr(i).GetEmot()
-                ceraArr(i).DeActivation() ' Deactivation if Mutatable.algkillswitch = True
+                ceraArr(i).Deactivate() ' Deactivation if Mutatable.algkillswitch = True
                 Return result
             Next
             emot = ""
@@ -367,7 +367,7 @@
             neuron = New Neuron()
         End Sub
 
-        Public Sub setDataBase(absDictionaryDB As AbsDictionaryDB)
+        Public Sub setDatabase(absDictionaryDB As AbsDictionaryDB)
             Me.kokoro.grimoireMemento = absDictionaryDB
         End Sub
 

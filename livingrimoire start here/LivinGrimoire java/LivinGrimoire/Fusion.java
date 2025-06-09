@@ -3,11 +3,11 @@ package LivinGrimoire;
 public class Fusion {
     private String emot = "";
     private String result = "";
-    private Cerabellum[] ceraArr = new Cerabellum[5];
+    private Cerebellum[] ceraArr = new Cerebellum[5];
 
     public Fusion() {
         for (int i = 0; i < 5; i++) {
-            ceraArr[i] = new Cerabellum();
+            ceraArr[i] = new Cerebellum();
         }
     }
 
@@ -33,7 +33,7 @@ public class Fusion {
             result = ceraArr[i].act(ear,skin,eye);
             ceraArr[i].advanceInAlg();
             emot = ceraArr[i].getEmot();
-            ceraArr[i].deActivation(); // deactivation if Mutatable.algkillswitch = true
+            ceraArr[i].deactivate(); // deactivation if Mutatable.algkillswitch = true
             return result;
         }
         emot = "";

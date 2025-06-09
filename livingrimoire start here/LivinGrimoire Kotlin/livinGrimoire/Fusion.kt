@@ -4,11 +4,11 @@ class Fusion {
     var emot = ""
         private set
     private var result = ""
-    private val ceraArr = arrayOfNulls<Cerabellum>(5)
+    private val ceraArr = arrayOfNulls<Cerebellum>(5)
 
     init {
         for (i in 0..4) {
-            ceraArr[i] = Cerabellum()
+            ceraArr[i] = Cerebellum()
         }
     }
 
@@ -23,16 +23,16 @@ class Fusion {
         }
     }
 
-    fun runAlgs(ear: String?, skin: String?, eye: String?): String {
+    fun runAlgs(ear: String, skin: String, eye: String): String {
         result = ""
         for (i in 0..4) {
             if (!ceraArr[i]!!.isActive) {
                 continue
             }
-            result = ceraArr[i]!!.act(ear!!, skin!!, eye!!)
+            result = ceraArr[i]!!.act(ear, skin, eye)
             ceraArr[i]!!.advanceInAlg()
             emot = ceraArr[i]!!.emot
-            ceraArr[i]!!.deActivation() // deactivation if Mutatable.algkillswitch = true
+            ceraArr[i]!!.deactivate() // deactivation if Mutatable.algkillswitch = true
             return result
         }
         emot = ""

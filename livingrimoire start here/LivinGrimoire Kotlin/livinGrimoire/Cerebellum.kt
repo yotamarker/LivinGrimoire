@@ -47,7 +47,7 @@ class Cerebellum {
         return axnStr
     }
 
-    fun deActivation() {
+    fun deactivate() {
         isActive = isActive && !alg!!.algParts[at].algKillSwitch
     }
 }

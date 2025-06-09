@@ -17,7 +17,7 @@ public class Chobits {
         this.fusion = new Fusion();
         neuron = new Neuron();
     }
-    public void setDataBase(AbsDictionaryDB absDictionaryDB) {
+    public void setDatabase(AbsDictionaryDB absDictionaryDB) {
         this.kokoro.grimoireMemento = absDictionaryDB;
     }
     public void addRegularSkill(Skill skill){

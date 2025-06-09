@@ -248,7 +248,7 @@ class Cerebellum:
                 self.incrementAt = True
         return axnStr
 
-    def deActivateAlg(self):
+    def deactivate(self):
         # stop the entire running active Algorithm
         self.isActive = self.isActive and not self.alg.getAlgParts[self.at].algKillSwitch
 
@@ -276,7 +276,7 @@ class Fusion:
             self._result = self.ceraArr[i].act(ear, skin, eye)
             self.ceraArr[i].advanceInAlg()
             self._emot = self.ceraArr[i].getEmot()
-            self.ceraArr[i].deActivateAlg()  # deactivation if Mutatable.algkillswitch = true
+            self.ceraArr[i].deactivate()  # deactivation if Mutatable.algkillswitch = true
             return self._result
         self._emot = ""
         return self._result

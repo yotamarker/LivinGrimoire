@@ -10,7 +10,7 @@ class Chobits {
     var algTriggered = false
     val ctsSkills = ArrayList<Skill>() // continuous skills
 
-    fun setDataBase(absDictionaryDB: AbsDictionaryDB) {
+    fun setDatabase(absDictionaryDB: AbsDictionaryDB) {
         kokoro.grimoireMemento = absDictionaryDB
     }
 
