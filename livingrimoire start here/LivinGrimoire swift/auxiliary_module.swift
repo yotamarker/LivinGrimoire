@@ -889,11 +889,11 @@ class SkillHubAlgDispenser {
     private var activeSkill: Int = 0
     private let tempN = Neuron()
     private let rand = Int.random(in: 0..<Int.max)
-    private var kokoro = Kokoro(absDictionaryDB: AbsDictionaryDB())
+    private var kokoro = Kokoro(AbsDictionaryDB())
    
     init(skillsParams: Skill...) {
         for skill in skillsParams {
-            skill.setKokoro(kokoro: kokoro)
+            skill.setKokoro(kokoro)
             skills.append(skill)
         }
     }
@@ -901,24 +901,24 @@ class SkillHubAlgDispenser {
     func setKokoro(_ kokoro: Kokoro) {
         self.kokoro = kokoro
         for skill in skills {
-            skill.setKokoro(kokoro: kokoro)
+            skill.setKokoro(kokoro)
         }
     }
    
     @discardableResult
     func addSkill(_ skill: Skill) -> SkillHubAlgDispenser {
         // Builder pattern
-        skill.setKokoro(kokoro: kokoro)
+        skill.setKokoro(kokoro)
         skills.append(skill)
         return self
     }
    
     func dispenseAlgorithm(ear: String, skin: String, eye: String) -> AlgorithmV2? {
         // Return value to outAlg param of (external) summoner DiSkillV2
-        skills[activeSkill].input(ear: ear, skin: skin, eye: eye)
-        skills[activeSkill].output(noiron: tempN)
+        skills[activeSkill].input(ear, skin, eye)
+        skills[activeSkill].output(tempN)
         for i in 1..<6 {
-            if let temp = tempN.getAlg(defcon: i) {
+            if let temp = tempN.getAlg(i) {
                 return AlgorithmV2(priority: i, alg: temp)
             }
         }
@@ -3230,18 +3230,18 @@ class AlgorithmV2 {
 class AXSkillBundle {
     private var skills: [Skill] = []
     private let tempN = Neuron()
-    private var kokoro = Kokoro(absDictionaryDB: AbsDictionaryDB())
+    private var kokoro = Kokoro(AbsDictionaryDB())
 
     func setKokoro(_ kokoro: Kokoro) {
         self.kokoro = kokoro
         for skill in skills {
-            skill.setKokoro(kokoro: self.kokoro)
+            skill.setKokoro(self.kokoro)
         }
     }
 
     init(skillsParams: Skill...) {
         for skill in skillsParams {
-            skill.setKokoro(kokoro: self.kokoro)
+            skill.setKokoro(self.kokoro)
             skills.append(skill)
         }
     }
@@ -3249,17 +3249,17 @@ class AXSkillBundle {
     @discardableResult
     func addSkill(_ skill: Skill) -> AXSkillBundle {
         // builder pattern
-        skill.setKokoro(kokoro: self.kokoro)
+        skill.setKokoro(self.kokoro)
         skills.append(skill)
         return self
     }
 
     func dispenseAlgorithm(ear: String, skin: String, eye: String) -> AlgorithmV2? {
         for skill in skills {
-            skill.input(ear: ear, skin: skin, eye: eye)
-            skill.output(noiron: tempN)
+            skill.input(ear, skin, eye)
+            skill.output(tempN)
             for j in 1..<6 {
-                if let temp = tempN.getAlg(defcon: j) {
+                if let temp = tempN.getAlg(j) {
                     return AlgorithmV2(priority: j, alg: temp)
                 }
             }

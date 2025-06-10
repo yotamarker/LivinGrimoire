@@ -9,131 +9,131 @@ import Foundation
 
 class DiTime:Skill{
     // hello world skill for testing purposes
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         switch (ear)  {
           case "what is the date":
-            setVerbatimAlg(priority: 4, sayThis: "\(TimeUtils.getCurrentMonthDay()) \(TimeUtils.getCurrentMonthName()) \(TimeUtils.getYearAsInt())")
+            setVerbatimAlg(4, "\(TimeUtils.getCurrentMonthDay()) \(TimeUtils.getCurrentMonthName()) \(TimeUtils.getYearAsInt())")
           case "what is the time":
 //            setVerbatimAlg(priority: 3, sayThis: pl.getCurrentTimeStamp())
-            setSimpleAlg(sayThis: TimeUtils.getCurrentTimeStamp())
+            setSimpleAlg(TimeUtils.getCurrentTimeStamp())
             break
           case "which day is it":
-            setSimpleAlg(sayThis: TimeUtils.getDayOfDWeek())
+            setSimpleAlg(TimeUtils.getDayOfDWeek())
             break
           case "good morning","good afternoon","good evening","good night":
-            setSimpleAlg(sayThis: TimeUtils.partOfDay())
+            setSimpleAlg(TimeUtils.partOfDay())
             break
           case "which month is it":
-            setSimpleAlg(sayThis: TimeUtils.getCurrentMonthName())
+            setSimpleAlg(TimeUtils.getCurrentMonthName())
             break
           case "which year is it":
-            setSimpleAlg(sayThis: "\(TimeUtils.getYearAsInt())")
+            setSimpleAlg("\(TimeUtils.getYearAsInt())")
             break
           case "what is your time zone":
-            setSimpleAlg(sayThis: TimeUtils.getLocal())
+            setSimpleAlg(TimeUtils.getLocal())
             break
           case "when is the first":
-            setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 1))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 1))
             break
           case "when is the second":
-            setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 2))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 2))
             break
           case "when is the third":
-            setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 3))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 3))
             break
         case "when is the fourth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 4))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 4))
           break
         case "when is the fifth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 5))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 5))
           break
         case "when is the sixth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 6))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 6))
           break
         case "when is the seventh":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 7))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 7))
           break
         case "when is the eighth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 8))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 8))
           break
         case "when is the ninth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 9))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 9))
           break
         case "when is the tenth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 10))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 10))
           break
         case "when is the eleventh":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 11))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 11))
           break
         case "when is the twelfth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 12))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 12))
           break
         case "when is the thirteenth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 13))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 13))
           break
         case "when is the fourteenth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 14))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 14))
           break
         case "when is the fifteenth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 15))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 15))
           break
         case "when is the sixteenth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 16))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 16))
           break
         case "when is the seventeenth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 17))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 17))
           break
         case "when is the eighteenth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 18))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 18))
           break
         case "when is the nineteenth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 19))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 19))
           break
         case "when is the twentieth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 20))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 20))
           break
         case "when is the twenty first":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 21))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 21))
           break
         case "when is the twenty second":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 22))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 22))
           break
         case "when is the twenty third":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 23))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 23))
           break
         case "when is the twenty fourth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 24))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 24))
           break
         case "when is the twenty fifth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 25))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 25))
           break
         case "when is the twenty sixth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 26))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 26))
           break
         case "when is the twenty seventh":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 27))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 27))
           break
         case "when is the twenty eighth":
-          setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 28))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 28))
           break
         case "when is the twenty ninth":
-            setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 29) == "" ? "never":TimeUtils.nxtDayOnDate(dayOfMonth: 29))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 29) == "" ? "never":TimeUtils.nxtDayOnDate(dayOfMonth: 29))
           break
         case "when is the thirtieth":
-            setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 30) == "" ? "never":TimeUtils.nxtDayOnDate(dayOfMonth: 30))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 30) == "" ? "never":TimeUtils.nxtDayOnDate(dayOfMonth: 30))
           break
         case "when is the thirty first":
-            setSimpleAlg(sayThis: TimeUtils.nxtDayOnDate(dayOfMonth: 31) == "" ? "never":TimeUtils.nxtDayOnDate(dayOfMonth: 31))
+            setSimpleAlg(TimeUtils.nxtDayOnDate(dayOfMonth: 31) == "" ? "never":TimeUtils.nxtDayOnDate(dayOfMonth: 31))
           break
           case "incantation 0":
             // cancel running algorithm entirely at any alg part point
-            super.setVerbatimAlg(priority: 4, sayThis: "fly","bless of magic caster","infinity wall", "magic ward holy","life essence")
+            super.setVerbatimAlg(4, "fly","bless of magic caster","infinity wall", "magic ward holy","life essence")
             break
         default:
             return
         }
     }
-    override func skillNotes(param: String) -> String {
+    override func skillNotes(_ param: String) -> String {
         if param == "notes" {
             return "gets time date or misc"
         } else if param == "triggers" {
@@ -157,11 +157,11 @@ class DiMagic8Ball: Skill {
         skillToggler.commands.input(in1: "repeat")
     }
     
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         // toggle the skill off/on
         if skillToggler.engageCommand(ear: ear) {
             isActive = !isActive
-            setSimpleAlg(sayThis: isActive ? "skill activated" : "skill inactivated")
+            setSimpleAlg(isActive ? "skill activated" : "skill inactivated")
             return
         }
         
@@ -170,10 +170,10 @@ class DiMagic8Ball: Skill {
         }
         // skill logic:
         if magic8Ball.engage(ear) {
-            setSimpleAlg(sayThis: magic8Ball.reply())
+            setSimpleAlg(magic8Ball.reply())
         }
     }
-    override func skillNotes(param: String) -> String {
+    override func skillNotes(_ param: String) -> String {
         if param == "notes" {
             return "magic 8 ball"
         } else if param == "triggers" {
@@ -194,9 +194,9 @@ class DiCron:Skill{
         self.cron = cron
         return self
     }
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         if cron.trigger(){
-            setSimpleAlg(sayThis: sound)
+            setSimpleAlg(sound)
         }
     }
 }
@@ -233,7 +233,7 @@ class DIBlabber: Skill {
         mode.setToZero()
     }
     
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         // skill toggle:
         if skillToggler.engageCommand(ear: ear) {
             isActive = !isActive
@@ -244,7 +244,7 @@ class DIBlabber: Skill {
         // chat-bot mode switch mode
         if modeSwitch.engageCommand(ear: ear) {
             mode.cycleCount()
-            setSimpleAlg(sayThis: talkMode())
+            setSimpleAlg(talkMode())
             return
         }
         
@@ -261,7 +261,7 @@ class DIBlabber: Skill {
     private func mode0(_ ear: String) {
         if !kokoro!.toHeart["diblabber", default: ""].isEmpty {
             kokoro!.toHeart["diblabber"] = ""
-            setSimpleAlg(sayThis: chatbot1.forceRespond())
+            setSimpleAlg(chatbot1.forceRespond())
             return
         }
         NPCUtilization(chatbot1, ear)
@@ -271,12 +271,12 @@ class DIBlabber: Skill {
         // auto engage
         if autoEngage.strContainsResponse(ear: ear) {
             tg.openGate()
-            setSimpleAlg(sayThis: "auto NPC mode engaged")
+            setSimpleAlg("auto NPC mode engaged")
             return
         }
         if shutUp.strContainsResponse(ear:ear) {
             tg.closeGate()
-            setSimpleAlg(sayThis:  "auto NPC mode disengaged")
+            setSimpleAlg("auto NPC mode disengaged")
             return
         }
         if tg.isOpen() {
@@ -286,7 +286,7 @@ class DIBlabber: Skill {
             }
             let result = chatbot2.respondPlus(plus: plus)
             if !result.isEmpty {
-                setSimpleAlg(sayThis: result)
+                setSimpleAlg(result)
                 return
             }
         }
@@ -325,14 +325,14 @@ class DIBlabber: Skill {
         if engage.engageCommand(ear: ear) {
             result = npc.respond()
             if !result.isEmpty {
-                setSimpleAlg(sayThis: result)
+                setSimpleAlg(result)
                 return
             }
         }
         // str engage
         result = npc.strRespond(ear: ear)
         if !result.isEmpty {
-            setSimpleAlg(sayThis: result)
+            setSimpleAlg(result)
         }
         // forced learn (say n)
         if !npc.learn(ear: ear) {
@@ -366,7 +366,7 @@ class DiEngager: Skill {
         self.skillToEngage = skillToEngage
     }
     
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         if TimeUtils.partOfDay() == "night" {
             return
         }
@@ -411,7 +411,7 @@ class DiBurper: Skill {
         self.burps = burps
     }
     
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         if TimeUtils.partOfDay() == "night" {
             return
         }
@@ -429,7 +429,7 @@ class DiBurper: Skill {
         if burpMinutes.contains(nowMinutes) {
             // snippet of code : remove item from array list
             burpMinutes.removeAll {value in return value == nowMinutes}
-            setSimpleAlg(sayThis: burps.getAResponse())
+            setSimpleAlg(burps.getAResponse())
         }
     }
 }
@@ -438,10 +438,10 @@ class DiSayer: Skill {
     var cmdBreaker = AXCmdBreaker(conjuration: "say")
     var command = ""
 
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         command = cmdBreaker.extractCmdParam(s1: ear)
         if !command.isEmpty {
-            setSimpleAlg(sayThis: command)
+            setSimpleAlg(command)
             command = ""
         }
     }
@@ -459,13 +459,13 @@ class DiSmoothie0: Skill {
         cmd.commands.input(in1: "no")
     }
 
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         if cmd.engageCommand(ear: ear) {
-            setSimpleAlg(sayThis: "\(draw.draw()) and \(draw.draw())")
+            setSimpleAlg("\(draw.draw()) and \(draw.draw())")
             draw.reset()
         }
     }
-    override func skillNotes(param: String) -> String {
+    override func skillNotes(_ param: String) -> String {
         if param == "notes" {
             return "smoothie recipe recommender"
         } else if param == "triggers" {
@@ -488,13 +488,13 @@ class DiSmoothie1: Skill {
         cmd.commands.input(in1: "no")
     }
 
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         if cmd.engageCommand(ear: ear) {
-            setSimpleAlg(sayThis: "use \(base.getAResponse()) as a base than add \(thickeners.draw()) and \(thickeners.draw())")
+            setSimpleAlg("use \(base.getAResponse()) as a base than add \(thickeners.draw()) and \(thickeners.draw())")
             thickeners.reset()
         }
     }
-    override func skillNotes(param: String) -> String {
+    override func skillNotes(_ param: String) -> String {
         if param == "notes" {
             return "thick smoothie recipe recommender"
         } else if param == "triggers" {
@@ -506,10 +506,10 @@ class DiSmoothie1: Skill {
 class DiJumbler: Skill{
     private var cmdBreaker = AXCmdBreaker(conjuration: "jumble the name")
         private var temp = ""
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         temp = cmdBreaker.extractCmdParam(s1: ear)
         if temp.isEmpty {return}
-        setSimpleAlg(sayThis: jumbleString(input: temp))
+        setSimpleAlg(jumbleString(input: temp))
         temp = ""
     }
     func jumbleString(input: String) -> String {
@@ -535,16 +535,16 @@ class SkillBranch: Skill {
         ml = AXLearnability(tolerance: tolerance)
     }
 
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         // conjuration alg morph
         if let skillIndex = skillRef[ear] {
             skillHub.setActiveSkillWithMood(skillIndex)
-            setSimpleAlg(sayThis: "hmm")
+            setSimpleAlg("hmm")
         }
         // machine learning alg morph
         if ml.mutateAlg(input: ear) {
             skillHub.cycleActiveSkill()
-            setSimpleAlg(sayThis: "hmm")
+            setSimpleAlg("hmm")
         }
         // alg engage
         if let a1 = skillHub.dispenseAlgorithm(ear: ear, skin: skin, eye: eye) {
@@ -570,12 +570,12 @@ class SkillBranch: Skill {
     // while alg is pending, cause alg mutation ignoring learnability tolerance:
     func addDefconLV5(_ defcon5: String){ml.defcon5.insert(defcon5)}
 
-    override func setKokoro(kokoro: Kokoro) {
-        super.setKokoro(kokoro: kokoro)
+    override func setKokoro(_ kokoro: Kokoro) {
+        super.setKokoro(kokoro)
         skillHub.setKokoro(kokoro)
     }
-    override func skillNotes(param: String) -> String {
-        return self.skillHub.activeSkillRef().skillNotes(param: param)
+    override func skillNotes(_ param: String) -> String {
+        return self.skillHub.activeSkillRef().skillNotes(param)
     }
 }
 class SkillBranch1Liner: SkillBranch {
@@ -638,28 +638,28 @@ class DiAware: Skill {
         super.init()
     }
 
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         switch self._ggFunnel.funnel(ear) {
         case "what can you do":
             if self.skillDex == nil {
                 self.skillDex = UniqueRandomGenerator(n1: self.chobit.getSkillList().count)
             }
             self.skill_for_info = self.skillDex!.getUniqueRandom()
-            self.setSimpleAlg(sayThis: String(describing: type(of: self.chobit.dClasses[self.skill_for_info])))
+            self.setSimpleAlg(String(describing: type(of: self.chobit.dClasses[self.skill_for_info])))
         case "skill triggers":
-            self.setSimpleAlg(sayThis: self.chobit.dClasses[self.skill_for_info].skillNotes(param: "triggers"))
+            self.setSimpleAlg(self.chobit.dClasses[self.skill_for_info].skillNotes("triggers"))
         case "what is your name":
-            self.setSimpleAlg(sayThis: self.name)
+            self.setSimpleAlg(self.name)
         case "name summoner":
-            self.setSimpleAlg(sayThis: self.summoner)
+            self.setSimpleAlg(self.summoner)
         case "how do you feel":
             self.kokoro!.toHeart["last_ap"] = self.chobit.getSoulEmotion()
         case self.name:
-            self.setSimpleAlg(sayThis: self.replies.getAResponse())
+            self.setSimpleAlg(self.replies.getAResponse())
         case "test":
-            self.setSimpleAlg(sayThis: self.replies.getAResponse())
+            self.setSimpleAlg(self.replies.getAResponse())
         case self._call:
-            self.setSimpleAlg(sayThis: self.replies.getAResponse())
+            self.setSimpleAlg(self.replies.getAResponse())
         default:
             break
         }
@@ -674,7 +674,7 @@ class DiBicameral: Skill {
      */
     public var msgCol:TimedMessages = TimedMessages()
 
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         msgCol.tick()
         if kokoro!.toHeart["dibicameral"] != "null" {
             kokoro!.toHeart["dibicameral"] = "null"
@@ -682,14 +682,14 @@ class DiBicameral: Skill {
         if msgCol.getMsg() {
             let temp = msgCol.getLastMSG()
             if !temp.contains("#") {
-                setSimpleAlg(sayThis: temp)
+                setSimpleAlg(temp)
             } else {
                 kokoro!.toHeart["dibicameral"] = temp.replacingOccurrences(of: "#", with: "")
             }
         }
     }
-    override func setKokoro(kokoro: Kokoro) {
-        super.setKokoro(kokoro: kokoro)
+    override func setKokoro(_ kokoro: Kokoro) {
+        super.setKokoro(kokoro)
         kokoro.toHeart["dibicameral"] = "null"
     }
 }
@@ -701,15 +701,15 @@ class DiSkillBundle: Skill {
         return tempDict
     }()
 
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         if let a1 = axSkillBundle.dispenseAlgorithm(ear: ear, skin: skin, eye: eye) {
             self.outAlg = a1.getAlg()
             self.outpAlgPriority = a1.getPriority()
         }
     }
 
-    override func setKokoro(kokoro: Kokoro) {
-        super.setKokoro(kokoro: kokoro)
+    override func setKokoro(_ kokoro: Kokoro) {
+        super.setKokoro(kokoro)
         axSkillBundle.setKokoro(kokoro)
     }
 
@@ -723,7 +723,7 @@ class DiSkillBundle: Skill {
     func addSkill(skill: Skill) {
         axSkillBundle.addSkill(skill)
         for _ in 0..<10 {
-            notes["triggers"]!.addResponse("grind \(skill.skillNotes(param: "triggers"))")
+            notes["triggers"]!.addResponse("grind \(skill.skillNotes("triggers"))")
         }
     }
 
@@ -731,7 +731,7 @@ class DiSkillBundle: Skill {
         notes["notes"] = UniqueResponder(replies: "a bundle of several skills")
     }
 
-    override func skillNotes(param: String) -> String {
+    override func skillNotes(_ param: String) -> String {
         if let response = notes[param]?.getAResponse() {
             return response
         }
@@ -750,19 +750,19 @@ class GamiPlus: Skill {
         self.gain = gain
     }
 
-    override func input(ear: String, skin: String, eye: String) {
-        skill.input(ear: ear, skin: skin, eye: eye)
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
+        skill.input(ear, skin, eye)
     }
 
-    override func output(noiron: Neuron) {
+    override func output(_ noiron: Neuron) {
         if skill.pendingAlgorithm() {
             axGamification.incrementBy(amount: gain)
         }
-        skill.output(noiron: noiron)
+        skill.output(noiron)
     }
 
-    override func setKokoro(kokoro: Kokoro) {
-        skill.setKokoro(kokoro: kokoro)
+    override func setKokoro(_ kokoro: Kokoro) {
+        skill.setKokoro(kokoro)
     }
 }
 
@@ -777,21 +777,21 @@ class GamiMinus: Skill {
         self.cost = cost
     }
 
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         if axGamification.surplus(cost: cost) {
-            skill.input(ear: ear, skin: skin, eye: eye)
+            skill.input(ear, skin, eye)
         }
     }
 
-    override func output(noiron: Neuron) {
+    override func output(_ noiron: Neuron) {
         if skill.pendingAlgorithm() {
             axGamification.reward(cost: cost)
-            skill.output(noiron: noiron)
+            skill.output(noiron)
         }
     }
 
-    override func setKokoro(kokoro: Kokoro) {
-        skill.setKokoro(kokoro: kokoro)
+    override func setKokoro(_ kokoro: Kokoro) {
+        skill.setKokoro(kokoro)
     }
 }
 
@@ -815,14 +815,14 @@ class DiGamificationSkillBundle: DiSkillBundle {
     func addGrindSkill(_ skill: Skill) {
         axSkillBundle.addSkill(GamiPlus(skill: skill, axGamification: axGamification, gain: gain))
         for _ in 0..<10 {
-            notes["triggers"]!.addResponse("grind \(skill.skillNotes(param: "triggers"))")
+            notes["triggers"]!.addResponse("grind \(skill.skillNotes("triggers"))")
         }
     }
 
     func addCostlySkill(_ skill: Skill) {
         axSkillBundle.addSkill(GamiMinus(skill: skill, axGamification: axGamification, cost: cost))
         for _ in 0..<10 {
-            notes["triggers"]!.addResponse("grind \(skill.skillNotes(param: "triggers"))")
+            notes["triggers"]!.addResponse("grind \(skill.skillNotes("triggers"))")
         }
     }
 
@@ -848,14 +848,14 @@ class DiGamificationScouter: Skill {
         self.lim = lim
     }
 
-    override func input(ear: String, skin: String, eye: String) {
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
         if ear != "how are you" {
             return
         }
         if axGamification.getCounter() > lim {
-            setSimpleAlg(sayThis: yesMood.getAResponse())
+            setSimpleAlg(yesMood.getAResponse())
         } else {
-            setSimpleAlg(sayThis: noMood.getAResponse())
+            setSimpleAlg(noMood.getAResponse())
         }
     }
 }

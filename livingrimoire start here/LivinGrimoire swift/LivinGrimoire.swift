@@ -16,23 +16,25 @@ open class AbsDictionaryDB{
         return "null"
     }
 }
-open class AlgPart{
-    var algKillSwitch:Bool = false
-    func action(ear: String, skin: String, eye: String) -> String{
+
+open class AlgPart {
+    var algKillSwitch: Bool = false
+    
+    func action(_ ear: String, _ skin: String, _ eye: String) -> String {
         return ""
     }
-    func completed() -> Bool{
-        //Has finished ?
+    
+    func completed() -> Bool {
+        // Has finished?
         return false
     }
-    func myName() -> String{
+    
+    func myName() -> String {
         // Returns the class name
         return String(describing: type(of: self))
-                      }
-}/*
- it speaks something x times
- a most basic skill.
- also fun to make the chobit say what you want */
+    }
+}
+
 class APsay:AlgPart{
     var at:Int=10
     var param:String="hmm"
@@ -41,7 +43,7 @@ class APsay:AlgPart{
         if repetitions<at {self.at=repetitions}
         self.param=param
     }
-    override func action(ear: String, skin: String, eye: String) -> String {
+    override func action(_ ear: String, _ skin: String, _ eye: String) -> String {
         var axnStr=""
         if self.at>0{
             if ear.lowercased() != self.param{
@@ -68,144 +70,197 @@ class APVerbatim: AlgPart {
         self.buffer = list1
     }
     
-    @inline(__always)
-    override func action(ear: String, skin: String, eye: String) -> String {
-        // Branchless O(1) dequeue
-        let result = headIndex < buffer.count ? buffer[headIndex] : ""
-        headIndex &+= 1  // Overflow-safe (unlikely but correct)
-        return result
+    override func action(_ ear: String, _ skin: String, _ eye: String) -> String {
+        guard headIndex < buffer.count else { return "" }
+        defer { headIndex += 1 }
+        return buffer[headIndex]
     }
     
-    @inline(__always)
     override func completed() -> Bool {
-        // Single branch (compiler optimizes this aggressively)
         headIndex >= buffer.count
     }
     
-    /// Optional: Manual memory cleanup for very large queues
     func compact() {
-        if headIndex > 1024 {  // Only reclaim memory after significant consumption
+        if headIndex > 1024 {
             buffer.removeFirst(headIndex)
             headIndex = 0
         }
     }
 }
 
-// a step by step plan to achieve a goal
-class Algorithm{
-    var algParts: Array<AlgPart> = [AlgPart]()
-    init(algParts: Array<AlgPart>) {
+// A step-by-step plan to achieve a goal
+class Algorithm {
+    private var algParts: [AlgPart]
+    
+    init(_ algParts: [AlgPart]) {
         self.algParts = algParts
     }
+    
     init(_ algParts: AlgPart...) {
         self.algParts = algParts
     }
+    
+    func getAlgParts() -> [AlgPart] {
+        return algParts
+    }
+    
     func getSize() -> Int {
         return algParts.count
     }
 }
-class Kokoro{
-    private var emot:String = ""
-    public var grimoireMemento:AbsDictionaryDB
-    var toHeart:[String:String] = [:]
-    init(absDictionaryDB: AbsDictionaryDB) {
+
+/* This class enables:
+   - Communication between skills
+   - Utilization of a database for skills
+   This class is a built-in attribute in skill objects.
+*/
+class Kokoro {
+    private var emot: String = ""
+    var grimoireMemento: AbsDictionaryDB
+    var toHeart: [String: String] = [:]
+    
+    init(_ absDictionaryDB: AbsDictionaryDB) {
         self.grimoireMemento = absDictionaryDB
     }
-    func getEmot()->String{
+    
+    func getEmot() -> String {
         return emot
     }
-    func setEmot(emot:String){
+    
+    func setEmot(_ emot: String) {
         self.emot = emot
     }
 }
-// used to transport algorithms to other classes
-class Neuron{
-    private var defcons:[Int:Array<Algorithm>] = [:]
+
+// Used to transport algorithms to other classes
+class Neuron {
+    private var defcons: [Int: [Algorithm]] = [:]
+    
     init() {
-        for i in 1...6{
-            defcons[i] = [Algorithm]()
+        for i in 1..<6 {
+            defcons[i] = []
         }
     }
-    func insertAlg(priority:Int, alg:Algorithm){
-        if priority>0 && priority < 6 {
-            if defcons[priority]!.count < 4{
-                defcons[priority]!.append(alg)
-            }
-        }
+    
+    func insertAlg(_ priority: Int, _ alg: Algorithm) {
+        guard (0 < priority) && (priority < 6) else { return }
+        guard var algs = defcons[priority], algs.count < 4 else { return }
+        algs.append(alg)
+        defcons[priority] = algs
     }
-    func getAlg(defcon:Int)->Algorithm?{
-        if defcons[defcon]!.count>0{
-            let temp:Algorithm = defcons[defcon]!.remove(at: 0)
-            return temp
-        }
-        return nil
+    
+    func getAlg(_ defcon: Int) -> Algorithm? {
+        guard var algs = defcons[defcon], !algs.isEmpty else { return nil }
+        let temp = algs.removeFirst()
+        defcons[defcon] = algs
+        return temp
     }
 }
-open class Skill{
-    private(set) var kokoro:Kokoro? = nil
-    var outAlg:Algorithm? = nil
-    var outpAlgPriority:Int = -1 // defcon 1->5
+
+// Skill: Base class for handling AI-driven skills
+open class Skill {
+    
+    var kokoro: Kokoro? = nil // Consciousness, enables interskill communication
+    var outAlg: Algorithm? = nil // Skill output algorithm
+    var outpAlgPriority: Int = -1 // Defcon 1->5
+    
+    fileprivate var skill_type: Int = 1 // 1: Regular, 2: Aware Skill, 3: Continuous Skill
+    fileprivate var skill_lobe: Int = 1 // 1: Logical, 2: Hardware, 3: Ear, 4: Skin, 5: Eye Chobits
+    
     init() {}
-    func input(ear:String, skin:String, eye:String){
-    }
-    func output(noiron:Neuron){
-        if let notNilAlg = self.outAlg{
-            noiron.insertAlg(priority: outpAlgPriority, alg: notNilAlg)
-            self.outpAlgPriority = -1
-            self.outAlg = nil
+    
+    // Skill triggers and algorithmic logic
+    func input(_ ear: String, _ skin: String, _ eye: String) {}
+    
+    // Extracts skill algorithm to run (if one exists)
+    func output(_ noiron: Neuron) {
+        if let alg = outAlg {
+            noiron.insertAlg(outpAlgPriority, alg)
+            outpAlgPriority = -1
+            outAlg = nil
         }
     }
-    func setKokoro(kokoro:Kokoro){
-        // use this for telepathic communication between different chobits objects
+    
+    func setKokoro(_ kokoro: Kokoro) {
+        // Use for telepathic communication between Chobits objects
         self.kokoro = kokoro
     }
-    // in skill algorithm building shortcut methods:
-    func setVerbatimAlgFromList(priority:Int,  sayThis: Array<String>) {
-        // build a simple output algorithm to speak string by string per think cycle
-        // uses list param
+    
+    // Algorithm building shortcut methods
+    func setVerbatimAlg(_ priority: Int, _ sayThis: String...) {
+        // Build a simple output algorithm to speak string-by-string per think cycle
         self.outAlg = Algorithm(APVerbatim(sayThis))
-        self.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
+        self.outpAlgPriority = priority // 1->5, 1 is the highest priority
     }
-    func setVerbatimAlg(priority:Int,  sayThis:String...) {
-        // build a simple output algorithm to speak string by string per think cycle
-        // uses varargs param
+    
+    func setSimpleAlg(_ sayThis: String...) {
+        // Similar to setVerbatimAlg, defaulting to priority 4
         self.outAlg = Algorithm(APVerbatim(sayThis))
-        self.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
+        self.outpAlgPriority = 4
     }
-    func setSimpleAlg(sayThis:String...) {
-        // based on the setVerbatimAlg method
-        // build a simple output algorithm to speak string by string per think cycle
-        // uses varargs param
+    
+    func setVerbatimAlgFromList(_ priority: Int, _ sayThis: [String]) {
+        // Build a simple output algorithm using a list parameter
         self.outAlg = Algorithm(APVerbatim(sayThis))
-        self.outpAlgPriority = 4 // Default priority of 4
+        self.outpAlgPriority = priority
     }
-    func algPartsFusion(priority:Int, algParts: AlgPart...) {
-        self.outAlg = Algorithm(algParts: algParts)
-        self.outpAlgPriority = priority // 1->5, 1 is the highest algorithm priority
+    
+    func algPartsFusion(_ priority: Int, _ algParts: AlgPart...) {
+        self.outAlg = Algorithm(algParts)
+        self.outpAlgPriority = priority
     }
+    
     func pendingAlgorithm() -> Bool {
+        // Is an algorithm pending?
         return outAlg != nil
     }
     
-    func skillNotes(param: String) -> String {
+    // Getter and Setter for skill_type
+    func getSkillType() -> Int {
+        return skill_type
+    }
+    
+    func setSkillType(_ skill_type: Int) {
+        // 1: Regular, 2: Aware Skill, 3: Continuous Skill
+        if (1...3).contains(skill_type) {
+            self.skill_type = skill_type
+        }
+    }
+    
+    // Getter and Setter for skill_lobe
+    func getSkillLobe() -> Int {
+        return skill_lobe
+    }
+    
+    func setSkillLobe(_ skill_lobe: Int) {
+        // 1: Logical, 2: Hardware, 3: Ear, 4: Skin, 5: Eye Chobits
+        if (1...5).contains(skill_lobe) {
+            self.skill_lobe = skill_lobe
+        }
+    }
+    
+    func skillNotes(_ param: String) -> String {
         return "notes unknown"
     }
 }
-class DiHelloWorld:Skill{
-    // hello world skill for testing purposes
-    override func input(ear: String, skin: String, eye: String) {
-        switch (ear)  {
-          case "hello":
-            super.setVerbatimAlg(priority: 4, sayThis: "hello world")
-          case "incantation 0":
-            // cancel running algorithm entirely at any alg part point
-            super.setVerbatimAlg(priority: 4, sayThis: "fly","bless of magic caster","infinity wall", "magic ward holy","life essence")
 
+
+class DiHelloWorld: Skill {
+    // hello world skill for testing purposes
+    override init() {
+        super.init()
+    }
+
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
+        switch ear {
+        case "hello":
+            super.setSimpleAlg("hello world") // 1->5 1 is the highest algorithm priority
         default:
-            return
+            break
         }
     }
-    override func skillNotes(param: String) -> String {
+
+    override func skillNotes(_ param: String) -> String {
         if param == "notes" {
             return "plain hello world skill"
         } else if param == "triggers" {
@@ -214,297 +269,412 @@ class DiHelloWorld:Skill{
         return "note unavailable"
     }
 }
-class Cerabellum{
-    // runs an algorithm
-    private var fin:Int = 0
-    private(set) var at:Int = 0
-    private var incrementAt:Bool = false
-    var alg:Algorithm?
-    private var isActive1:Bool = false
-    private(set) var emot:String = ""
+
+class Cerebellum {
+    // Runs an algorithm
+    private var fin: Int = 0
+    private var at: Int = 0
+    private var incrementAt: Bool = false
+    
+    var alg: Algorithm?
+    private var isActive: Bool = false
+    private var emot: String = ""
+    
     func advanceInAlg() {
         if incrementAt {
             incrementAt = false
             at += 1
             if at == fin {
-                isActive1 = false
+                isActive = false
             }
         }
     }
-    func setAlgorithm(algorithm:Algorithm) {
-        if(!isActive1) && (!algorithm.algParts.isEmpty){
+    
+    func getAt() -> Int {
+        return at
+    }
+    
+    func getEmot() -> String {
+        return emot
+    }
+    
+    func setAlgorithm(_ algorithm: Algorithm) {
+        if !isActive && !algorithm.getAlgParts().isEmpty {
             self.alg = algorithm
-            at = 0;fin = algorithm.getSize();isActive1 = true
-            emot = alg!.algParts[at].myName()
+            self.at = 0
+            self.fin = algorithm.getSize()
+            self.isActive = true
+            self.emot = algorithm.getAlgParts()[at].myName()
         }
     }
-    func isActive() -> Bool {
-        return isActive1
+    
+    func getIsActive() -> Bool {
+        return isActive
     }
-    func act(ear: String, skin: String, eye: String) -> String {
-        if !isActive1 {return ""}
-        var axnStr:String = ""
-        if at < fin {
-        let algPart:AlgPart = alg!.algParts[at]
-            axnStr = algPart.action(ear: ear, skin: skin, eye: eye)
-            self.emot = algPart.myName()
-            if algPart.completed(){
+    
+    func act(_ ear: String, _ skin: String, _ eye: String) -> String {
+        var axnStr = ""
+        guard isActive else { return axnStr }
+        
+        if at < fin, let currentAlg = alg {
+            axnStr = currentAlg.getAlgParts()[at].action(ear, skin, eye)
+            self.emot = currentAlg.getAlgParts()[at].myName()
+            
+            if currentAlg.getAlgParts()[at].completed() {
                 incrementAt = true
             }
         }
         return axnStr
     }
-    func deActivation() {
-        self.isActive1 = self.isActive1 && !alg!.algParts[at].algKillSwitch
+    
+    func deactivate() {
+        if isActive, let currentAlg = alg {
+            isActive = !currentAlg.getAlgParts()[at].algKillSwitch
+        }
     }
 }
+
 class Fusion {
-    private var emot:String = "" // emotion represented by the active alg part (Mutatable)
-    private var result:String = ""
-    private var CeraArr = [Cerabellum(),Cerabellum(),Cerabellum(),Cerabellum(),Cerabellum()]
+    private var emot: String = ""
+    private var result: String = ""
+    private var ceraArr: [Cerebellum] = Array(repeating: Cerebellum(), count: 5)
+    
+    public init() {
+        for i in 0..<5 {
+            ceraArr[i] = Cerebellum()
+        }
+    }
+    
     func getEmot() -> String {
         return emot
     }
-    func loadAlgs(neuron:Neuron) {
-        for i in 1...5{
-            if !CeraArr[i-1].isActive(){
-                if let temp:Algorithm = neuron.getAlg(defcon: i){
-                    CeraArr[i-1].setAlgorithm(algorithm: temp)
+    
+    func loadAlgs(_ neuron: Neuron) {
+        for i in 1...5 {
+            if !ceraArr[i-1].getIsActive() {
+                if let temp = neuron.getAlg(i) {
+                    ceraArr[i-1].setAlgorithm(temp)
                 }
             }
         }
     }
-    func runAlgs(ear: String, skin: String, eye: String) -> String {
+    
+    func runAlgs(_ ear: String, _ skin: String, _ eye: String) -> String {
         result = ""
-        for i in 0...4 {
-            if !CeraArr[i].isActive(){continue}
-            result = CeraArr[i].act(ear: ear, skin: skin, eye: eye)
-            CeraArr[i].advanceInAlg()
-            emot = CeraArr[i].emot
-            CeraArr[i].deActivation() // deactivation if Mutatable.algkillswitch = true
+        for i in 0..<5 {
+            guard ceraArr[i].getIsActive() else { continue }
+            
+            result = ceraArr[i].act(ear, skin, eye)
+            ceraArr[i].advanceInAlg()
+            emot = ceraArr[i].getEmot()
+            ceraArr[i].deactivate() // deactivation if Mutatable.algkillswitch = true
             return result
         }
         emot = ""
         return result
     }
 }
-class Chobits {
-    var dClasses: [Skill] = []
-    var fusion: Fusion
-    var noiron: Neuron
-    var kokoro: Kokoro = Kokoro(absDictionaryDB: AbsDictionaryDB()) // consciousness
+
+// The Chobits class represents an AI entity managing skills and algorithms
+open class Chobits {
+    
+    public var dClasses: [Skill] = [] // Regular skills
+    fileprivate var fusion: Fusion
+    fileprivate var neuron: Neuron
+    fileprivate var kokoro: Kokoro // consciousness
+    
     private var isThinking: Bool = false
     private var awareSkills: [Skill] = []
-    var algTriggered: Bool = false
-    var ctsSkills: [Skill] = []  // continuous skills
+    public var algTriggered: Bool = false
+    public var cts_skills: [Skill] = [] // Continuous skills
     
-    init() {
+    public init() {
+        // Constructor
         self.fusion = Fusion()
-        self.noiron = Neuron()
+        self.neuron = Neuron()
+        self.kokoro = Kokoro(AbsDictionaryDB()) // consciousness initialization
     }
     
-    func setDataBase(absDictionaryDB: AbsDictionaryDB) {
+    func setDatabase(_ absDictionaryDB: AbsDictionaryDB) {
         self.kokoro.grimoireMemento = absDictionaryDB
     }
     
-    @discardableResult
-    func addSkill(skill: Skill) -> Chobits {
-        // add a skill (builder design patterned func)
-        if self.isThinking {
-            return self
-        }
-        skill.setKokoro(kokoro: self.kokoro)
-        self.dClasses.append(skill)
-        return self
+    func addRegularSkill(_ skill: Skill) {
+        // Add a skill (builder design patterned func)
+        guard !isThinking else { return }
+        skill.setSkillType(1)
+        skill.setKokoro(kokoro)
+        dClasses.append(skill)
     }
     
-    func addSkillAware(skill: Skill){
-        // add a skill with Chobit Object in their constructor
-        skill.setKokoro(kokoro: self.kokoro)
-        self.awareSkills.append(skill)
+    func addSkillAware(_ skill: Skill) {
+        // Add a skill with Chobit Object in their constructor
+        skill.setSkillType(2)
+        skill.setKokoro(kokoro)
+        awareSkills.append(skill)
     }
     
-    func clearSkills() {
-        // remove all skills
-        if self.isThinking {
-            return
-        }
-        self.dClasses.removeAll()
+    func addContinuousSkill(_ skill: Skill) {
+        // Add a skill (builder design patterned func)
+        guard !isThinking else { return }
+        skill.setSkillType(3)
+        skill.setKokoro(kokoro)
+        cts_skills.append(skill)
     }
     
-    func addSkills(skills: Skill...) {
-        if self.isThinking {
-            return
-        }
+    func clearRegularSkills() {
+        // Remove all regular skills
+        guard !isThinking else { return }
+        dClasses.removeAll()
+    }
+    
+    func clearContinuousSkills() {
+        // Remove all continuous skills
+        guard !isThinking else { return }
+        cts_skills.removeAll()
+    }
+    
+    func clearAllSkills() {
+        clearRegularSkills()
+        clearContinuousSkills()
+    }
+    
+    func addSkills(_ skills: Skill...) {
         for skill in skills {
-            skill.setKokoro(kokoro: self.kokoro)
-            self.dClasses.append(skill)
+            addSkill(skill)
         }
     }
     
-    func removeSkill(skill: Skill) {
-        if self.isThinking {
-            return
-        }
-        if let index = self.dClasses.firstIndex(where: { $0 === skill }) {
-            self.dClasses.remove(at: index)
+    func removeLogicalSkill(_ skill: Skill) {
+        guard !isThinking else { return }
+        dClasses.removeAll { $0 === skill }
+    }
+    
+    func removeContinuousSkill(_ skill: Skill) {
+        guard !isThinking else { return }
+        cts_skills.removeAll { $0 === skill }
+    }
+    
+    func removeSkill(_ skill: Skill) {
+        /* Remove any type of skill (except aware skills) */
+        if skill.getSkillType() == 1 {
+            removeLogicalSkill(skill)
+        } else {
+            removeContinuousSkill(skill)
         }
     }
     
-    func containsSkill(skill: Skill) -> Bool {
-        return self.dClasses.contains(where: { $0 === skill })
+    func containsSkill(_ skill: Skill) -> Bool {
+        return dClasses.contains { $0 === skill }
     }
+    
     @discardableResult
-    func think(ear: String, skin: String, eye: String) -> String {
+    func think(_ ear: String, _ skin: String, _ eye: String) -> String {
         algTriggered = false
-        self.isThinking = true
-        for dCls in self.dClasses {
-            inOut(dClass: dCls, ear: ear, skin: skin, eye: eye)
+        isThinking = true // Regular skills loop
+        
+        for dCls in dClasses {
+            inOut(dCls, ear, skin, eye)
         }
-        self.isThinking = false
-        for dCls2 in self.awareSkills {
-            inOut(dClass: dCls2, ear: ear, skin: skin, eye: eye)
-        }
-        isThinking = true
-        for dCls3 in ctsSkills {
-            if algTriggered { break }
-            inOut(dClass: dCls3, ear: ear, skin: skin, eye: eye)
-        }
+        
         isThinking = false
-        fusion.loadAlgs(neuron: noiron)
-        return fusion.runAlgs(ear: ear, skin: skin, eye: eye)
+        
+        for dCls2 in awareSkills {
+            inOut(dCls2, ear, skin, eye)
+        }
+        
+        isThinking = true
+        
+        for dCls2 in cts_skills {
+            if algTriggered { break }
+            inOut(dCls2, ear, skin, eye)
+        }
+        
+        isThinking = false
+        
+        fusion.loadAlgs(neuron)
+        return fusion.runAlgs(ear, skin, eye)
     }
     
     func getSoulEmotion() -> String {
+        // Get the last active AlgPart name
+        // The AP is an action, and it also represents an emotion
         return fusion.getEmot()
     }
     
-    private func inOut(dClass: Skill, ear: String, skin: String, eye: String) {
-        dClass.input(ear: ear, skin: skin, eye: eye)
-        if dClass.pendingAlgorithm() { algTriggered = true }
-        dClass.output(noiron: noiron)
+    func inOut(_ dClass: Skill, _ ear: String, _ skin: String, _ eye: String) {
+        dClass.input(ear, skin, eye) // Process input
+        
+        if dClass.pendingAlgorithm() {
+            algTriggered = true
+        }
+        
+        dClass.output(neuron)
     }
     
     func getKokoro() -> Kokoro {
+        // Several Chobits can use the same soul
+        // This enables telepathic communications between Chobits in the same project
         return kokoro
     }
     
-    func setKokoro(kokoro: Kokoro) {
+    func setKokoro(_ kokoro: Kokoro) {
+        // Use this for telepathic communication between different Chobits objects
         self.kokoro = kokoro
     }
     
-    func getFusion() -> Fusion {
-        return fusion
+    func getSkillList() -> [String] {
+        return dClasses.map { String(describing: type(of: $0)) }
     }
     
-    func getSkillList() -> [String] {
-        var result: [String] = []
-        for skill in self.dClasses {
-            result.append(String(describing: type(of: skill)))
+    func getFusedSkills() -> [Skill] {
+        /*
+         Returns a fusion list containing both dClasses (regular skills)
+         and cts_skills (continuous skills).
+         */
+        return dClasses + cts_skills
+    }
+    
+    func addSkill(_ skill: Skill) {
+        /*
+         Automatically adds a skill to the correct category based on its type.
+         No manual classification needed—just pass the skill and let the system handle it.
+         */
+        switch skill.getSkillType() {
+        case 1:  // Regular Skill
+            addRegularSkill(skill)
+        case 2:  // Aware Skill
+            addSkillAware(skill)
+        case 3:  // Continuous Skill
+            addContinuousSkill(skill)
+        default:
+            break
         }
-        return result
-    }
-    func addContinuousSkill(skill: Skill) {
-        if isThinking { return }
-        skill.setKokoro(kokoro: kokoro)
-        ctsSkills.append(skill)
-    }
-    func clearContinuousSkills() {
-        if isThinking { return }
-        ctsSkills.removeAll()
-    }
-    func removeContinuousSkill(skill: Skill) {
-        if isThinking { return }
-        ctsSkills.removeAll { $0 === skill }
     }
 }
 
-public class Brain {
-    var logicChobit = Chobits()
-    private var emotion = ""
-    private var logicChobitOutput = ""
-    var hardwareChobit = Chobits()
-    var ear = Chobits()
-    var skin = Chobits()
-    var eye = Chobits()
-    // ret active alg part representing emotion
-    public func getEmotion() -> String {
+// The Brain class represents an AI core managing multiple Chobits
+open class Brain {
+    
+    public var logicChobit: Chobits = Chobits()
+    private var emotion: String = ""
+    private var logicChobitOutput: String = ""
+    
+    public var hardwareChobit: Chobits = Chobits()
+    public var ear: Chobits = Chobits()
+    public var skin: Chobits = Chobits()
+    public var eye: Chobits = Chobits()
+    
+    // Returns active algorithm part representing emotion
+    func getEmotion() -> String {
         return emotion
     }
-    // ret feedback (last output)
-    public func getLogicChobitOutput() -> String {
+    
+    // Returns feedback (last output)
+    func getLogicChobitOutput() -> String {
         return logicChobitOutput
     }
-    // c'tor
-    public init() {
-        Brain.imprintSoul(kokoro: logicChobit.getKokoro(), args: hardwareChobit, ear, skin, eye)
+    
+    // Constructor
+    init() {
+        Brain.imprintSoul(logicChobit.getKokoro(), hardwareChobit, ear, skin, eye)
     }
-
-    static func imprintSoul(kokoro: Kokoro, args: Chobits...) {
+    
+    private static func imprintSoul(_ kokoro: Kokoro, _ args: Chobits...) {
         for arg in args {
-            arg.setKokoro(kokoro: kokoro)
+            arg.setKokoro(kokoro)
         }
     }
-    // live
-    public func doIt(ear: String, skin: String, eye: String) {
-        logicChobitOutput = logicChobit.think(ear: ear, skin: skin, eye: eye)
+    
+    // Live processing method
+    func doIt(_ ear: String, _ skin: String, _ eye: String) {
+        logicChobitOutput = logicChobit.think(ear, skin, eye)
         emotion = logicChobit.getSoulEmotion()
-        hardwareChobit.think(ear: logicChobitOutput, skin: skin, eye: eye)
+        hardwareChobit.think(logicChobitOutput, skin, eye)
     }
-    // add regular thinking(logical) skill
-    public func addLogicalSkill(skill: Skill) {
-        logicChobit.addSkill(skill: skill)
-    }
-    // add output skill
-    public func addHardwareSkill(skill: Skill) {
-        hardwareChobit.addSkill(skill: skill)
-    }
-
-    // add visual input skill
-    public func addEarSkill(skill: Skill) {
-        ear.addSkill(skill: skill)
-    }
-    // add sensor input skill
-    public func addSkinSkill(skill: Skill) {
-        skin.addSkill(skill: skill)
-    }
-    // add visual input skill
-    public func addEyeSkill(skill: Skill) {
-        eye.addSkill(skill: skill)
-    }
-
-    public func think(_ keyIn: String) {
-        if !keyIn.isEmpty {
-            // handles typed inputs(keyIn)
-            doIt(ear: keyIn, skin: "", eye: "")
-        } else {
-            // accounts for sensory inputs
-            doIt(ear: self.ear.think(ear: "", skin: "", eye: ""),
-                 skin: skin.think(ear: "", skin: "", eye: ""),
-                 eye: eye.think(ear: "", skin: "", eye: ""))
+    
+    func addSkill(_ skill: Skill) {
+        /*
+         Adds a skill to the correct Chobits based on its skill_lobe attribute.
+         Just pass the skill—the Brain handles where it belongs.
+         */
+        switch skill.getSkillLobe() {
+        case 1:  // Logical skill
+            logicChobit.addSkill(skill)
+        case 2:  // Hardware skill
+            hardwareChobit.addSkill(skill)
+        case 3:  // Ear skill
+            ear.addSkill(skill)
+        case 4:  // Skin skill
+            skin.addSkill(skill)
+        case 5:  // Eye skill
+            eye.addSkill(skill)
+        default:
+            break
         }
     }
-
-    public func think() {
-        doIt(ear: ear.think(ear: "", skin: "", eye: ""),
-             skin: skin.think(ear: "", skin: "", eye: ""),
-             eye: eye.think(ear: "", skin: "", eye: ""))
+    
+    func chained(_ skill: Skill) -> Brain {
+        // Chained add skill
+        addSkill(skill)
+        return self
+    }
+    
+    // Add logical processing skill
+    func addLogicalSkill(_ skill: Skill) { logicChobit.addRegularSkill(skill) }
+    
+    // Add hardware output skill
+    func addHardwareSkill(_ skill: Skill) { hardwareChobit.addRegularSkill(skill) }
+    
+    // Add audio (ear) input skill
+    func addEarSkill(_ skill: Skill) { ear.addRegularSkill(skill) }
+    
+    // Add sensor input skill
+    func addSkinSkill(_ skill: Skill) { skin.addRegularSkill(skill) }
+    
+    // Add visual input skill
+    func addEyeSkill(_ skill: Skill) { eye.addRegularSkill(skill) }
+    
+    func think(_ keyIn: String) {
+        if !keyIn.isEmpty {
+            // Handles typed inputs (keyIn)
+            doIt(keyIn, "", "")
+        } else {
+            // Accounts for sensory inputs
+            doIt(ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""))
+        }
+    }
+    
+    func think() {
+        // Accounts for sensory inputs only. Use this overload for tick events (where no typed inputs are expected)
+        doIt(ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""))
     }
 }
 
-class DiSysOut:Skill{
-    // hello world skill for testing purposes
-    override func input(ear: String, skin: String, eye: String) {
-        if(!ear.isEmpty && !ear.contains("#")){
+// DiSysOut: Continuous skill that prints ear input to the console
+class DiSysOut: Skill {
+    
+    override init() {
+        super.init()
+        setSkillType(3) // Continuous skill
+        setSkillLobe(2) // Hardware Chobit
+    }
+    
+    override func input(_ ear: String, _ skin: String, _ eye: String) {
+        if !ear.isEmpty && !ear.contains("#") {
             print(ear)
         }
     }
-    override func skillNotes(param: String) -> String {
-        if param == "notes" {
+    
+    override func skillNotes(_ param: String) -> String {
+        switch param {
+        case "notes":
             return "prints to console"
-        } else if param == "triggers" {
+        case "triggers":
             return "automatic for any input"
+        default:
+            return "note unavailable"
         }
-        return "note unavailable"
     }
 }
+
