@@ -158,9 +158,9 @@
         Public Overridable Sub Input(ear As String, skin As String, eye As String)
         End Sub
 
-        Public Overridable Sub Output(noiron As Neuron)
+        Public Overridable Sub Output(neuron As Neuron)
             If outAlg IsNot Nothing Then
-                noiron.InsertAlg(Me.outpAlgPriority, outAlg)
+                neuron.InsertAlg(Me.outpAlgPriority, outAlg)
                 outpAlgPriority = -1
                 outAlg = Nothing
             End If

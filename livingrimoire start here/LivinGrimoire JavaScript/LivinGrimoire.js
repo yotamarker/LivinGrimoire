@@ -141,9 +141,9 @@ class Skill {
         // Virtual method to be overridden by subclasses
     }
 
-    output(noiron) {
+    output(neuron) {
         if (this.outAlg !== null) {
-            noiron.insertAlg(this.outpAlgPriority, this.outAlg);
+            neuron.insertAlg(this.outpAlgPriority, this.outAlg);
             this.outpAlgPriority = -1;
             this.outAlg = null;
         }

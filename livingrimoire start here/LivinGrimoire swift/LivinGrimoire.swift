@@ -173,9 +173,9 @@ open class Skill {
     func input(_ ear: String, _ skin: String, _ eye: String) {}
     
     // Extracts skill algorithm to run (if one exists)
-    func output(_ noiron: Neuron) {
+    func output(_ neuron: Neuron) {
         if let alg = outAlg {
-            noiron.insertAlg(outpAlgPriority, alg)
+            neuron.insertAlg(outpAlgPriority, alg)
             outpAlgPriority = -1
             outAlg = nil
         }

@@ -121,9 +121,9 @@ class Skill:
         pass
 
     # extraction of skill algorithm to run (if there is one)
-    def output(self, noiron: Neuron):
+    def output(self, neuron: Neuron):
         if self._outAlg is not None:
-            noiron.insertAlg(self._outpAlgPriority, self._outAlg)
+            neuron.insertAlg(self._outpAlgPriority, self._outAlg)
             self._outpAlgPriority = -1
             self._outAlg = None
 

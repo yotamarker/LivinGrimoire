@@ -16,9 +16,9 @@ public class Skill {
     public void input(String ear, String skin, String eye) {
     }
     // extraction of skill algorithm to run (if there is one)
-    public void output(Neuron noiron) {
+    public void output(Neuron neuron) {
         if (outAlg != null) {
-            noiron.insertAlg(this.outpAlgPriority,outAlg);
+            neuron.insertAlg(this.outpAlgPriority,outAlg);
             outpAlgPriority = -1;
             outAlg = null;
         }

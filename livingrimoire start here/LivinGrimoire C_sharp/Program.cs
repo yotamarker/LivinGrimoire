@@ -1,4 +1,4 @@
 ﻿Brain brain = new Brain();
-brain.chained(new DiHelloWorld()).chained(new DiPrinter());
-brain.think("hello");
+brain.Chained(new DiHelloWorld()).Chained(new DiPrinter());
+brain.Think("hello");
 Console.ReadLine();

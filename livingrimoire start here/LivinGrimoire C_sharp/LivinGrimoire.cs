@@ -193,11 +193,11 @@ public class Skill
     {
     }
 
-    public virtual void Output(Neuron noiron)
+    public virtual void Output(Neuron neuron)
     {
         if (outAlg != null)
         {
-            noiron.InsertAlg(outpAlgPriority, outAlg);
+            neuron.InsertAlg(outpAlgPriority, outAlg);
             outpAlgPriority = -1;
             outAlg = null;
         }
@@ -239,19 +239,18 @@ public class Skill
         this.outpAlgPriority = priority; // 1->5, 1 is the highest algorithm priority
     }
 
-
     public bool PendingAlgorithm()
     {
         return outAlg != null;
     }
 
     // Getter and Setter for skill_type
-    public int getSkillType()
+    public int GetSkillType()
     {
         return skill_type;
     }
 
-    public void setSkillType(int skill_type)
+    public void SetSkillType(int skill_type)
     {
         // 1:regular, 2:aware_skill, 3:continuous_skill
         if (skill_type >= 1 && skill_type <= 3)
@@ -261,12 +260,12 @@ public class Skill
     }
 
     // Getter and Setter for skill_lobe
-    public int getSkillLobe()
+    public int GetSkillLobe()
     {
         return skill_lobe;
     }
 
-    public void setSkillLobe(int skill_lobe)
+    public void SetSkillLobe(int skill_lobe)
     {
         // 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
         if (skill_lobe >= 1 && skill_lobe <= 5)
@@ -274,12 +273,13 @@ public class Skill
             this.skill_lobe = skill_lobe;
         }
     }
+
     public virtual string SkillNotes(string param)
     {
         return "notes unknown";
     }
-
 }
+
 public class DiHelloWorld : Skill
 {
     // hello world skill for testing purposes
@@ -379,7 +379,7 @@ public class Cerebellum
         return axnStr;
     }
 
-    public void DeActivate()
+    public void Deactivate()
     {
         ia = IsActive() && !alg!.GetAlgParts()[at].algKillSwitch;
     }
@@ -430,7 +430,7 @@ public class Fusion
             result = ceraArr[i].Act(ear, skin, eye);
             ceraArr[i].AdvanceInAlg();
             emot = ceraArr[i].GetEmot();
-            ceraArr[i].DeActivate(); // Deactivation if Mutatable.algkillswitch = true
+            ceraArr[i].Deactivate(); // Deactivation if Mutatable.algkillswitch = true
             return result;
         }
         emot = "";
@@ -455,115 +455,115 @@ public class Chobits
         this.neuron = new Neuron();
     }
 
-    public void setDatabase(AbsDictionaryDB absDictionaryDB)
+    public void SetDatabase(AbsDictionaryDB absDictionaryDB)
     {
         this.kokoro.grimoireMemento = absDictionaryDB;
     }
 
-    public void addRegularSkill(Skill skill)
+    public void AddRegularSkill(Skill skill)
     {
         if (this.isThinking) return;
-        skill.setSkillType(1);
+        skill.SetSkillType(1);
         skill.SetKokoro(this.kokoro);
         this.dClasses.Add(skill);
     }
 
-    public void addSkillAware(Skill skill)
+    public void AddSkillAware(Skill skill)
     {
-        skill.setSkillType(2);
+        skill.SetSkillType(2);
         skill.SetKokoro(this.kokoro);
         this.awareSkills.Add(skill);
     }
 
-    public void addContinuousSkill(Skill skill)
+    public void AddContinuousSkill(Skill skill)
     {
         if (this.isThinking) return;
-        skill.setSkillType(3);
+        skill.SetSkillType(3);
         skill.SetKokoro(this.kokoro);
         this.cts_skills.Add(skill);
     }
 
-    public void clearRegularSkills()
+    public void ClearRegularSkills()
     {
         if (this.isThinking) return;
         this.dClasses.Clear();
     }
 
-    public void clearContinuousSkills()
+    public void ClearContinuousSkills()
     {
         if (this.isThinking) return;
         this.cts_skills.Clear();
     }
 
-    public void clearAllSkills()
+    public void ClearAllSkills()
     {
-        clearRegularSkills();
-        clearContinuousSkills();
+        ClearRegularSkills();
+        ClearContinuousSkills();
     }
 
-    public void addSkills(params Skill[] skills)
+    public void AddSkills(params Skill[] skills)
     {
         foreach (Skill skill in skills)
         {
-            this.addSkill(skill);
+            this.AddSkill(skill);
         }
     }
 
-    public void removeLogicalSkill(Skill skill)
+    public void RemoveLogicalSkill(Skill skill)
     {
         if (this.isThinking) return;
         dClasses.Remove(skill);
     }
 
-    public void removeContinuousSkill(Skill skill)
+    public void RemoveContinuousSkill(Skill skill)
     {
         if (this.isThinking) return;
         cts_skills.Remove(skill);
     }
 
-    public void removeSkill(Skill skill)
+    public void RemoveSkill(Skill skill)
     {
-        if (skill.getSkillType() == 1)
-            this.removeLogicalSkill(skill);
+        if (skill.GetSkillType() == 1)
+            this.RemoveLogicalSkill(skill);
         else
-            this.removeContinuousSkill(skill);
+            this.RemoveContinuousSkill(skill);
     }
 
-    public bool containsSkill(Skill skill)
+    public bool ContainsSkill(Skill skill)
     {
         return dClasses.Contains(skill);
     }
 
-    public string think(string ear, string skin, string eye)
+    public string Think(string ear, string skin, string eye)
     {
         this.algTriggered = false;
         this.isThinking = true; // regular skills loop
         foreach (Skill dCls in dClasses)
         {
-            inOut(dCls, ear, skin, eye);
+            InOut(dCls, ear, skin, eye);
         }
         this.isThinking = false;
         foreach (Skill dCls2 in awareSkills)
         {
-            inOut(dCls2, ear, skin, eye);
+            InOut(dCls2, ear, skin, eye);
         }
         this.isThinking = true;
         foreach (Skill dCls2 in cts_skills)
         {
             if (algTriggered) break;
-            inOut(dCls2, ear, skin, eye);
+            InOut(dCls2, ear, skin, eye);
         }
         this.isThinking = false;
         fusion.LoadAlgs(neuron);
         return fusion.RunAlgs(ear, skin, eye);
     }
 
-    public string getSoulEmotion()
+    public string GetSoulEmotion()
     {
         return fusion.GetEmot();
     }
 
-    protected void inOut(Skill dClass, string ear, string skin, string eye)
+    protected void InOut(Skill dClass, string ear, string skin, string eye)
     {
         dClass.Input(ear, skin, eye);
         if (dClass.PendingAlgorithm())
@@ -573,17 +573,17 @@ public class Chobits
         dClass.Output(neuron);
     }
 
-    public Kokoro getKokoro()
+    public Kokoro GetKokoro()
     {
         return kokoro;
     }
 
-    public void setKokoro(Kokoro kokoro)
+    public void SetKokoro(Kokoro kokoro)
     {
         this.kokoro = kokoro;
     }
 
-    public List<string> getSkillList()
+    public List<string> GetSkillList()
     {
         List<string> result = new List<string>();
         foreach (Skill skill in this.dClasses)
@@ -593,29 +593,30 @@ public class Chobits
         return result;
     }
 
-    public List<Skill> getFusedSkills()
+    public List<Skill> GetFusedSkills()
     {
         List<Skill> combined = new List<Skill>(this.dClasses);
         combined.AddRange(this.cts_skills);
         return combined;
     }
 
-    public void addSkill(Skill skill)
+    public void AddSkill(Skill skill)
     {
-        switch (skill.getSkillType())
+        switch (skill.GetSkillType())
         {
             case 1: // Regular Skill
-                this.addRegularSkill(skill);
+                this.AddRegularSkill(skill);
                 break;
             case 2: // Aware Skill
-                this.addSkillAware(skill);
+                this.AddSkillAware(skill);
                 break;
             case 3: // Continuous Skill
-                this.addContinuousSkill(skill);
+                this.AddContinuousSkill(skill);
                 break;
         }
     }
 }
+
 
 public class Brain
 {
@@ -628,13 +629,13 @@ public class Brain
     public Chobits eye = new Chobits();
 
     // Returns active algorithm part representing emotion
-    public string getEmotion()
+    public string GetEmotion()
     {
         return emotion;
     }
 
     // Returns feedback (last output)
-    public string getLogicChobitOutput()
+    public string GetLogicChobitOutput()
     {
         return logicChobitOutput;
     }
@@ -642,112 +643,113 @@ public class Brain
     // Constructor
     public Brain()
     {
-        Brain.imprintSoul(this.logicChobit.getKokoro(), this.hardwareChobit, this.ear, this.skin, this.eye);
+        Brain.ImprintSoul(this.logicChobit.GetKokoro(), this.hardwareChobit, this.ear, this.skin, this.eye);
     }
 
-    private static void imprintSoul(Kokoro kokoro, params Chobits[] args)
+    private static void ImprintSoul(Kokoro kokoro, params Chobits[] args)
     {
         foreach (Chobits arg in args)
         {
-            arg.setKokoro(kokoro);
+            arg.SetKokoro(kokoro);
         }
     }
 
     // Live processing
-    public void doIt(string ear, string skin, string eye)
+    public void DoIt(string ear, string skin, string eye)
     {
-        logicChobitOutput = logicChobit.think(ear, skin, eye);
-        emotion = logicChobit.getSoulEmotion();
-        hardwareChobit.think(logicChobitOutput, skin, eye);
+        logicChobitOutput = logicChobit.Think(ear, skin, eye);
+        emotion = logicChobit.GetSoulEmotion();
+        hardwareChobit.Think(logicChobitOutput, skin, eye);
     }
 
-    public void addSkill(Skill skill)
+    public void AddSkill(Skill skill)
     {
         // Adds a skill to the correct Chobits based on its skill_lobe attribute
-        switch (skill.getSkillLobe())
+        switch (skill.GetSkillLobe())
         {
             case 1: // Logical skill
-                this.logicChobit.addSkill(skill);
+                this.logicChobit.AddSkill(skill);
                 break;
             case 2: // Hardware skill
-                this.hardwareChobit.addSkill(skill);
+                this.hardwareChobit.AddSkill(skill);
                 break;
             case 3: // Ear skill
-                this.ear.addSkill(skill);
+                this.ear.AddSkill(skill);
                 break;
             case 4: // Skin skill
-                this.skin.addSkill(skill);
+                this.skin.AddSkill(skill);
                 break;
             case 5: // Eye skill
-                this.eye.addSkill(skill);
+                this.eye.AddSkill(skill);
                 break;
         }
     }
 
-    public Brain chained(Skill skill)
+    public Brain Chained(Skill skill)
     {
         // Chained add skill
-        addSkill(skill);
+        AddSkill(skill);
         return this;
     }
 
     // Add regular thinking (logical) skill
-    public void addLogicalSkill(Skill skill)
+    public void AddLogicalSkill(Skill skill)
     {
-        logicChobit.addRegularSkill(skill);
+        logicChobit.AddRegularSkill(skill);
     }
 
     // Add output skill
-    public void addHardwareSkill(Skill skill)
+    public void AddHardwareSkill(Skill skill)
     {
-        hardwareChobit.addRegularSkill(skill);
+        hardwareChobit.AddRegularSkill(skill);
     }
 
     // Add audio (ear) input skill
-    public void addEarSkill(Skill skill)
+    public void AddEarSkill(Skill skill)
     {
-        this.ear.addRegularSkill(skill);
+        this.ear.AddRegularSkill(skill);
     }
 
     // Add sensor input skill
-    public void addSkinSkill(Skill skill)
+    public void AddSkinSkill(Skill skill)
     {
-        this.skin.addRegularSkill(skill);
+        this.skin.AddRegularSkill(skill);
     }
 
     // Add visual input skill
-    public void addEyeSkill(Skill skill)
+    public void AddEyeSkill(Skill skill)
     {
-        this.eye.addRegularSkill(skill);
+        this.eye.AddRegularSkill(skill);
     }
 
-    public void think(string keyIn)
+    public void Think(string keyIn)
     {
         if (!string.IsNullOrEmpty(keyIn))
         {
             // Handles typed inputs (keyIn)
-            this.doIt(keyIn, "", "");
+            this.DoIt(keyIn, "", "");
         }
         else
         {
             // Accounts for sensory inputs
-            this.doIt(ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""));
+            this.DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""));
         }
     }
 
-    public void think()
+    public void Think()
     {
         // Accounts for sensory inputs only
-        this.doIt(ear.think("", "", ""), skin.think("", "", ""), eye.think("", "", ""));
+        this.DoIt(ear.Think("", "", ""), skin.Think("", "", ""), eye.Think("", "", ""));
     }
 }
+
 public class DiPrinter : Skill
 {
     // Hello world skill for testing purposes
     public DiPrinter()
     {
-        base.setSkillType(3); // continuous skill
-        base.setSkillLobe(2); // hardware chobit
+        base.SetSkillType(3); // continuous skill
+        base.SetSkillLobe(2); // hardware chobit
     }
 
     public override void Input(string ear, string skin, string eye)
@@ -772,3 +774,4 @@ public class DiPrinter : Skill
         }
     }
 }
+

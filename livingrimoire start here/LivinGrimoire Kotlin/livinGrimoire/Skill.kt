@@ -11,9 +11,9 @@ open class Skill {
     open fun input(ear: String, skin: String, eye: String) {}
 
     // extraction of skill algorithm to run (if there is one)
-    open fun output(noiron: Neuron) {
+    open fun output(neuron: Neuron) {
         if (outAlg != null) {
-            noiron.insertAlg(outpAlgPriority, outAlg!!)
+            neuron.insertAlg(outpAlgPriority, outAlg!!)
             outpAlgPriority = -1
             outAlg = null
         }
