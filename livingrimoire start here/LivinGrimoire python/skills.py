@@ -5,6 +5,8 @@ import string
 from AXPython import *
 import sys  # used for shutoff skill
 
+from AlgParts import *
+
 
 class DiMisser(Skill):
     def __init__(self):
@@ -1049,178 +1051,6 @@ class DiNoteTaker(Skill):
         return "note unavailable"
 
 
-class APMad(AlgPart):
-    """this algorithm part says each past param verbatim"""
-
-    def __init__(self, *args) -> None:
-        super().__init__()
-        self.sentences: list[str] = []
-        self.at = 0
-        try:
-            if isinstance(args[0], list):
-                self.sentences = args[0]
-                if len(self.sentences) == 0:
-                    self.at = 30
-            else:
-                for i in range(len(args)):
-                    self.sentences.append(args[i])
-        except IndexError:
-            # Handle the case where args[0] does not exist
-            self.at = 30
-        except AttributeError:
-            # Handle the case where self.sentences is not initialized
-            self.at = 30
-        except Exception as e:
-            # Log or handle other exceptions
-            print(f"An unexpected error occurred: {e}")
-            self.at = 30
-
-    # Override
-    def action(self, ear: str, skin: str, eye: str) -> str:
-        axnStr = ""
-        if self.at < len(self.sentences):
-            axnStr = self.sentences[self.at]
-            self.at += 1
-        return axnStr
-
-    # Override
-    def completed(self) -> bool:
-        return self.at >= len(self.sentences)
-
-    # Override
-    def clone(self) -> AlgPart:
-        return APMad(DeepCopier().copyList(self.sentences))
-
-
-class APShy(AlgPart):
-    """this algorithm part says each past param verbatim"""
-
-    def __init__(self, *args) -> None:
-        super().__init__()
-        self.sentences: list[str] = []
-        self.at = 0
-        try:
-            if isinstance(args[0], list):
-                self.sentences = args[0]
-                if len(self.sentences) == 0:
-                    self.at = 30
-            else:
-                for i in range(len(args)):
-                    self.sentences.append(args[i])
-        except IndexError:
-            # Handle the case where args[0] does not exist
-            self.at = 30
-        except AttributeError:
-            # Handle the case where self.sentences is not initialized
-            self.at = 30
-        except Exception as e:
-            # Log or handle other exceptions
-            print(f"An unexpected error occurred: {e}")
-            self.at = 30
-
-    # Override
-    def action(self, ear: str, skin: str, eye: str) -> str:
-        axnStr = ""
-        if self.at < len(self.sentences):
-            axnStr = self.sentences[self.at]
-            self.at += 1
-        return axnStr
-
-    # Override
-    def completed(self) -> bool:
-        return self.at >= len(self.sentences)
-
-    # Override
-    def clone(self) -> AlgPart:
-        return APShy(DeepCopier().copyList(self.sentences))
-
-
-class APHappy(AlgPart):
-    """this algorithm part says each past param verbatim"""
-
-    def __init__(self, *args) -> None:
-        super().__init__()
-        self.sentences: list[str] = []
-        self.at = 0
-        try:
-            if isinstance(args[0], list):
-                self.sentences = args[0]
-                if len(self.sentences) == 0:
-                    self.at = 30
-            else:
-                for i in range(len(args)):
-                    self.sentences.append(args[i])
-        except IndexError:
-            # Handle the case where args[0] does not exist
-            self.at = 30
-        except AttributeError:
-            # Handle the case where self.sentences is not initialized
-            self.at = 30
-        except Exception as e:
-            # Log or handle other exceptions
-            print(f"An unexpected error occurred: {e}")
-            self.at = 30
-
-    # Override
-    def action(self, ear: str, skin: str, eye: str) -> str:
-        axnStr = ""
-        if self.at < len(self.sentences):
-            axnStr = self.sentences[self.at]
-            self.at += 1
-        return axnStr
-
-    # Override
-    def completed(self) -> bool:
-        return self.at >= len(self.sentences)
-
-    # Override
-    def clone(self) -> AlgPart:
-        return APHappy(DeepCopier().copyList(self.sentences))
-
-
-class APSad(AlgPart):
-    """this algorithm part says each past param verbatim"""
-
-    def __init__(self, *args) -> None:
-        super().__init__()
-        self.sentences: list[str] = []
-        self.at = 0
-        try:
-            if isinstance(args[0], list):
-                self.sentences = args[0]
-                if len(self.sentences) == 0:
-                    self.at = 30
-            else:
-                for i in range(len(args)):
-                    self.sentences.append(args[i])
-        except IndexError:
-            # Handle the case where args[0] does not exist
-            self.at = 30
-        except AttributeError:
-            # Handle the case where self.sentences is not initialized
-            self.at = 30
-        except Exception as e:
-            # Log or handle other exceptions
-            print(f"An unexpected error occurred: {e}")
-            self.at = 30
-
-    # Override
-    def action(self, ear: str, skin: str, eye: str) -> str:
-        axnStr = ""
-        if self.at < len(self.sentences):
-            axnStr = self.sentences[self.at]
-            self.at += 1
-        return axnStr
-
-    # Override
-    def completed(self) -> bool:
-        return self.at >= len(self.sentences)
-
-    # Override
-    def clone(self) -> AlgPart:
-        return APSad(DeepCopier().copyList(self.sentences))
-
-
 class DiBurperV2(Skill):
     def __init__(self, burps_per_hour: int = 3):
         self._burpsPerHour = 2
@@ -1374,7 +1204,7 @@ class DiYandere(Skill):
             d1 = DrawRndDigits()
             for i in range(d1.getSimpleRNDNum(3)):
                 tempList.append(self.sadYandere.getAResponse())
-            self.algPartsFusion(4, APVerbatim(tempList))
+            self.algPartsFusion(4, APVerbatim(*tempList))
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
@@ -1617,26 +1447,6 @@ class DiImprint_recorder(Skill):
         elif param == "triggers":
             return "Activated by verbal commands like 'recorder on'. stop recording to stop."
         return "Note unavailable"
-
-
-class APSleep(AlgPart):
-    def __init__(self, wakeners, sleep_minutes):
-        super().__init__()  # Call the constructor of the parent class (AlgPart)
-        self.wakeners: Responder = wakeners
-        self.done: bool = False
-        self.timeGate: TimeGate = TimeGate(sleep_minutes)
-        self.timeGate.openForPauseMinutes()
-
-    def action(self, ear, skin, eye):
-        if self.wakeners.responsesContainsStr(ear) or self.timeGate.isClosed():
-            self.done = True
-            return "i am awake"
-        if ear:
-            return "zzz"
-        return ""
-
-    def completed(self):
-        return self.done
 
 
 class DiSleep(Skill):
@@ -2186,7 +1996,8 @@ class DiMezzoflationGame(Skill):
         self.last_choices = []
         self.choices = ["macro", "micro", "mezzo"]
 
-    def check_win(self, player_choice, opponent_choice):
+    @staticmethod
+    def check_win(player_choice, opponent_choice):
         """
         Determines if the player wins against the opponent.
         Returns True if the player wins, False otherwise.
@@ -2211,7 +2022,8 @@ class DiMezzoflationGame(Skill):
                     return "macro"
         return random.choice(self.choices)
 
-    def get_taunt(self, score):
+    @staticmethod
+    def get_taunt(score):
         """
         Returns a Joey Wheeler taunt based on the player's score.
         """
@@ -2396,26 +2208,6 @@ class DiRail(Skill):
             return "end input with the word ok"
         return "note unavailable"
 
-
-class APSay(AlgPart):
-    def __init__(self, at: int, param: str) -> None:
-        super().__init__()
-        if at > 10:
-            at = 10
-        self.at = at
-        self.param = param
-
-    def action(self, ear: str, skin: str, eye: str) -> str:
-        """TODO Auto-generated method stub"""
-        axnStr = ""
-        if self.at > 0:
-            if ear.lower() != self.param.lower():
-                axnStr = self.param
-                self.at -= 1
-        return axnStr
-
-    def completed(self) -> bool:
-        return self.at < 1
 
 class DiShutOff(Skill):
     def __init__(self):
