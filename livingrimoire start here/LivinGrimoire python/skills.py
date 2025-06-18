@@ -1688,6 +1688,7 @@ class DiCusser(Skill):
         # responder needs be initialized with varargs of cuss words
         # reply_chance < 100 prevents infinite cussing between 2 bots
         super().__init__()
+        self.set_skill_type(3)  # continuous skill
         self.npc: AXNPC2 = AXNPC2(memory_size, reply_chance)
         self.splitter: AXStringSplit = AXStringSplit()
         self._initialized: bool = False
