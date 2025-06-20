@@ -4,7 +4,7 @@ import threading
 from subprocess import call  # for calc skill DiCalculator
 
 from AXPython import AXFunnel
-from LivinGrimoire23 import Skill
+from LivinGrimoire import Skill
 
 
 class ShorniSplash(Skill):
@@ -213,6 +213,10 @@ class DaDeepseekRun(ShorniSplash):
     def __init__(self):
         super().__init__()
         self.input_text = ""  # Temporary storage for input text
+        self.apikey: str = ""  # your https://openweathermap.org/api api key. place it in a
+        # weather_apikey.txt in the python project's source dir
+        with open('deepseek_api_key.txt', 'r') as f:
+            self.apikey = f.read()
 
     def trigger(self, ear: str, skin: str, eye: str) -> bool:
         # Check if the ear string ends with the word "run"
@@ -222,10 +226,17 @@ class DaDeepseekRun(ShorniSplash):
     def _async_func(this_cls):
         # Use the stored input text
         input_text = this_cls.input_text
+        data = {
+            "model": "deepseek-chat",
+            "messages": [
+                {"role": "system", "content": "You are a cute and friendly waifubot."},
+                {"role": "user", "content": input_text}
+            ]
+        }
 
         # Call the Deepseek API (replace with actual API endpoint and logic)
         try:
-            response = this_cls.call_deepseek_api(input_text)
+            response = this_cls.call_deepseek_api(data,this_cls.apikey)
             this_cls._result = response
         except Exception as e:
             this_cls._result = f"Error calling Deepseek API: {str(e)}"
@@ -250,14 +261,14 @@ class DaDeepseekRun(ShorniSplash):
             self._result = ""
 
     @staticmethod
-    def call_deepseek_api(input_text: str) -> str:
+    def call_deepseek_api(input_text: str,deepseek_api_key: str) -> str:
         # Replace this with the actual Deepseek API call logic
         # Example:
-        # api_url = "https://api.deepseek.com/chat"
-        # payload = {"input": input_text}
-        # headers = {"Authorization": "Bearer YOUR_API_KEY"}
-        # response = requests.post(api_url, json=payload, headers=headers)
-        # return response.json().get("response", "No response from API")
+        api_url = "https://api.deepseek.com/chat"
+        payload = {"input": input_text}
+        headers = {"Authorization": deepseek_api_key}
+        response = requests.post(api_url, json=payload, headers=headers)
+        return response.json().get("response", "No response from API")
 
         # For now, just return a mock response
-        return f"Deepseek response to: {input_text}"
+        # return f"Deepseek response to: {input_text}"

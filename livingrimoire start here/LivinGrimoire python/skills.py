@@ -362,17 +362,25 @@ class DiSayer(Skill):
         self.command = ""
 
     def input(self, ear, skin, eye):
-        if len(ear) == 0:
-            return
-        if ear == "say it":
-            self.setSimpleAlg(self.getKokoro().grimoireMemento.load(f'disayer'))
-            return
+        match ear:
+            case "meow":
+                self.setSimpleAlg("meow_sound")
+            case "bark":
+                self.setSimpleAlg("wan_wan")
+            case "shout":
+                self.setSimpleAlg("hadoken")
+            case _:
+                if len(ear) == 0:
+                    return
+                if ear == "say it":
+                    self.setSimpleAlg(self.getKokoro().grimoireMemento.load(f'disayer'))
+                    return
 
-        self.command = self.cmdBreaker.extractCmdParam(ear)
-        if self.command:
-            self.getKokoro().grimoireMemento.save(f'disayer', self.command)
-            self.setSimpleAlg(self.command)
-            self.command = ""
+                self.command = self.cmdBreaker.extractCmdParam(ear)
+                if self.command:
+                    self.getKokoro().grimoireMemento.save(f'disayer', self.command)
+                    self.setSimpleAlg(self.command)
+                    self.command = ""
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
