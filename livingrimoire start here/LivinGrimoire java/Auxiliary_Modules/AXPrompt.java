@@ -1,7 +1,5 @@
 package Auxiliary_Modules;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-
 import java.util.ArrayList;
 
 public class AXPrompt {
@@ -37,7 +35,7 @@ public class AXPrompt {
         }
         while (axPrompt.getActive());
     * */
-    Boolean isActive = false;
+    boolean isActive = false;
     int index = 0;
     ArrayList<Prompt> prompts = new ArrayList<Prompt>();
     AXKeyValuePair kv = null;
@@ -50,7 +48,7 @@ public class AXPrompt {
     }
     public void process(String in1){
         if (prompts.isEmpty() || !isActive){return;}
-        Boolean b1= prompts.get(index).process(in1);
+        boolean b1= prompts.get(index).process(in1);
         if (!b1){
             kv = prompts.get(index).getKv();
             index++;
@@ -58,7 +56,7 @@ public class AXPrompt {
         if(index == prompts.size()){isActive = false;}
     }
 
-    public Boolean getActive() {
+    public boolean getActive() {
         return isActive;
     }
 

@@ -10,7 +10,10 @@ import calendar
 from livingrimoire import Neuron, Kokoro, AbsDictionaryDB
 
 
-# string converters section start
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║                            STRING CONVERTERS                           ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
 class AXFunnel:
     # funnel all sorts of strings to fewer or other strings
     def __init__(self, default="default"):
@@ -104,8 +107,10 @@ class AXStringSplit:
         return self._separator.join(l1)  # Simplified!
 
 
-# string converters section end
-#utility section start
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║                               UTILITY                                  ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
 class TimeUtils:
     week_days = {
         1: 'sunday',
@@ -428,8 +433,19 @@ class RegexUtil:
         return ""
 
 
-# Utility section end
-# triggers section start
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║                               TRIGGERS                                 ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
+
+class CodeParser:
+    @staticmethod
+    def extract_code_number(s):
+        match = re.fullmatch(r"code (\d+)", s)
+        if match:
+            return int(match.group(1))
+        return -1
+
 class TimeGate:
     """A gate that only opens X minutes after being set."""
 
@@ -1047,60 +1063,6 @@ class OnOffSwitch:
         self._mode = False
 
 
-class SpiderSense:
-    # enables event prediction
-    def __init__(self, lim):
-        super().__init__()
-        self._spiderSense = False
-        self._events = UniqueItemSizeLimitedPriorityQueue(lim)
-        self._alerts = UniqueItemSizeLimitedPriorityQueue(lim)
-        self._prev = "null"
-
-    def addEvent(self, event):
-        # builder pattern
-        self._events.insert(event)
-        return self
-
-    def learn(self, in1):
-        if len(in1) == 0:
-            return
-        # simple prediction of an event from the events que :
-        if self._alerts.contains(in1):
-            self._spiderSense = True
-            return
-        # event has occured, remember what lead to it
-        if self._events.contains(in1):
-            self._alerts.insert(self._prev)
-            return
-        # nothing happend
-        self._prev = in1
-
-    def getSpiderSense(self):
-        # spider sense is tingling? event predicted?
-        temp = self._spiderSense
-        self._spiderSense = False
-        return temp
-
-    def getAlertsShallowCopy(self):
-        # return shallow copy of alerts list
-        return self._alerts.queue
-
-    def getAlertsClone(self):
-        # return deep copy of alerts list
-        l_temp = []
-        for item in self._alerts.queue:
-            l_temp.append(item)
-        return l_temp
-
-    def clearAlerts(self):
-        """this can for example prevent war, because say once a month or a year you stop
-         being on alert against a rival"""
-        self._alerts.clear()
-
-    def eventTriggered(self, in1):
-        return self._events.contains(in1)
-
-
 class TimeAccumulator:
     # accumulator ++ each tick minutes interval
     def __init__(self, tick):
@@ -1144,9 +1106,10 @@ class KeyWords:
     def contains_keyword(self, text):  # Renamed for clarity
         return any(keyword in text for keyword in self._keywords)
 
-# Triggers section end
 
-# special skills dependencies section start
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║                     SPECIAL SKILLS DEPENDENCIES                       ║
+# ╚════════════════════════════════════════════════════════════════════════╝
 
 class TimedMessages:
     """
@@ -1516,4 +1479,796 @@ class Responder:
     def addResponse(self, s1):
         self.responses.append(s1)
 
- # special skills dependencies section end
+
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║                           SPEECH ENGINES                               ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
+
+class ChatBot:
+    """
+    chatbot = ChatBot(5)
+
+    chatbot.addParam("name", "jinpachi")
+    chatbot.addParam("name", "sakura")
+    chatbot.addParam("verb", "eat")
+    chatbot.addParam("verb", "code")
+
+    chatbot.addSentence("i can verb #")
+
+    chatbot.learnParam("ryu is a name")
+    chatbot.learnParam("ken is a name")
+    chatbot.learnParam("drink is a verb")
+    chatbot.learnParam("rest is a verb")
+
+    chatbot.learnV2("hello ryu i like to code")
+    chatbot.learnV2("greetings ken")
+    for i in range(1, 10):
+        print(chatbot.talk())
+        print(chatbot.getALoggedParam())
+    """
+
+    def __init__(self, logParamLim):
+        self.sentences = RefreshQ(5)
+        self.wordToList = {}
+        self.rand = random.Random()
+        self.allParamRef = {}
+        self.paramLim = 5
+        self.loggedParams = RefreshQ(5)
+        self.conjuration = "is a"
+        self.loggedParams.setLimit(logParamLim)
+
+    def setConjuration(self, conjuration):
+        self.conjuration = conjuration
+
+    def setSentencesLim(self, lim):
+        self.sentences.setLimit(lim)
+
+    def setParamLim(self, paramLim):
+        self.paramLim = paramLim
+
+    def getWordToList(self):
+        return self.wordToList
+
+    def talk(self):
+        result = self.sentences.getRNDElement()
+        return self.clearRecursion(result)
+
+    def clearRecursion(self, result):
+        params = RegexUtil.extractAllRegexes("(\\w+)(?= #)", result)
+        for strI in params:
+            temp = self.wordToList.get(strI)
+            s1 = temp.getRNDElement()
+            result = result.replace(strI + " #", s1)
+        if "#" not in result:
+            return result
+        else:
+            return self.clearRecursion(result)
+
+    def addParam(self, category, value):
+        if category not in self.wordToList:
+            temp = RefreshQ(self.paramLim)
+            self.wordToList[category] = temp
+        self.wordToList[category].insert(value)
+        self.allParamRef[value] = category
+
+    def addKeyValueParam(self, kv):
+        if kv.getKey() not in self.wordToList:
+            temp = RefreshQ(self.paramLim)
+            self.wordToList[kv.getKey()] = temp
+        self.wordToList[kv.getKey()].insert(kv.getValue())
+        self.allParamRef[kv.getValue()] = kv.getKey()
+
+    def addSubject(self, category, value):
+        if category not in self.wordToList:
+            temp = RefreshQ(1)
+            self.wordToList[category] = temp
+        self.wordToList[category].insert(value)
+        self.allParamRef[value] = category
+
+    def addSentence(self, sentence):
+        self.sentences.insert(sentence)
+
+    def learn(self, s1):
+        s1 = " " + s1
+        for key in self.wordToList.keys():
+            s1 = s1.replace(" " + key, " {} #".format(key))
+        self.sentences.insert(s1.strip())
+
+    def learnV2(self, s1):
+        OGStr = s1
+        s1 = " " + s1
+        for key in self.allParamRef.keys():
+            s1 = s1.replace(" " + key, " {} #".format(self.allParamRef[key]))
+        s1 = s1.strip()
+        if not OGStr == s1:
+            self.sentences.insert(s1)
+            return True
+        return False
+
+    def learnParam(self, s1):
+        if self.conjuration not in s1:
+            return
+        category = RegexUtil.afterWord(self.conjuration, s1)
+        if category not in self.wordToList:
+            return
+        param = s1.replace("{} {}".format(self.conjuration, category), "").strip()
+        self.wordToList[category].insert(param)
+        self.allParamRef[param] = category
+        self.loggedParams.insert(s1)
+
+    def addParamFromAXPrompt(self, kv):
+        if kv.getKey() not in self.wordToList:
+            return
+        self.wordToList[kv.getKey()].insert(kv.getValue())
+        self.allParamRef[kv.getValue()] = kv.getKey()
+
+    def addRefreshQ(self, category, q1):
+        self.wordToList[category] = q1
+
+    def getALoggedParam(self):
+        return self.loggedParams.getRNDElement()
+
+
+class ElizaDeducer:
+    """
+    This class populates a special chat dictionary
+    based on the matches added via its add_phrase_matcher function.
+    See subclass ElizaDeducerInitializer for example:
+    ed = ElizaDeducerInitializer(2)  # 2 = limit of replies per input
+    """
+    def __init__(self, lim):
+        self.babble2 = []
+        self.pattern_index = {}
+        self.response_cache = {}
+        self.ec2 = EventChatV2(lim)  # Chat dictionary, use getter for access. Hardcoded replies can also be added
+
+    def get_ec2(self):
+        return self.ec2
+
+    def learn(self, msg):
+        # Populate EventChat dictionary
+        # Check cache first
+        if msg in self.response_cache:
+            self.ec2.add_key_values(list(self.response_cache[msg]))
+
+        # Search for matching patterns
+        potential_matchers = self.get_potential_matchers(msg)
+        for pm in potential_matchers:
+            if pm.matches(msg):
+                response = pm.respond(msg)
+                self.response_cache[msg] = response
+                self.ec2.add_key_values(response)
+
+    def learned_bool(self, msg):
+        # Same as learn method but returns true if it learned new replies
+        learned = False
+        # Populate EventChat dictionary
+        # Check cache first
+        if msg in self.response_cache:
+            self.ec2.add_key_values(list(self.response_cache[msg]))
+            learned = True
+
+        # Search for matching patterns
+        potential_matchers = self.get_potential_matchers(msg)
+        for pm in potential_matchers:
+            if pm.matches(msg):
+                response = pm.respond(msg)
+                self.response_cache[msg] = response
+                self.ec2.add_key_values(response)
+                learned = True
+        return learned
+
+    def respond(self, str1):
+        return self.ec2.response(str1)
+
+    def respond_latest(self, str1):
+        # Get most recent reply/data
+        return self.ec2.response_latest(str1)
+
+    def get_potential_matchers(self, msg):
+        potential_matchers = []
+        for key in self.pattern_index:
+            if key in msg:
+                potential_matchers.extend(self.pattern_index[key])
+        return potential_matchers
+
+    def add_phrase_matcher(self, pattern, *kv_pairs):
+        kvs = [AXKeyValuePair(kv_pairs[i], kv_pairs[i + 1]) for i in range(0, len(kv_pairs), 2)]
+        matcher = PhraseMatcher(pattern, kvs)
+        self.babble2.append(matcher)
+        self.index_pattern(pattern, matcher)
+
+    def index_pattern(self, pattern, matcher):
+        for word in pattern.split():
+            self.pattern_index.setdefault(word, []).append(matcher)
+
+
+class PhraseMatcher:
+    def __init__(self, matcher, responses):
+        self.matcher = re.compile(matcher)
+        self.responses = responses
+
+    def matches(self, str):
+        m = self.matcher.match(str)
+        return m is not None
+
+    def respond(self, str):
+        m = self.matcher.match(str)
+        result = []
+        if m:
+            tmp = len(m.groups())
+            for kv in self.responses:
+                temp_kv = AXKeyValuePair(kv.key, kv.value)
+                for i in range(tmp):
+                    s = m.group(i + 1)
+                    temp_kv.key = temp_kv.key.replace(f"{{{i}}}", s).lower()
+                    temp_kv.value = temp_kv.value.replace(f"{{{i}}}", s).lower()
+                result.append(temp_kv)
+        return result
+
+
+class ElizaDeducerInitializer(ElizaDeducer):
+    def __init__(self, lim):
+        # Recommended lim = 5; it's the limit of responses per key in the EventChat dictionary
+        # The purpose of the lim is to make saving and loading data easier
+        super().__init__(lim)
+        self.initialize_babble2()
+
+    def initialize_babble2(self):
+        self.add_phrase_matcher(
+            r"(.*) is (.*)",
+            "what is {0}", "{0} is {1}",
+            "explain {0}", "{0} is {1}"
+        )
+
+        self.add_phrase_matcher(
+            r"if (.*) or (.*) than (.*)",
+            "{0}", "{2}",
+            "{1}", "{2}"
+        )
+
+        self.add_phrase_matcher(
+            r"if (.*) and (.*) than (.*)",
+            "{0}", "{1}"
+        )
+
+        self.add_phrase_matcher(
+            r"(.*) because (.*)",
+            "{1}", "i guess {0}"
+        )
+
+
+class ElizaDBWrapper:
+    # This (function wrapper) class adds save load functionality to the ElizaDeducer Object
+    """
+    ElizaDeducer ed = ElizaDeducerInitializer(2)
+    ed.get_ec2().add_from_db("test", "one_two_three")  # Manual load for testing
+    kokoro = Kokoro(AbsDictionaryDB())  # Use skill's kokoro attribute
+    ew = ElizaDBWrapper()
+    print(ew.respond("test", ed.get_ec2(), kokoro))  # Get reply for input, tries loading reply from DB
+    print(ew.respond("test", ed.get_ec2(), kokoro))  # Doesn't try DB load on second run
+    ed.learn("a is b")  # Learn only after respond
+    ew.sleep_n_save(ed.get_ec2(), kokoro)  # Save when bot is sleeping, not on every skill input method visit
+    """
+
+    def __init__(self):
+        self.modified_keys = set()
+
+    def respond(self, in1, ec, kokoro):
+        if in1 in self.modified_keys:
+            return ec.response(in1)
+        self.modified_keys.add(in1)
+        # Load
+        ec.add_from_db(in1, kokoro.grimoireMemento.load(in1))
+        return ec.response(in1)
+
+    def respond_latest(self, in1, ec, kokoro):
+        if in1 in self.modified_keys:
+            return ec.response_latest(in1)
+        self.modified_keys.add(in1)
+        # Load and get latest reply for input
+        ec.add_from_db(in1, kokoro.grimoireMemento.load(in1))
+        return ec.response_latest(in1)
+
+    def sleep_n_save(self, ecv2, kokoro):
+        for element in ecv2.get_modified_keys():
+            kokoro.grimoireMemento.save(element, ecv2.get_save_str(element))
+
+
+class RailBot:
+    def __init__(self, limit=5):
+        self.ec = EventChatV2(limit)
+        self.context = "stand by"
+        self.eliza_wrapper = None  # Starts as None (no DB)
+
+    def enable_db_wrapper(self):
+        """Enables database features. Must be called before any save/load operations."""
+        if self.eliza_wrapper is None:
+            self.eliza_wrapper = ElizaDBWrapper()
+
+    def disable_db_wrapper(self):
+        """Disables database features."""
+        self.eliza_wrapper = None
+
+    def set_context(self, context):
+        """Sets the current context."""
+        if not context:
+            return
+        self.context = context
+
+    def respond_monolog(self, ear):
+        """Private helper for monolog response."""
+        if not ear:
+            return ""
+        temp = self.ec.response(ear)
+        if temp:
+            self.context = temp
+        return temp
+
+    def learn(self, ear):
+        """Learns a new response for the current context."""
+        if not ear or ear == self.context:
+            return
+        self.ec.add_key_value(self.context, ear)
+        self.context = ear
+
+    def monolog(self):
+        """Returns a monolog based on the current context."""
+        return self.respond_monolog(self.context)
+
+    def respond_dialog(self, ear):
+        """Responds to a dialog input."""
+        return self.ec.response(ear)
+
+    def respond_latest(self, ear):
+        """Responds to the latest input."""
+        return self.ec.response_latest(ear)
+
+    def learn_key_value(self, context, reply):
+        """Adds a new key-value pair to the memory."""
+        self.ec.add_key_value(context, reply)
+
+    def feed_key_value_pairs(self, kv_list):
+        """Feeds a list of key-value pairs into the memory."""
+        if not kv_list:
+            return
+        for kv in kv_list:
+            self.learn_key_value(kv.get_key(), kv.get_value())
+
+    def save_learned_data(self, kokoro):
+        """Saves learned data using the provided Kokoro instance."""
+        if self.eliza_wrapper is None:
+            return
+        self.eliza_wrapper.sleep_n_save(self.ec, kokoro)
+
+    def loadable_monolog_mechanics(self, ear, kokoro):
+        """Private helper for loadable monolog mechanics."""
+        if not ear:
+            return ""
+        temp = self.eliza_wrapper.respond(ear, self.ec, kokoro)
+        if temp:
+            self.context = temp
+        return temp
+
+    def loadable_monolog(self, kokoro):
+        """Returns a loadable monolog based on the current context."""
+        if self.eliza_wrapper is None:
+            return self.monolog()
+        return self.loadable_monolog_mechanics(self.context, kokoro)
+
+    def loadable_dialog(self, ear, kokoro):
+        """Returns a loadable dialog response."""
+        if self.eliza_wrapper is None:
+            return self.respond_dialog(ear)
+        return self.eliza_wrapper.respond(ear, self.ec, kokoro)
+
+
+
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║                        OUTPUT MANAGEMENT                               ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
+
+class LimUniqueResponder:
+    def __init__(self, lim):
+        self.responses = []
+        self.lim = lim
+        self.urg = UniqueRandomGenerator(0)
+
+    def get_a_response(self):
+        if not self.responses:
+            return ""
+        return self.responses[self.urg.get_unique_random()]
+
+    def responses_contains_str(self, item):
+        return item in self.responses
+
+    def str_contains_response(self, item):
+        return any(response and response in item for response in self.responses)
+
+    def add_response(self, s1):
+        if s1 in self.responses:
+            self.responses.remove(s1)
+            self.responses.append(s1)
+            return
+        if len(self.responses) > self.lim - 1:
+            self.responses.pop(0)
+        else:
+            self.urg = UniqueRandomGenerator(len(self.responses) + 1)
+        self.responses.append(s1)
+
+    def add_responses(self, *replies):
+        for value in replies:
+            self.add_response(value)
+
+    def get_savable_str(self):
+        return "_".join(self.responses)
+
+    def get_last_item(self):
+        if not self.responses:
+            return ""
+        return self.responses[-1]
+
+    def clone(self):
+        cloned_responder = LimUniqueResponder(self.lim)  # Create a new instance with the same limit
+        cloned_responder.responses = self.responses.copy()  # Copy the responses list
+        cloned_responder.urg = UniqueRandomGenerator(
+            len(cloned_responder.responses))  # Recreate the UniqueRandomGenerator
+        return cloned_responder
+
+
+class EventChatV2:
+    def __init__(self, lim):
+        self.dic = {}
+        self.modified_keys = set()
+        self.lim = lim
+
+    def get_modified_keys(self):
+        return self.modified_keys
+
+    def key_exists(self, key):
+        # if the key was active true is returned
+        return key in self.modified_keys
+
+    # Add items
+    def add_items(self, ur, *args):
+        for arg in args:
+            self.dic[arg] = ur.clone()
+
+    def add_from_db(self, key, value):
+        if not value or value == "null":
+            return
+        values = value.split("_")  # assuming AXStringSplit splits on "_"
+        if key not in self.dic:
+            self.dic[key] = LimUniqueResponder(self.lim)
+        for item in values:
+            self.dic[key].add_response(item)
+
+    # Add key-value pair
+    def add_key_value(self, key, value):
+        self.modified_keys.add(key)
+        if key in self.dic:
+            self.dic[key].add_response(value)
+        else:
+            self.dic[key] = LimUniqueResponder(self.lim)
+            self.dic[key].add_response(value)
+
+    def add_key_values(self, eliza_results):
+        for pair in eliza_results:
+            # Access the key and value of each AXKeyValuePair object
+            self.add_key_value(pair.get_key(), pair.get_value())
+
+    # Get response
+    def response(self, in1):
+        return self.dic[in1].get_a_response() if in1 in self.dic else ""
+
+    def response_latest(self, in1):
+        return self.dic[in1].get_last_item() if in1 in self.dic else ""
+
+    def get_save_str(self, key):
+        return self.dic[key].get_savable_str() if key in self.dic else ""
+
+
+class PercentDripper:
+    def __init__(self):
+        self.__dr = DrawRnd()
+        self.__limis = 35
+
+    def setLimit(self, limis):
+        self.__limis = limis
+
+    def drip(self):
+        return self.__dr.getSimpleRNDNum(100) < self.__limis
+
+    def dripPlus(self, plus):
+        return self.__dr.getSimpleRNDNum(100) < self.__limis + plus
+
+
+class AXTimeContextResponder:
+    # output reply based on the part of day as context
+    def __init__(self):
+        self.morning = Responder()
+        self.afternoon = Responder()
+        self.evening = Responder()
+        self.night = Responder()
+        self._responders = {
+            "morning": self.morning,
+            "afternoon": self.afternoon,
+            "evening": self.evening,
+            "night": self.night
+        }
+
+    def respond(self):
+        return self._responders[TimeUtils.partOfDay()].getAResponse()
+
+
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║                         STATE MANAGEMENT                               ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
+class Prompt:
+    def __init__(self):
+        self.kv = AXKeyValuePair()
+        self.prompt = ""
+        self.regex = ""
+        self.kv.set_key("default")
+
+    def get_prompt(self):
+        return self.prompt
+
+    def set_prompt(self, prompt):
+        self.prompt = prompt
+
+    def process(self, in1):
+        self.kv.set_value(RegexUtil.extractRegex(self.regex, in1))
+        return not self.kv.get_value()  # is prompt still active? (returns True if empty)
+
+    def get_kv(self):
+        return self.kv
+
+    def set_regex(self, regex):
+        self.regex = regex
+
+
+class AXPrompt:
+    """
+    Example use:
+
+    # prompt1
+    prompt1 = Prompt()
+    prompt1.kv.set_key("fruit")
+    prompt1.set_prompt("do you prefer an apple, banana or grapes?")
+    prompt1.set_regex("apple|banana|grapes")
+
+    # prompt2
+    prompt2 = Prompt()
+    prompt2.kv.set_key("age")
+    prompt2.set_prompt("how old are you??")
+    prompt2.set_regex(r"\d+(\.\d+)?")
+
+    ax_prompt = AXPrompt()
+    ax_prompt.add_prompt(prompt1)
+    ax_prompt.add_prompt(prompt2)
+    ax_prompt.activate()
+
+    while ax_prompt.get_active():
+        print(ax_prompt.get_prompt())
+        in2 = input()
+        ax_prompt.process(in2)
+
+        # extract keyvaluepair
+        temp = ax_prompt.get_kv()
+        # extract data: field, value
+        if temp is not None:
+            print(temp.get_value())
+    """
+
+    def __init__(self):
+        self.is_active = False
+        self.index = 0
+        self.prompts = []
+        self.kv = None
+
+    def add_prompt(self, p1):
+        self.prompts.append(p1)
+
+    def get_prompt(self):
+        if not self.prompts:
+            return ""
+        return self.prompts[self.index].get_prompt()
+
+    def process(self, in1):
+        if not self.prompts or not self.is_active:
+            return
+
+        b1 = self.prompts[self.index].process(in1)
+        if not b1:
+            self.kv = self.prompts[self.index].get_kv()
+            self.index += 1
+
+        if self.index == len(self.prompts):
+            self.is_active = False
+
+    def get_active(self):
+        return self.is_active
+
+    def get_kv(self):
+        if self.kv is None:
+            return None
+
+        temp = AXKeyValuePair()
+        temp.set_key(self.kv.get_key())
+        temp.set_value(self.kv.get_value())
+        self.kv = None
+        return temp
+
+    def activate(self):
+        self.is_active = True
+        self.index = 0
+
+    def deactivate(self):
+        self.is_active = False
+        self.index = 0
+
+
+class AXMachineCode:
+    # common code lines used in machine code to declutter machine code
+    # also simplified extensions for common dictionary actions
+    def __init__(self):
+        self.dic = {}
+
+    def addKeyValuePair(self, key, value):
+        self.dic[key] = value
+        return self
+
+    def getMachineCodeFor(self, key):
+        if key not in self.dic:
+            return -1
+        return self.dic[key]
+
+
+class ButtonEngager:
+    """ detect if a button was pressed
+     this class disables phisical button engagement while it remains being pressed"""
+
+    def __init__(self):
+        self._prev_state = False
+
+    def engage(self, btnState):
+        # send true for pressed state
+        if self._prev_state != btnState:
+            self._prev_state = btnState
+            if btnState:
+                return True
+        return False
+
+
+
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║                         LEARNABILITY                                   ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
+
+class SpiderSense:
+    # enables event prediction
+    def __init__(self, lim):
+        super().__init__()
+        self._spiderSense = False
+        self._events = UniqueItemSizeLimitedPriorityQueue(lim)
+        self._alerts = UniqueItemSizeLimitedPriorityQueue(lim)
+        self._prev = "null"
+
+    def addEvent(self, event):
+        # builder pattern
+        self._events.insert(event)
+        return self
+
+    def learn(self, in1):
+        if len(in1) == 0:
+            return
+        # simple prediction of an event from the events que :
+        if self._alerts.contains(in1):
+            self._spiderSense = True
+            return
+        # event has occured, remember what lead to it
+        if self._events.contains(in1):
+            self._alerts.insert(self._prev)
+            return
+        # nothing happend
+        self._prev = in1
+
+    def getSpiderSense(self):
+        # spider sense is tingling? event predicted?
+        temp = self._spiderSense
+        self._spiderSense = False
+        return temp
+
+    def getAlertsShallowCopy(self):
+        # return shallow copy of alerts list
+        return self._alerts.queue
+
+    def getAlertsClone(self):
+        # return deep copy of alerts list
+        l_temp = []
+        for item in self._alerts.queue:
+            l_temp.append(item)
+        return l_temp
+
+    def clearAlerts(self):
+        """this can for example prevent war, because say once a month or a year you stop
+         being on alert against a rival"""
+        self._alerts.clear()
+
+    def eventTriggered(self, in1):
+        return self._events.contains(in1)
+
+
+class Strategy:
+    def __init__(self, allStrategies, strategiesLim):
+        # bank of all strategies. out of this pool active strategies are pulled
+        self._allStrategies = allStrategies
+        self._strategiesLim = strategiesLim
+        # active strategic options
+        self._activeStrategy = UniqueItemSizeLimitedPriorityQueue(strategiesLim)
+        for i in range(0, self._strategiesLim):
+            self._activeStrategy.insert(self._allStrategies.getAResponse())
+
+    def evolveStrategies(self):
+        for i in range(0, self._strategiesLim):
+            self._activeStrategy.insert(self._allStrategies.getAResponse())
+
+    def getStrategy(self):
+        return self._activeStrategy.getRNDElement()
+
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║                            MISCELLANEOUS                               ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
+class AXKeyValuePair:
+    def __init__(self, key="", value=""):
+        self.key = key
+        self.value = value
+
+    def get_key(self):
+        return self.key
+
+    def set_key(self, key):
+        self.key = key
+
+    def get_value(self):
+        return self.value
+
+    def set_value(self, value):
+        self.value = value
+
+    def __str__(self):
+        return f"{self.key};{self.value}"
+
+
+class CombinatoricalUtils:
+    # combo related algorithmic tools
+    def __init__(self):
+        self.result = []
+
+    def _generatePermutations(self, lists, result, depth, current):
+        # this function has a private modifier (the "_" makes it so)
+        if depth == len(lists):
+            result.append(current)
+            return
+        for i in range(0, len(lists) + 1):
+            self._generatePermutations(lists, result, depth + 1, current + lists[depth][i])
+
+    def generatePermutations(self, lists):
+        # generate all permutations between all string lists in lists, which is a list of lists of strings
+        self.result = []
+        self._generatePermutations(lists, self.result, 0, "")
+
+    def generatePermutations_V2(self, *lists):
+        # this is the varargs vertion of this function
+        # example method call: cu.generatePermutations(l1,l2)
+        temp_lists = []
+        for i in range(0, len(lists)):
+            temp_lists.append(lists[i])
+        self.result = []
+        self._generatePermutations(temp_lists, self.result, 0, "")
