@@ -1,5 +1,6 @@
 import random
 import time
+from collections import deque
 from datetime import timedelta
 import re  # for RegexUtil
 from enum import Enum
@@ -11,16 +12,16 @@ from livingrimoire import Neuron, Kokoro, AbsDictionaryDB
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
-# ║ TABLE OF CONTENTS                                                     ║
+# ║ TABLE OF CONTENTS                                                      ║
 # ╠════════════════════════════════════════════════════════════════════════╣
-# ║ 1. STRING CONVERTERS                                                  ║
-# ║ 2. UTILITY                                                            ║
-# ║ 3. TRIGGERS                                                           ║
-# ║ 4. SPECIAL SKILLS DEPENDENCIES                                        ║
-# ║ 5. SPEECH ENGINES                                                     ║
-# ║ 6. OUTPUT MANAGEMENT                                                  ║
-# ║ 7. LEARNABILITY                                                       ║
-# ║ 8. MISCELLANEOUS                                                      ║
+# ║ 1. STRING CONVERTERS                                                   ║
+# ║ 2. UTILITY                                                             ║
+# ║ 3. TRIGGERS                                                            ║
+# ║ 4. SPECIAL SKILLS DEPENDENCIES                                         ║
+# ║ 5. SPEECH ENGINES                                                      ║
+# ║ 6. OUTPUT MANAGEMENT                                                   ║
+# ║ 7. LEARNABILITY                                                        ║
+# ║ 8. MISCELLANEOUS                                                       ║
 # ╚════════════════════════════════════════════════════════════════════════╝
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -498,6 +499,166 @@ class RegexUtil:
         if regexMatcher is not None:
             return regexMatcher.group(0).strip()
         return ""
+
+
+class CityMap:
+    def __init__(self, n):
+        self.streets = {}
+        self.n = n
+        self.lastInp = "standby"
+
+    def add_street(self, current_street, new_street):
+        if current_street not in self.streets:
+            self.streets[current_street] = deque(maxlen=self.n)
+        if len(new_street) == 0:
+            return
+        if new_street not in self.streets:
+            self.streets[new_street] = deque(maxlen=self.n)
+
+        self.streets[current_street].append(new_street)
+        self.streets[new_street].append(current_street)
+
+    def add_streets_from_string(self, current_street, streets_string):
+        streets = streets_string.split('_')
+        for street in streets:
+            self.add_street(current_street, street)
+
+    def learn(self, inp):
+        if inp == self.lastInp:
+            return
+        self.add_street(self.lastInp, inp)
+        self.lastInp = inp
+
+    def find_path(self, start_street, goal_street, avoid_street, max_length = 4):
+        if start_street not in self.streets:
+            return []
+        queue = deque([(start_street, [start_street])])
+        visited = {start_street}
+        while queue:
+            current_street, path = queue.popleft()
+            if len(path) > max_length:
+                return []
+            if current_street == goal_street:
+                return path
+            for neighbor in self.streets[current_street]:
+                if neighbor not in visited and neighbor != avoid_street:
+                    queue.append((neighbor, path + [neighbor]))
+                    visited.add(neighbor)
+        return []
+
+    def get_random_street(self, current_street):
+        if current_street in self.streets and self.streets[current_street]:
+            return random.choice(list(self.streets[current_street]))
+        return ""
+
+    def get_streets_string(self, street):
+        if street in self.streets and self.streets[street]:
+            return '_'.join(self.streets[street])
+        return ""
+
+    def get_first_street(self, current_street):
+        if current_street in self.streets and self.streets[current_street]:
+            return self.streets[current_street][0]
+        return ""
+
+    @staticmethod
+    def create_city_map_from_path(path):
+        new_city_map = CityMap(n=1)
+        for i in range(len(path) - 1):
+            new_city_map.add_street(path[i], path[i + 1])
+        return new_city_map
+
+    def find_path_with_must(self, start_street, goal_street, street_must, max_length = 4):
+        if start_street not in self.streets or street_must not in self.streets or goal_street not in self.streets:
+            return []
+
+        # Find path from start_street to street_must
+        path_to_must = self.find_path(start_street, street_must, avoid_street="", max_length=max_length)
+        if not path_to_must:
+            return []
+
+        # Find path from street_must to goal_street
+        path_from_must = self.find_path(street_must, goal_street, avoid_street="", max_length=max_length)
+        if not path_from_must:
+            return []
+
+        # Combine paths, ensuring street_must is not duplicated
+        return path_to_must + path_from_must[1:]
+
+
+class CityMapWithPublicTransport:
+    def __init__(self, n):
+        self.streets = {}  # Walking connections (street ↔ street or street ↔ bus stop)
+        self.transport_lines = {}  # Bus/train lines: {"Bus1": ["StopA", "StopB", ...]}
+        self.n = n  # Max connections per street
+        self.lastInp = "standby"
+
+    def add_street(self, current_street, new_street):
+        """Add a bidirectional walking connection between two streets (or a street and a bus stop)."""
+        if current_street not in self.streets:
+            self.streets[current_street] = deque(maxlen=self.n)
+        if new_street not in self.streets:
+            self.streets[new_street] = deque(maxlen=self.n)
+        self.streets[current_street].append(new_street)
+        self.streets[new_street].append(current_street)
+
+    def add_transport_line(self, line_name, stops):
+        """Add a transport line (e.g., "Bus1" with stops ["StopA", "StopB"])."""
+        self.transport_lines[line_name] = stops
+        # Connect stops sequentially (bidirectional)
+        for i in range(len(stops) - 1):
+            self.add_street(stops[i], stops[i+1])
+
+    def find_path(
+        self,
+        start,
+        goal,
+        avoid = None,
+        max_length = 4,
+        use_transport = True
+    ):
+        """
+        Finds a path using walking + transport (if enabled).
+        Returns a list like ["StreetA", "StopX", "StopY", "StreetB"].
+        """
+        queue = deque([(start, [start], "walk")])  # (current, path, mode)
+        visited = {(start, "walk")}  # Track (node, mode) to avoid loops
+
+        while queue:
+            current, path, mode = queue.popleft()
+
+            if len(path) > max_length:
+                continue  # Skip if path too long
+
+            if current == goal:
+                return path  # Found!
+
+            # Explore walking neighbors (streets + adjacent bus stops)
+            for neighbor in self.streets.get(current, []):
+                if neighbor == avoid:
+                    continue
+                if (neighbor, "walk") not in visited:
+                    visited.add((neighbor, "walk"))
+                    queue.append((neighbor, path + [neighbor], "walk"))
+
+            # Explore transport lines (if enabled and current is a stop)
+            if use_transport:
+                for line, stops in self.transport_lines.items():
+                    if current in stops:
+                        idx = stops.index(current)
+                        # Next stop in line
+                        if idx + 1 < len(stops):
+                            next_stop = stops[idx + 1]
+                            if (next_stop, line) not in visited:
+                                visited.add((next_stop, line))
+                                queue.append((next_stop, path + [next_stop], line))
+                        # Previous stop in line (bidirectional)
+                        if idx - 1 >= 0:
+                            prev_stop = stops[idx - 1]
+                            if (prev_stop, line) not in visited:
+                                visited.add((prev_stop, line))
+                                queue.append((prev_stop, path + [prev_stop], line))
+        return []  # No path found
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -1869,7 +2030,8 @@ class ElizaDBWrapper:
         ec.add_from_db(in1, kokoro.grimoireMemento.load(in1))
         return ec.response_latest(in1)
 
-    def sleep_n_save(self, ecv2, kokoro):
+    @staticmethod
+    def sleep_n_save(ecv2, kokoro):
         for element in ecv2.get_modified_keys():
             kokoro.grimoireMemento.save(element, ecv2.get_save_str(element))
 
