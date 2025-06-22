@@ -11,6 +11,19 @@ from livingrimoire import Neuron, Kokoro, AbsDictionaryDB
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
+# ║ TABLE OF CONTENTS                                                     ║
+# ╠════════════════════════════════════════════════════════════════════════╣
+# ║ 1. STRING CONVERTERS                                                  ║
+# ║ 2. UTILITY                                                            ║
+# ║ 3. TRIGGERS                                                           ║
+# ║ 4. SPECIAL SKILLS DEPENDENCIES                                        ║
+# ║ 5. SPEECH ENGINES                                                     ║
+# ║ 6. OUTPUT MANAGEMENT                                                  ║
+# ║ 7. LEARNABILITY                                                       ║
+# ║ 8. MISCELLANEOUS                                                      ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+
+# ╔════════════════════════════════════════════════════════════════════════╗
 # ║                            STRING CONVERTERS                           ║
 # ╚════════════════════════════════════════════════════════════════════════╝
 
@@ -105,6 +118,60 @@ class AXStringSplit:
 
     def stringBuilder(self, l1):
         return self._separator.join(l1)  # Simplified!
+
+
+class PhraseInflector:
+    # Maps for pronoun and verb inflection
+    inflection_map = {
+        "i": "you",
+        "me": "you",
+        "my": "your",
+        "mine": "yours",
+        "you": "i",  # Default inflection
+        "your": "my",
+        "yours": "mine",
+        "am": "are",
+        "are": "am",
+        "was": "were",
+        "were": "was",
+        "i'd": "you would",
+        "i've": "you have",
+        "you've": "I have",
+        "you'll": "I will"
+    }
+
+    @staticmethod
+    def is_verb(word):
+        verbs = {"am", "are", "was", "were", "have", "has", "had", "do", "does", "did"}
+        return word in verbs
+
+    @staticmethod
+    def inflect_phrase(phrase):
+        words = phrase.split()
+        result = []
+
+        for i, word in enumerate(words):
+            lower_word = word.lower()
+            inflected_word = word  # Default to original word
+
+            # Check if word needs inflection
+            if lower_word in PhraseInflector.inflection_map:
+                inflected_word = PhraseInflector.inflection_map[lower_word]
+
+                # Special case for "you"
+                if lower_word == "you":
+                    if i == len(words) - 1 or (i > 0 and PhraseInflector.is_verb(words[i - 1].lower())):
+                        inflected_word = "me"
+                    else:
+                        inflected_word = "I"
+
+            # Preserve capitalization
+            if word[0].isupper():
+                inflected_word = inflected_word.capitalize()
+
+            result.append(inflected_word)
+
+        return " ".join(result)
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -1107,8 +1174,39 @@ class KeyWords:
         return any(keyword in text for keyword in self._keywords)
 
 
+class QuestionChecker:
+    QUESTION_WORDS = {
+        "what", "who", "where", "when", "why", "how",
+        "is", "are", "was", "were", "do", "does", "did",
+        "can", "could", "would", "will", "shall", "should",
+        "have", "has", "am", "may", "might"
+    }
+
+    @staticmethod
+    def is_question(input_text):
+        if not input_text or not input_text.strip():
+            return False
+
+        trimmed = input_text.strip().lower()
+
+        # Check for question mark
+        if trimmed.endswith("?"):
+            return True
+
+        # Extract the first word
+        first_space = trimmed.find(' ')
+        first_word = trimmed if first_space == -1 else trimmed[:first_space]
+
+        # Check for contractions like "who's"
+        if "'" in first_word:
+            first_word = first_word.split("'")[0]
+
+        # Check if the first word is a question word
+        return first_word in QuestionChecker.QUESTION_WORDS
+
+
 # ╔════════════════════════════════════════════════════════════════════════╗
-# ║                     SPECIAL SKILLS DEPENDENCIES                       ║
+# ║                     SPECIAL SKILLS DEPENDENCIES                        ║
 # ╚════════════════════════════════════════════════════════════════════════╝
 
 class TimedMessages:
@@ -1689,12 +1787,12 @@ class PhraseMatcher:
         self.matcher = re.compile(matcher)
         self.responses = responses
 
-    def matches(self, str):
-        m = self.matcher.match(str)
+    def matches(self, str1):
+        m = self.matcher.match(str1)
         return m is not None
 
-    def respond(self, str):
-        m = self.matcher.match(str)
+    def respond(self, str1):
+        m = self.matcher.match(str1)
         result = []
         if m:
             tmp = len(m.groups())
@@ -1864,6 +1962,24 @@ class RailBot:
         return self.eliza_wrapper.respond(ear, self.ec, kokoro)
 
 
+class EventChat:
+    # funnel input to a unique response bundle
+    def __init__(self, ur, *args):
+        self._dic = {arg: ur for arg in args}
+
+    def add_items(self, ur, *args):
+        for arg in args:
+            self._dic[arg] = ur
+
+    def add_key_value(self, key, value):
+        if key in self._dic:
+            self._dic[key].addResponse(value)
+        else:
+            self._dic[key] = UniqueResponder(value)
+
+    def response(self, in1):
+        return self._dic.get(in1, "").getAResponse() if in1 in self._dic else ""
+
 
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                        OUTPUT MANAGEMENT                               ║
@@ -2001,6 +2117,63 @@ class AXTimeContextResponder:
 
     def respond(self):
         return self._responders[TimeUtils.partOfDay()].getAResponse()
+
+
+class Magic8Ball:
+    def __init__(self):
+        self.__questions = Responder()
+        self.__answers = Responder()
+        # answers:
+        # Affirmative answers
+        self.__answers.addResponse("It is certain")
+        self.__answers.addResponse("It is decidedly so")
+        self.__answers.addResponse("Without a doubt")
+        self.__answers.addResponse("Yes definitely")
+        self.__answers.addResponse("You may rely on it")
+        self.__answers.addResponse("As I see it, yes")
+        self.__answers.addResponse("Most likely")
+        self.__answers.addResponse("Outlook good")
+        self.__answers.addResponse("Yes")
+        self.__answers.addResponse("Signs point to yes")
+        # Non–Committal answers
+        self.__answers.addResponse("Reply hazy, try again")
+        self.__answers.addResponse("Ask again later")
+        self.__answers.addResponse("Better not tell you now")
+        self.__answers.addResponse("Cannot predict now")
+        self.__answers.addResponse("Concentrate and ask again")
+        # Negative answers
+        self.__answers.addResponse("Don’t count on it")
+        self.__answers.addResponse("My reply is no")
+        self.__answers.addResponse("My sources say no")
+        self.__answers.addResponse("Outlook not so good")
+        self.__answers.addResponse("Very doubtful")
+        # questions:
+        self.__questions = Responder("will i", "can i expect", "should i", "is it a good idea",
+                                     "will it be a good idea for me to", "is it possible", "future hold",
+                                     "will there be")
+
+    def setQuestions(self, q):
+        self.__questions = q
+
+    def setAnswers(self, answers):
+        self.__answers = answers
+
+    def getQuestions(self):
+        return self.__questions
+
+    def getAnswers(self):
+        return self.__answers
+
+    def engage(self, ear):
+        if len(ear) == 0:
+            return False
+        if self.__questions.strContainsResponse(ear):
+            return True
+        return False
+
+    def reply(self):
+        return self.__answers.getAResponse()
+
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -2144,6 +2317,95 @@ class ButtonEngager:
         return False
 
 
+class AXShoutOut:
+    def __init__(self):
+        self.__isActive = False
+        self.handshake = Responder()
+
+    def activate(self):
+        # make engage-able
+        self.__isActive = True
+
+    def engage(self, ear):
+        if len(ear) == 0:
+            return False
+        if self.__isActive:
+            if self.handshake.strContainsResponse(ear):
+                self.__isActive = False
+                return True  # shout out was replied!
+
+        # unrelated reply to shout out, shout out context is outdated
+        self.__isActive = False
+        return False
+
+
+class AXHandshake:
+    """
+    example use:
+            if self.__handshake.engage(ear): # ear reply like: what do you want?/yes
+            self.setVerbatimAlg(4, "now I know you are here")
+            return
+        if self.__handshake.trigger():
+            self.setVerbatimAlg(4, self.__handshake.getUser_name()) # user, user!
+    """
+
+    def __init__(self):
+        self.__trgTime = TrgTime()
+        self.__trgTolerance = TrgTolerance(10)
+        self.__shoutout = AXShoutOut()
+        # default handshakes (valid reply to shout out)
+        self.__shoutout.handshake = Responder("what", "yes", "i am here")
+        self.__user_name = ""
+        self.__dripper = PercentDripper()
+
+    # setters
+    def setTimeStamp(self, time_stamp):
+        # when will the shout out happen?
+        # example time stamp: 9:15
+        self.__trgTime.setTime(time_stamp)
+        return self
+
+    def setShoutOutLim(self, lim):
+        # how many times should user be called for, per shout out?
+        self.__trgTolerance.setMaxRepeats(lim)
+        return self
+
+    def setHandShake(self, responder):
+        # which responses would acknowledge the shout-out?
+        # such as *see default handshakes for examples suggestions
+        self.__shoutout.handshake = responder
+        return self
+
+    def setDripperPercent(self, n):
+        # hen shout out to user how frequent will it be?
+        self.__dripper.setLimit(n)
+        return self
+
+    def setUser_name(self, user_name):
+        self.__user_name = user_name
+        return self
+
+    # getters
+    def getUser_name(self):
+        return self.__user_name
+
+    def engage(self, ear):
+        if self.__trgTime.alarm():
+            self.__trgTolerance.reset()
+        # stop shout out
+        if self.__shoutout.engage(ear):
+            self.__trgTolerance.disable()
+            return True
+        return False
+
+    def trigger(self):
+        if self.__trgTolerance.trigger():
+            if self.__dripper.drip():
+                self.__shoutout.activate()
+                return True
+        return False
+
+
 
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                         LEARNABILITY                                   ║
@@ -2221,6 +2483,53 @@ class Strategy:
     def getStrategy(self):
         return self._activeStrategy.getRNDElement()
 
+
+class Differ:
+    # battery state management
+    def __init__(self):
+        self._powerLevel = 90
+        self._difference = 0
+
+    def getPowerLevel(self):
+        return self._powerLevel
+
+    def getPowerLVDifference(self):
+        return self._difference
+
+    def clearPowerLVDifference(self):
+        self._difference = 0
+
+    def samplePowerLV(self, pl: int):
+        # pl is the current power level
+        self._difference = pl - self._powerLevel
+        self._powerLevel = pl
+
+
+class Notes:
+    def __init__(self):
+        self._log = []
+        self._index = 0
+
+    def add(self, s1):
+        self._log.append(s1)
+
+    def clear(self):
+        self._log.clear()
+
+    def getNote(self):
+        if len(self._log) == 0:
+            return "zero notes"
+        return self._log[self._index]
+
+    def get_next_note(self):
+        if len(self._log) == 0:
+            return "zero notes"
+        self._index += 1
+        if self._index == len(self._log):
+            self._index = 0
+        return self._log[self._index]
+
+
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                            MISCELLANEOUS                               ║
 # ╚════════════════════════════════════════════════════════════════════════╝
@@ -2272,3 +2581,42 @@ class CombinatoricalUtils:
             temp_lists.append(lists[i])
         self.result = []
         self._generatePermutations(temp_lists, self.result, 0, "")
+
+
+class AXNightRider:
+    # night rider display simulation for LED lights count up then down
+    def __init__(self, limit):
+        self._mode = 0
+        self._position = 0
+        self._lim = 0
+        if limit > 0:
+            self._lim = limit
+        self._direction = 1
+
+    def setLim(self, lim):
+        # number of LEDs
+        self._lim = lim
+
+    def setMode(self, mode):
+        # room for more modes to be added
+        if 10 > mode > -1:
+            self._mode = mode
+
+    def getPosition(self):
+        match self._mode:
+            case 0:
+                self.mode0()
+        return self._position
+
+    def mode0(self):
+        # classic night rider display
+        self._position += self._direction
+        if self._direction < 1:
+            if self._position < 1:
+                self._position = 0
+                self._direction = 1
+        else:
+            if self._position > self._lim - 1:
+                self._position = self._lim
+                self._direction = -1
+
