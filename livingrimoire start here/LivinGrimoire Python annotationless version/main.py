@@ -1,28 +1,49 @@
-import sched
+import threading
 import time
-from livingrimoire import Brain
 import os
+from queue import Queue
+from livingrimoire import Brain
+import sys  # at the top
+import importlib
 
-def tick(scheduler1):
-    """Runs at intervals without blocking."""
-    user_input = input("> ")
-    if user_input.lower() == "exit":
-        print("Exiting program...")
-        return  # Stop scheduling
-    b1.think_default(user_input)
-    scheduler1.enter(2, 1, tick, (scheduler1,))  # Schedule next tick in 2 seconds
 
-def call_add_DLC_skills(brain: Brain):
+TICK_INTERVAL = 2  # seconds
+
+def brain_loop():
+    while True:
+        message = brain_queue.get()
+        b1.think_default(message)
+
+def input_loop():
+    while True:
+        user_input = input("> ")
+        if user_input.strip().lower() == "exit":
+            print("Exiting...")
+            sys.exit(0)
+        brain_queue.put(user_input)
+
+def tick_loop():
+    next_tick = time.monotonic()
+    while True:
+        now = time.monotonic()
+        if now >= next_tick:
+            brain_queue.put("")  # background tick
+            next_tick += TICK_INTERVAL
+        time.sleep(0.01)  # just enough to keep CPU chill
+
+def call_add_DLC_skills(brain):
     for file in os.listdir('.'):
         if file.endswith('.py') and 'DLC' in file:
             module_name = file[:-3]
-            exec(f"import {module_name}")
-            exec(f"{module_name}.add_DLC_skills(brain)")
+            module = importlib.import_module(module_name)  # [SECURE LOAD]
+            module.add_DLC_skills(brain)  # [SAFE EXECUTION]
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     b1 = Brain()
-    call_add_DLC_skills(b1)  # dynamic dispatch
+    brain_queue = Queue()
 
-    scheduler = sched.scheduler(time.time, time.sleep)
-    scheduler.enter(0, 1, tick, (scheduler,))  # Start loop immediately
-    scheduler.run()
+    call_add_DLC_skills(b1)
+
+    threading.Thread(target=brain_loop, daemon=True).start()
+    threading.Thread(target=tick_loop, daemon=True).start()
+    input_loop()  # blocks main thread
