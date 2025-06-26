@@ -1013,17 +1013,6 @@ class AHAware(Skill):
                 self.setSimpleAlg(self.replies.getAResponse())
 
 
-class DiBlabberV6(Skill):
-    def __init__(self, funnel: AXFunnelResponder):
-        super().__init__()
-        self.funnel: AXFunnelResponder = funnel
-
-    def input(self, ear: str, skin: str, eye: str):
-        # walrus operator:
-        if n := self.funnel.funnel_walrus_operator(ear):
-            self.setSimpleAlg(n)
-
-
 class DiNoteTaker(Skill):
     def __init__(self):
         super().__init__()
