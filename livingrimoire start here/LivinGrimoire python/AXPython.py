@@ -27,6 +27,121 @@ from datetime import timedelta
 # ║ 9. UNDER USE                                                           ║
 # ╚════════════════════════════════════════════════════════════════════════╝
 
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║     📜 TABLE OF CONTENTS — CLASS INDEX                               ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+
+# ┌────────────────────────────┐
+# │ 🧵 STRING CONVERTERS       │
+# └────────────────────────────┘
+# - AXFunnel
+# - AXLMorseCode
+# - AXLNeuroSama
+# - AXStringSplit
+# - PhraseInflector
+
+# ┌────────────────────────────┐
+# │ 🛠️ UTILITY                 │
+# └────────────────────────────┘
+# - TimeUtils
+# - LGPointInt
+# - LGPointFloat
+# - enumRegexGrimoire
+# - RegexUtil
+# - CityMap
+# - CityMapWithPublicTransport
+
+# ┌────────────────────────────┐
+# │ 🎯 TRIGGERS                │
+# └────────────────────────────┘
+# - CodeParser
+# - TimeGate
+# - LGFIFO
+# - UniqueItemsPriorityQue
+# - UniqueItemSizeLimitedPriorityQueue
+# - RefreshQ
+# - AnnoyedQ
+# - TrgTolerance
+# - AXCmdBreaker
+# - AXContextCmd
+# - AXInputWaiter
+# - LGTypeConverter
+# - DrawRnd
+# - AXPassword
+# - TrgTime
+# - Cron
+# - AXStandBy
+# - Cycler
+# - OnOffSwitch
+# - TimeAccumulator
+# - KeyWords
+# - QuestionChecker
+# - TrgMinute
+# - TrgEveryNMinutes
+
+# ┌──────────────────────────────────────────────┐
+# │ 🧪 SPECIAL SKILLS DEPENDENCIES               │
+# └──────────────────────────────────────────────┘
+# - TimedMessages
+# - AXLearnability
+# - AlgorithmV2
+# - SkillHubAlgDispenser
+# - UniqueRandomGenerator
+# - UniqueResponder
+# - AXSkillBundle
+# - AXGamification
+# - Responder
+
+# ┌────────────────────────────┐
+# │ 🗣️ SPEECH ENGINES          │
+# └────────────────────────────┘
+# - ChatBot
+# - ElizaDeducer
+# - PhraseMatcher
+# - ElizaDeducerInitializer (ElizaDeducer)
+# - ElizaDBWrapper
+# - RailBot
+# - EventChat
+# - AXFunnelResponder
+# - TrgParrot
+
+# ┌────────────────────────────┐
+# │ 🎛️ OUTPUT MANAGEMENT       │
+# └────────────────────────────┘
+# - LimUniqueResponder
+# - EventChatV2
+# - PercentDripper
+# - AXTimeContextResponder
+# - Magic8Ball
+# - Responder1Word
+
+# ┌────────────────────────────┐
+# │ 🧩 STATE MANAGEMENT        │
+# └────────────────────────────┘
+# - Prompt
+# - AXPrompt
+# - AXMachineCode
+# - ButtonEngager
+# - AXShoutOut
+# - AXHandshake
+# - Differ
+# - ChangeDetector
+
+# ┌────────────────────────────┐
+# │ 🧠 LEARNABILITY            │
+# └────────────────────────────┘
+# - SpiderSense
+# - Strategy
+# - Notes
+# - Catche
+
+# ┌────────────────────────────┐
+# │ 🧿 MISCELLANEOUS           │
+# └────────────────────────────┘
+# - AXKeyValuePair
+# - CombinatoricalUtils
+# - AXNightRider
+
 
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                            STRING CONVERTERS                           ║
@@ -1541,6 +1656,57 @@ class QuestionChecker:
         # Check if the first word is a question word
         return first_word in QuestionChecker.QUESTION_WORDS
 
+
+class TrgMinute:
+    # trigger true at minute once per hour
+    def __init__(self):
+        super().__init__()
+        self._hour1: int = -1
+        self._minute: int = random.randint(0, 60)
+
+    def setMinute(self, minute):
+        if -1 < minute < 61:
+            self._minute = minute
+
+    # override
+    def trigger(self) -> bool:
+        temp_hour: int = TimeUtils.getHoursAsInt()
+        if temp_hour != self._hour1:
+            if TimeUtils.getMinutesAsInt() == self._minute:
+                self._hour1 = temp_hour
+                return True
+        return False
+
+    # override
+    def reset(self):
+        self._hour1 = -1
+
+
+class TrgEveryNMinutes:
+    # trigger returns true every minutes interval, post start time
+    def __init__(self, startTime: str, minutes: int):
+        self._minutes: int = minutes  # minute interval between triggerings
+        self._timeStamp = startTime
+        self._trgTime: TrgTime = TrgTime()
+        self._trgTime.setTime(startTime)
+
+    def setMinutes(self, minutes: int):
+        if minutes > -1:
+            self._minutes = minutes
+
+    # override
+    def trigger(self) -> bool:
+        if self._trgTime.alarm():
+            self._timeStamp = TimeUtils.getFutureInXMin(self._minutes)
+            self._trgTime.setTime(self._timeStamp)
+            return True
+        return False
+
+    # override
+    def reset(self):
+        self._timeStamp = TimeUtils.getCurrentTimeStamp()
+
+
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                     SPECIAL SKILLS DEPENDENCIES                        ║
 # ╚════════════════════════════════════════════════════════════════════════╝
@@ -2311,6 +2477,74 @@ class EventChat:
     def response(self, in1: str) -> str:
         return self._dic.get(in1, "").getAResponse() if in1 in self._dic else ""
 
+
+class AXFunnelResponder:
+    def __init__(self):
+        self.dic: dict[str, Responder] = {}
+
+    def add_kv(self, key: str, value: Responder) -> None:
+        # Add key-value pair
+        self.dic[key] = value
+
+    def add_kv_builder_pattern(self, key: str, value: Responder) -> AXFunnelResponder:
+        # Add key-value pair
+        self.dic[key] = value
+        return self
+
+    def funnel(self, key: str) -> str:
+        # Default funnel = key
+        if key in self.dic:
+            return self.dic[key].getAResponse()
+        return key
+
+    def funnel_or_nothing(self, key: str) -> str:
+        # Default funnel = ""
+        if key in self.dic:
+            return self.dic[key].getAResponse()
+        return ""
+
+    def funnel_walrus_operator(self, key: str):
+        # Default funnel = None
+        if key in self.dic:
+            return self.dic[key].getAResponse()
+        return None
+
+
+class TrgParrot:
+    # simulates a parrot chirp trigger mechanism
+    # as such this trigger is off at night
+    # in essence this trigger says: I am here, are you here? good.
+    def __init__(self, limit: int):
+        super().__init__()
+        temp_lim: int = 3
+        if limit > 0:
+            temp_lim = limit
+        self._tolerance: TrgTolerance = TrgTolerance(temp_lim)
+        self._silencer: Responder = Responder("ok", "okay", "stop", "shut up", "quiet")
+
+    def trigger(self, standBy: bool, ear: str) -> bool:
+        """relies on the Kokoro standby boolean
+         no input or output for a set amount of time results with a true
+         and replenishing the trigger."""
+        if TimeUtils.isNight():
+            # is it night? I will be quite
+            return False
+        # you want the bird to shut up?
+        if self._silencer.responsesContainsStr(ear):
+            self._tolerance.disable()
+            return False
+        # no input or output for a while?
+        if standBy:
+            # I will chirp!
+            self._tolerance.reset()
+            return True
+        # we are handshaking?
+        if not ear == "":
+            # I will reply chirp till it grows old for me (a set amount of times till reset)
+            if self._tolerance.trigger():
+                return True
+        return False
+
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                        OUTPUT MANAGEMENT                               ║
 # ╚════════════════════════════════════════════════════════════════════════╝
@@ -2500,6 +2734,27 @@ class Magic8Ball:
 
     def reply(self) -> str:
         return self.__answers.getAResponse()
+
+
+class Responder1Word:
+    # learns 1 word input
+    # outputs learned recent words
+    def __init__(self):
+        self.q: UniqueItemSizeLimitedPriorityQueue = UniqueItemSizeLimitedPriorityQueue(5)
+        self.q.insert("chi")
+        self.q.insert("gaga")
+        self.q.insert("gugu")
+        self.q.insert("baby")
+
+    def listen(self, ear: str):
+        if not (ear.__contains__(" ") or ear == ""):
+            self.q.insert(ear)
+
+    def getAResponse(self) -> str:
+        return self.q.getRNDElement()
+
+    def contains(self, ear: str) -> bool:
+        return self.q.contains(ear)
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -2720,6 +2975,33 @@ class Differ:
         self._powerLevel = pl
 
 
+class ChangeDetector:
+    # threat recognition
+    def __init__(self, a, b):
+        self.A = a
+        self.B = b
+        self.prev = -1
+
+    def detect_change(self, ear):
+        # a->b return 2; b->a return 1; else return 0
+        if not ear:
+            return 0
+        current: int
+        if self.A in ear:
+            current = 1
+        elif self.B in ear:
+            current = 2
+        else:
+            return 0
+        result = 0
+        if (current == 1) and (self.prev == 2):
+            result = 1
+        if (current == 2) and (self.prev == 1):
+            result = 2
+        self.prev = current
+        return result
+
+
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                         LEARNABILITY                                   ║
 # ╚════════════════════════════════════════════════════════════════════════╝
@@ -2827,6 +3109,37 @@ class Notes:
         if self._index == len(self._log):
             self._index = 0
         return self._log[self._index]
+
+
+class Catche:
+    # limited sized dictionary, used for short term memories
+    def __init__(self, size: int):
+        super().__init__()
+        self._limit: int = size
+        self._keys: UniqueItemSizeLimitedPriorityQueue = UniqueItemSizeLimitedPriorityQueue(size)
+        self._d1: dict[str, str] = {}
+
+    def insert(self, key: str, value: str):
+        # update
+        if self._d1.__contains__(key):
+            self._d1[key] = value
+            return
+        # insert:
+        if self._keys.size() == self._limit:
+            temp = self._keys.peak()
+            del self._d1[temp]
+        self._keys.insert(key)
+        self._d1[key] = value
+
+    def clear(self):
+        self._keys.clear()
+        self._d1.clear()
+
+    def read(self, key: str) -> str:
+        if not self._d1.__contains__(key):
+            return "null"
+        return self._d1[key]
+
 
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                            MISCELLANEOUS                               ║
@@ -3153,97 +3466,6 @@ class Map:
         return self._descriptionPoint[description]
 
 
-class Catche:
-    # limited sized dictionary
-    def __init__(self, size: int):
-        super().__init__()
-        self._limit: int = size
-        self._keys: UniqueItemSizeLimitedPriorityQueue = UniqueItemSizeLimitedPriorityQueue(size)
-        self._d1: dict[str, str] = {}
-
-    def insert(self, key: str, value: str):
-        # update
-        if self._d1.__contains__(key):
-            self._d1[key] = value
-            return
-        # insert:
-        if self._keys.size() == self._limit:
-            temp = self._keys.peak()
-            del self._d1[temp]
-        self._keys.insert(key)
-        self._d1[key] = value
-
-    def clear(self):
-        self._keys.clear()
-        self._d1.clear()
-
-    def read(self, key: str) -> str:
-        if not self._d1.__contains__(key):
-            return "null"
-        return self._d1[key]
-
-
-class TrgMinute(TrGEV3):
-    # trigger true at minute once per hour
-    def __init__(self):
-        super().__init__()
-        self._hour1: int = -1
-        self._minute: int = random.randint(0, 60)
-
-    def setMinute(self, minute):
-        if -1 < minute < 61:
-            self._minute = minute
-
-    # override
-    def trigger(self) -> bool:
-        temp_hour: int = TimeUtils.getHoursAsInt()
-        if temp_hour != self._hour1:
-            if TimeUtils.getMinutesAsInt() == self._minute:
-                self._hour1 = temp_hour
-                return True
-        return False
-
-    # override
-    def reset(self):
-        self._hour1 = -1
-
-
-class TrgParrot:
-    # simulates a parrot chirp trigger mechanism
-    # as such this trigger is off at night
-    # in essence this trigger says: I am here, are you here? good.
-    def __init__(self, limit: int):
-        super().__init__()
-        temp_lim: int = 3
-        if limit > 0:
-            temp_lim = limit
-        self._tolerance: TrgTolerance = TrgTolerance(temp_lim)
-        self._silencer: Responder = Responder("ok", "okay", "stop", "shut up", "quiet")
-
-    def trigger(self, standBy: bool, ear: str) -> bool:
-        """relies on the Kokoro standby boolean
-         no input or output for a set amount of time results with a true
-         and replenishing the trigger."""
-        if TimeUtils.isNight():
-            # is it night? I will be quite
-            return False
-        # you want the bird to shut up?
-        if self._silencer.responsesContainsStr(ear):
-            self._tolerance.disable()
-            return False
-        # no input or output for a while?
-        if standBy:
-            # I will chirp!
-            self._tolerance.reset()
-            return True
-        # we are handshaking?
-        if not ear == "":
-            # I will reply chirp till it grows old for me (a set amount of times till reset)
-            if self._tolerance.trigger():
-                return True
-        return False
-
-
 class TrgSnooze(TrGEV3):
     # this boolean gate will return true per minute interval
     # max repeats times.
@@ -3448,52 +3670,6 @@ class AXLSpeechModifier(AXLHousing):
         for item in words:
             result = result + " " + self.dic.get(item, item)
         return result.strip()
-
-
-class Responder1Word:
-    # learns 1 word input
-    # outputs learned recent words
-    def __init__(self):
-        self.q: UniqueItemSizeLimitedPriorityQueue = UniqueItemSizeLimitedPriorityQueue(5)
-        self.q.insert("chi")
-        self.q.insert("gaga")
-        self.q.insert("gugu")
-        self.q.insert("baby")
-
-    def listen(self, ear: str):
-        if not (ear.__contains__(" ") or ear == ""):
-            self.q.insert(ear)
-
-    def getAResponse(self) -> str:
-        return self.q.getRNDElement()
-
-    def contains(self, ear: str) -> bool:
-        return self.q.contains(ear)
-
-
-class TrgEveryNMinutes(TrGEV3):
-    # trigger returns true every minutes interval, post start time
-    def __init__(self, startTime: str, minutes: int):
-        self._minutes: int = minutes  # minute interval between triggerings
-        self._timeStamp = startTime
-        self._trgTime: TrgTime = TrgTime()
-        self._trgTime.setTime(startTime)
-
-    def setMinutes(self, minutes: int):
-        if minutes > -1:
-            self._minutes = minutes
-
-    # override
-    def trigger(self) -> bool:
-        if self._trgTime.alarm():
-            self._timeStamp = TimeUtils.getFutureInXMin(self._minutes)
-            self._trgTime.setTime(self._timeStamp)
-            return True
-        return False
-
-    # override
-    def reset(self):
-        self._timeStamp = TimeUtils.getCurrentTimeStamp()
 
 
 # A simple implementation of Priority Queue
@@ -3705,63 +3881,6 @@ class TextEditingSeries:
 
         lines.append(' '.join(current_line))
         return '\n'.join(lines)
-
-class ChangeDetector:
-    def __init__(self, a, b):
-        self.A = a
-        self.B = b
-        self.prev = -1
-
-    def detect_change(self, ear):
-        # a->b return 2; b->a return 1; else return 0
-        if not ear:
-            return 0
-        current: int
-        if self.A in ear:
-            current = 1
-        elif self.B in ear:
-            current = 2
-        else:
-            return 0
-        result = 0
-        if (current == 1) and (self.prev == 2):
-            result = 1
-        if (current == 2) and (self.prev == 1):
-            result = 2
-        self.prev = current
-        return result
-
-
-class AXFunnelResponder:
-    def __init__(self):
-        self.dic: dict[str, Responder] = {}
-
-    def add_kv(self, key: str, value: Responder) -> None:
-        # Add key-value pair
-        self.dic[key] = value
-
-    def add_kv_builder_pattern(self, key: str, value: Responder) -> AXFunnelResponder:
-        # Add key-value pair
-        self.dic[key] = value
-        return self
-
-    def funnel(self, key: str) -> str:
-        # Default funnel = key
-        if key in self.dic:
-            return self.dic[key].getAResponse()
-        return key
-
-    def funnel_or_nothing(self, key: str) -> str:
-        # Default funnel = ""
-        if key in self.dic:
-            return self.dic[key].getAResponse()
-        return ""
-
-    def funnel_walrus_operator(self, key: str):
-        # Default funnel = None
-        if key in self.dic:
-            return self.dic[key].getAResponse()
-        return None
 
 
 class Excluder:
