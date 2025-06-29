@@ -179,112 +179,63 @@ class DiTime(Skill):
     def __init__(self):
         super().__init__()
 
-    # Override
     def input(self, ear: str, skin: str, eye: str):
-        match ear:
-            case "what is the date":
-                self.setVerbatimAlg(4,
-                                    f'{TimeUtils.getCurrentMonthDay()} {TimeUtils.getCurrentMonthName()} {TimeUtils.getYearAsInt()}')
-            case "what is the time":
-                self.setVerbatimAlg(4, TimeUtils.getCurrentTimeStamp())
-            case "honey bunny":
-                self.setVerbatimAlg(4, "bunny honey")
-            case "i am sleepy":
-                self.setSimpleAlg(
-                    "Chi… Chi knows it’s late. Sleep, sleep is good. When you sleep, you can dream. Dreams, dreams are nice. Tomorrow, lots to do. If sleep now, can do best tomorrow. So, let’s sleep. Good night… zzz…")
-            case "which day is it":
-                self.setVerbatimAlg(4, TimeUtils.getDayOfDWeek())
-            case "good morning":
-                self.setVerbatimAlg(4, f'good {TimeUtils.partOfDay()}')  # fstring
-            case "good night":
-                self.setVerbatimAlg(4, f'good {TimeUtils.partOfDay()}')  # fstring
-            case "good afternoon":
-                self.setVerbatimAlg(4, f'good {TimeUtils.partOfDay()}')  # fstring
-            case "good evening":
-                self.setVerbatimAlg(4, f'good {TimeUtils.partOfDay()}')  # fstring
-            case "which month is it":
-                self.setVerbatimAlg(4, TimeUtils.getCurrentMonthName())
-            case "which year is it":
-                self.setVerbatimAlg(4, f'{TimeUtils.getYearAsInt()}')
-            case "what is your time zone":
-                self.setVerbatimAlg(4, TimeUtils.getLocal())
-            case "when is the first":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(1))
-            case "when is the second":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(2))
-            case "when is the third":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(3))
-            case "when is the fourth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(4))
-            case "when is the fifth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(5))
-            case "when is the sixth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(6))
-            case "when is the seventh":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(7))
-            case "when is the eighth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(8))
-            case "when is the ninth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(9))
-            case "when is the tenth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(10))
-            case "when is the eleventh":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(11))
-            case "when is the twelfth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(12))
-            case "when is the thirteenth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(13))
-            case "when is the fourteenth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(14))
-            case "when is the fifteenth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(15))
-            case "when is the sixteenth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(16))
-            case "when is the seventeenth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(17))
-            case "when is the eighteenth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(18))
-            case "when is the nineteenth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(19))
-            case "when is the twentieth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(20))
-            case "when is the twenty first":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(21))
-            case "when is the twenty second":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(22))
-            case "when is the twenty third":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(23))
-            case "when is the twenty fourth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(24))
-            case "when is the twenty fifth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(25))
-            case "when is the twenty sixth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(26))
-            case "when is the twenty seventh":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(27))
-            case "when is the twenty eighth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(28))
-            case "when is the twenty ninth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(29) if (TimeUtils.nxtDayOnDate(29) != "") else "never")
-            case "when is the thirtieth":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(30) if (TimeUtils.nxtDayOnDate(30) != "") else "never")
-            case "when is the thirty first":
-                self.setVerbatimAlg(4, TimeUtils.nxtDayOnDate(31) if (TimeUtils.nxtDayOnDate(31) != "") else "never")
-            case "incantation 0":
-                self.setVerbatimAlg(5, "fly", "bless of magic caster", "infinity wall", "magic ward holy",
-                                    "life essence")
-            case "evil laugh":
-                self.setSimpleAlg("bwahaha mwahaha")
-            case "bye":
-                if PercentDripper().dripPlus(35):
-                    self.setSimpleAlg("bye")
+        responses = {
+            "what is the date": f'{TimeUtils.getCurrentMonthDay()} {TimeUtils.getCurrentMonthName()} {TimeUtils.getYearAsInt()}',
+            "what is the time": TimeUtils.getCurrentTimeStamp(),
+            "honey bunny": "bunny honey",
+            "i am sleepy": "Chi… Chi knows it's late. Sleep, sleep is good... zzz…",
+            "which day is it": TimeUtils.getDayOfDWeek(),
+            "good morning": f'good {TimeUtils.partOfDay()}',
+            "good night": f'good {TimeUtils.partOfDay()}',
+            "good afternoon": f'good {TimeUtils.partOfDay()}',
+            "good evening": f'good {TimeUtils.partOfDay()}',
+            "which month is it": TimeUtils.getCurrentMonthName(),
+            "which year is it": f'{TimeUtils.getYearAsInt()}',
+            "what is your time zone": TimeUtils.getLocal(),
+            "incantation 0": ["fly", "bless of magic caster", "infinity wall", "magic ward holy", "life essence"],
+            "evil laugh": "bwahaha mwahaha",
+            "bye": "bye" if PercentDripper().dripPlus(35) else None
+        }
+
+        # Handle date queries (1st-31st)
+        if ear.startswith("when is the "):
+            date_str = ear[12:]
+            date_map = {
+                "first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5,
+                "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,
+                "eleventh": 11, "twelfth": 12, "thirteenth": 13, "fourteenth": 14,
+                "fifteenth": 15, "sixteenth": 16, "seventeenth": 17, "eighteenth": 18,
+                "nineteenth": 19, "twentieth": 20, "twenty first": 21, "twenty second": 22,
+                "twenty third": 23, "twenty fourth": 24, "twenty fifth": 25, "twenty sixth": 26,
+                "twenty seventh": 27, "twenty eighth": 28, "twenty ninth": 29, "thirtieth": 30,
+                "thirty first": 31
+            }
+            if date_str in date_map:
+                date = date_map[date_str]
+                result = TimeUtils.nxtDayOnDate(date)
+                if date > 28 and not result:
+                    result = "never"
+                self.setVerbatimAlg(4, result)
+                return
+
+        if ear in responses:
+            response = responses[ear]
+            if response is not None:
+                if isinstance(response, list):
+                    self.setVerbatimAlg(5, *response)
+                else:
+                    self.setVerbatimAlg(4, response) if ear != "i am sleepy" else self.setSimpleAlg(response)
 
     def skillNotes(self, param: str) -> str:
-        if param == "notes":
-            return "gets time date or misc"
-        elif param == "triggers":
-            return random.choice(["what is the time", "which day is it", "what is the date", "evil laugh", "good part of day", "when is the fifth"])
-        return "time util skill"
+        notes = {
+            "notes": "gets time date or misc",
+            "triggers": random.choice([
+                "what is the time", "which day is it", "what is the date",
+                "evil laugh", "good part of day", "when is the fifth"
+            ])
+        }
+        return notes.get(param, "time util skill")
 
 
 class DiCron(Skill):
@@ -1377,6 +1328,7 @@ class DiImprint_PT1(Skill):
         for line in lines:
             self.chobit.think(line, "", "")
 
+    # noinspection PyMethodMayBeStatic
     def skill_notes(self, param: str) -> str:
         if param == "notes":
             return "imprints kiln file to bot"
@@ -1402,6 +1354,7 @@ class DiImprint_PT2(Skill):
         if ear == "imprint":
             self.setSimpleAlg("imprinting")
 
+    # noinspection PyMethodMayBeStatic
     def skill_notes(self, param: str) -> str:
         if param == "notes":
             return "Tells when bot is imprinted with kiln file."
@@ -1438,6 +1391,7 @@ class DiImprint_recorder(Skill):
         with open("kiln.txt", "a") as file:
             file.write(f"\n{ear}")
 
+    # noinspection PyMethodMayBeStatic
     def skill_notes(self, param: str) -> str:
         if param == "notes":
             return "Records inputs to kiln text file"

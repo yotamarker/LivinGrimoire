@@ -7,6 +7,37 @@ import threading
 from queue import Queue
 from LivinGrimoire import Brain, Skill
 
+"""
+🔧 Whisper + CUDA Upgrade Guide
+
+✅ 1. Check if your system supports GPU acceleration
+import torch
+print(torch.cuda.is_available())
+if true:
+✅ 2. Install CUDA-enabled PyTorch (if needed)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+✅ 3. Load a better Whisper model (with GPU support)
+replace:
+model = whisper.load_model("base")
+
+with one of these for better accuracy:
+model = whisper.load_model("small", device="cuda")     # Good balance
+model = whisper.load_model("medium", device="cuda")    # Higher accuracy
+model = whisper.load_model("large", device="cuda")     # Best accuracy (but slowest)
+
+This tells Whisper to use your **GPU** (via CUDA), which makes transcription faster and lets you use larger models if needed.
+✅ 4. Enable fp16 for faster transcription (on supported GPUs)
+replace:
+result = DiSTT.model.transcribe(audio_np, fp16=False, language='en')
+with:
+result = DiSTT.model.transcribe(audio_np, fp16=True, language='en')
+
+This enables **16-bit floating point precision**, which is faster on modern GPUs.
+⚠️ fp16=True will crash on unsupported GPUs and should be switched back if needed.
+NVIDIA RTX or newer graphics cards
+"""
+
 
 class DiSTT(Skill):
     CHUNK = 1024
