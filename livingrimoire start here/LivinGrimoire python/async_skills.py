@@ -1,3 +1,5 @@
+import os
+
 import feedparser
 import requests
 import threading
@@ -42,7 +44,8 @@ class DaRainAlerts(ShorniSplash):
         self.city: str = city
         self.apikey: str = ""  # your https://openweathermap.org/api api key. place it in a
         # weather_apikey.txt in the python project's source dir
-        with open('weather_apikey.txt', 'r') as f:
+        key_path = os.path.join(os.path.dirname(__file__), 'api_keys', 'weather_apikey.txt')
+        with open(key_path, 'r') as f:
             self.apikey = f.read()
         self._funnel: AXFunnel = AXFunnel()
         self._funnel.setDefault("temp")
@@ -215,7 +218,8 @@ class DaDeepseekRun(ShorniSplash):
         self.input_text = ""  # Temporary storage for input text
         self.apikey: str = ""  # your https://openweathermap.org/api api key. place it in a
         # weather_apikey.txt in the python project's source dir
-        with open('deepseek_api_key.txt', 'r') as f:
+        key_path = os.path.join(os.path.dirname(__file__), 'api_keys', 'deepseek_api_key.txt')
+        with open(key_path, 'r') as f:
             self.apikey = f.read()
 
     def trigger(self, ear: str, skin: str, eye: str) -> bool:
