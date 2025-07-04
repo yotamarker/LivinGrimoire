@@ -2,10 +2,10 @@ import threading
 import time
 import os
 from queue import Queue
-from livingrimoire import Brain
 import sys  # at the top
 import importlib
 
+from LivinGrimoirePacket.livingrimoire import Brain
 
 TICK_INTERVAL = 2  # seconds
 

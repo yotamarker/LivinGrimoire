@@ -1,4 +1,4 @@
-from livingrimoire import Brain, DiHelloWorld, DiSysOut
+from LivinGrimoirePacket.livingrimoire import Brain, DiHelloWorld
 from skills_utility import DiSayer, DiTime
 
 

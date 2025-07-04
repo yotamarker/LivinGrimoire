@@ -8,7 +8,7 @@ from math import sqrt
 import datetime
 import calendar
 
-from livingrimoire import Neuron, Kokoro, AbsDictionaryDB
+from LivinGrimoirePacket.livingrimoire import Neuron, Kokoro, AbsDictionaryDB
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -2945,27 +2945,6 @@ class Strategy:
 
     def getStrategy(self):
         return self._activeStrategy.getRNDElement()
-
-
-class Differ:
-    # battery state management
-    def __init__(self):
-        self._powerLevel = 90
-        self._difference = 0
-
-    def getPowerLevel(self):
-        return self._powerLevel
-
-    def getPowerLVDifference(self):
-        return self._difference
-
-    def clearPowerLVDifference(self):
-        self._difference = 0
-
-    def samplePowerLV(self, pl: int):
-        # pl is the current power level
-        self._difference = pl - self._powerLevel
-        self._powerLevel = pl
 
 
 class Notes:

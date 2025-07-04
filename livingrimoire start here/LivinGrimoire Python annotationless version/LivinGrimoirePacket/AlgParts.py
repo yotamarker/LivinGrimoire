@@ -1,6 +1,7 @@
-from ax_modules import TimeGate
-from livingrimoire import AlgPart
 from collections import deque  # for APVerbatim cls
+
+from LivinGrimoirePacket.ax_modules import TimeGate
+from LivinGrimoirePacket.livingrimoire import AlgPart
 
 
 class APSleep(AlgPart):

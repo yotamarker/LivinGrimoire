@@ -1,4 +1,4 @@
-from livingrimoire import Brain, DiSysOut
+from LivinGrimoirePacket.livingrimoire import Brain, DiSysOut
 
 
 def add_DLC_skills(brain: Brain):

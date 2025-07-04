@@ -1,7 +1,7 @@
 import random
 
-from ax_modules import AXCmdBreaker, TimeUtils, PercentDripper
-from livingrimoire import Skill
+from LivinGrimoirePacket.ax_modules import AXCmdBreaker, TimeUtils, PercentDripper
+from LivinGrimoirePacket.livingrimoire import Skill
 
 
 # ╔════════════════════════════════════════════════╗

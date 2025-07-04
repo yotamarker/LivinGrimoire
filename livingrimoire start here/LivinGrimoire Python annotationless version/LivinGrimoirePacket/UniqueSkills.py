@@ -1,7 +1,7 @@
-from AlgParts import APSad
-from ax_modules import TimedMessages, SkillHubAlgDispenser, AXLearnability, UniqueResponder, AXSkillBundle, \
-    AXGamification, Responder
-from livingrimoire import Skill, Kokoro, AbsDictionaryDB
+from LivinGrimoirePacket.AlgParts import APSad
+from LivinGrimoirePacket.ax_modules import TimedMessages, SkillHubAlgDispenser, AXLearnability, AXSkillBundle, \
+    UniqueResponder, AXGamification, Responder
+from LivinGrimoirePacket.livingrimoire import Skill, Kokoro, AbsDictionaryDB
 
 
 class DiBicameral(Skill):
