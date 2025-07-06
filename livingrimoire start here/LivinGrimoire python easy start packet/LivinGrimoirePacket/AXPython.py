@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from LivinGrimoire import *
+from LivinGrimoirePacket.LivinGrimoire import *
 from enum import Enum, auto
 import calendar
 import re
