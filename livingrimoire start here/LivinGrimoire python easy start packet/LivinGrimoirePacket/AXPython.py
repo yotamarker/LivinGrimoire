@@ -2520,30 +2520,34 @@ class TrgParrot:
         if limit > 0:
             temp_lim = limit
         self._tolerance: TrgTolerance = TrgTolerance(temp_lim)
-        self._silencer: Responder = Responder("ok", "okay", "stop", "shut up", "quiet")
+        self._idle_tolerance: TrgTolerance = TrgTolerance(temp_lim)
+        self._silencer: Responder = Responder("stop", "shut up", "quiet")
 
-    def trigger(self, standBy: bool, ear: str) -> bool:
-        """relies on the Kokoro standby boolean
-         no input or output for a set amount of time results with a true
-         and replenishing the trigger."""
+    def trigger(self, standBy: bool, ear: str) -> int:
         if TimeUtils.isNight():
             # is it night? I will be quite
             return False
-        # you want the bird to shut up?
+        # you want the bird to shut up?: say stop/shutup/queit
         if self._silencer.responsesContainsStr(ear):
             self._tolerance.disable()
-            return False
-        # no input or output for a while?
+            self._idle_tolerance.disable()
+            return 0
+        # external trigger to refill chirpability
         if standBy:
             # I will chirp!
             self._tolerance.reset()
-            return True
+            self._idle_tolerance.reset()
+            return 1  # low chirp
         # we are handshaking?
-        if not ear == "":
-            # I will reply chirp till it grows old for me (a set amount of times till reset)
+        if len(ear) > 0:
+            # presence detected!
+            self._idle_tolerance.disable()
             if self._tolerance.trigger():
-                return True
-        return False
+                return 2  # excited chirp
+        else:
+            if self._idle_tolerance.trigger():
+                return 1
+        return 0
 
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                        OUTPUT MANAGEMENT                               ║

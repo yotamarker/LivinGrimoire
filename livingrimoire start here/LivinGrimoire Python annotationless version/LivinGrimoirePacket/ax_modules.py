@@ -180,13 +180,13 @@ class AXLMorseCode:
     # A happy little Morse Code converter~! (◕‿◕✿)
     def __init__(self):
         self.morse_dict = {
-            'A': '.-',    'B': '-...',  'C': '-.-.',  'D': '-..',
-            'E': '.',     'F': '..-.',  'G': '--.',   'H': '....',
-            'I': '..',    'J': '.---',  'K': '-.-',   'L': '.-..',
-            'M': '--',   'N': '-.',    'O': '---',   'P': '.--.',
-            'Q': '--.-',  'R': '.-.',   'S': '...',   'T': '-',
-            'U': '..-',   'V': '...-',  'W': '.--',   'X': '-..-',
-            'Y': '-.--',  'Z': '--..',
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..',
+            'E': '.', 'F': '..-.', 'G': '--.', 'H': '....',
+            'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+            'M': '--', 'N': '-.', 'O': '---', 'P': '.--.',
+            'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-',
+            'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..',
             '0': '-----', '1': '.----', '2': '..---', '3': '...--',
             '4': '....-', '5': '.....', '6': '-....', '7': '--...',
             '8': '---..', '9': '----.',
@@ -497,6 +497,7 @@ class TimeUtils:
     def isLeapYear(year):
         return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
+
 class LGPointInt:
     def __init__(self, x_init, y_init):
         self.x = x_init
@@ -645,7 +646,7 @@ class CityMap:
         self.add_street(self.lastInp, inp)
         self.lastInp = inp
 
-    def find_path(self, start_street, goal_street, avoid_street, max_length = 4):
+    def find_path(self, start_street, goal_street, avoid_street, max_length=4):
         if start_street not in self.streets:
             return []
         queue = deque([(start_street, [start_street])])
@@ -684,7 +685,7 @@ class CityMap:
             new_city_map.add_street(path[i], path[i + 1])
         return new_city_map
 
-    def find_path_with_must(self, start_street, goal_street, street_must, max_length = 4):
+    def find_path_with_must(self, start_street, goal_street, street_must, max_length=4):
         if start_street not in self.streets or street_must not in self.streets or goal_street not in self.streets:
             return []
 
@@ -723,15 +724,15 @@ class CityMapWithPublicTransport:
         self.transport_lines[line_name] = stops
         # Connect stops sequentially (bidirectional)
         for i in range(len(stops) - 1):
-            self.add_street(stops[i], stops[i+1])
+            self.add_street(stops[i], stops[i + 1])
 
     def find_path(
-        self,
-        start,
-        goal,
-        avoid = None,
-        max_length = 4,
-        use_transport = True
+            self,
+            start,
+            goal,
+            avoid=None,
+            max_length=4,
+            use_transport=True
     ):
         """
         Finds a path using walking + transport (if enabled).
@@ -789,6 +790,7 @@ class CodeParser:
         if match:
             return int(match.group(1))
         return -1
+
 
 class TimeGate:
     """A gate that only opens X minutes after being set."""
@@ -964,6 +966,7 @@ class RefreshQ(UniqueItemSizeLimitedPriorityQueue):
         if super().size() == self._limit:
             super().poll()
         self.queue.append(data)
+
 
 class AnnoyedQ:
     def __init__(self, queLim):
@@ -1532,7 +1535,6 @@ class TrgEveryNMinutes:
         self._timeStamp = TimeUtils.getCurrentTimeStamp()
 
 
-
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                     SPECIAL SKILLS DEPENDENCIES                        ║
 # ╚════════════════════════════════════════════════════════════════════════╝
@@ -1659,6 +1661,7 @@ class AXLearnability:
     def resetTolerance(self):
         # Use when you run code to change algorithms regardless of learnability
         self.trgTolerance.reset()
+
 
 class AlgorithmV2:
     def __init__(self, priority, alg):
@@ -2043,6 +2046,7 @@ class ElizaDeducer:
     See subclass ElizaDeducerInitializer for example:
     ed = ElizaDeducerInitializer(2)  # 2 = limit of replies per input
     """
+
     def __init__(self, lim):
         self.babble2 = []
         self.pattern_index = {}
@@ -2346,36 +2350,40 @@ class TrgParrot:
     # simulates a parrot chirp trigger mechanism
     # as such this trigger is off at night
     # in essence this trigger says: I am here, are you here? good.
-    def __init__(self, limit):
+    def __init__(self, limit=3):
         super().__init__()
         temp_lim = 3
         if limit > 0:
             temp_lim = limit
         self._tolerance = TrgTolerance(temp_lim)
-        self._silencer = Responder("ok", "okay", "stop", "shut up", "quiet")
+        self._idle_tolerance = TrgTolerance(temp_lim)
+        self._silencer = Responder("stop", "shut up", "quiet")
 
     def trigger(self, standBy, ear):
-        """relies on the Kokoro standby boolean
-         no input or output for a set amount of time results with a true
-         and replenishing the trigger."""
         if TimeUtils.isNight():
-            # is it night? I will be quite
-            return False
-        # you want the bird to shut up?
+            # is it night? I will be quiet
+            return 0
+        # you want the bird to shut up?: say stop/shut up/quiet
         if self._silencer.responsesContainsStr(ear):
             self._tolerance.disable()
-            return False
-        # no input or output for a while?
+            self._idle_tolerance.disable()
+            return 0
+        # external trigger to refill chirpability
         if standBy:
             # I will chirp!
             self._tolerance.reset()
-            return True
+            self._idle_tolerance.reset()
+            return 1  # low chirp
         # we are handshaking?
-        if not ear == "":
-            # I will reply chirp till it grows old for me (a set amount of times till reset)
+        if len(ear) > 0:
+            # presence detected!
+            self._idle_tolerance.disable()
             if self._tolerance.trigger():
-                return True
-        return False
+                return 2  # excited chirp
+        else:
+            if self._idle_tolerance.trigger():
+                return 1
+        return 0
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -2635,7 +2643,7 @@ class AXPrompt:
     prompt2 = Prompt()
     prompt2.kv.set_key("age")
     prompt2.set_prompt("how old are you??")
-    prompt2.set_regex(r"\d+(\.\d+)?")
+    prompt2.set_regex(num regex)
 
     ax_prompt = AXPrompt()
     ax_prompt.add_prompt(prompt1)
@@ -3091,4 +3099,3 @@ class AXNightRider:
             if self._position > self._lim - 1:
                 self._position = self._lim
                 self._direction = -1
-
