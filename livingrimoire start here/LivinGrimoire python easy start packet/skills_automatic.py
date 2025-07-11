@@ -8,7 +8,8 @@ from LivinGrimoirePacket.LivinGrimoire import Skill
 class DiParrot(Skill):
     def __init__(self, interval_minutes: int = 17, chirp_lim: int = 3):
         super().__init__()
-        self.trg: TrgEveryNMinutes = TrgEveryNMinutes(TimeUtils.getCurrentTimeStamp(),interval_minutes)
+        self.set_skill_type(3)  # continuous skill
+        self.trg: TrgEveryNMinutes = TrgEveryNMinutes(TimeUtils.timeInXMinutes(2),interval_minutes)
         self.parrot: TrgParrot = TrgParrot(chirp_lim)
 
     # Override

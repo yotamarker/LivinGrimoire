@@ -480,7 +480,7 @@ class TimeUtils:
         """This method returns the time (hh:mm) in x minutes"""
         right_now = datetime.datetime.now()
         final_time = right_now + datetime.timedelta(minutes=x)
-        return str(final_time.hour) + ":" + str(final_time.minute)
+        return f"{final_time.hour:02}:{final_time.minute:02}"
 
     @staticmethod
     def isDayTime() -> bool:

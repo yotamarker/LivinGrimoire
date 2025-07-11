@@ -182,6 +182,9 @@ class Skill:
 
 
 class DiHelloWorld(Skill):
+    def __init__(self):
+        super().__init__()
+
     # Override
     def input(self, ear: str, skin: str, eye: str):
         if ear == "hello":
