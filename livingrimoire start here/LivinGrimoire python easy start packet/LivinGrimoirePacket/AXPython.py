@@ -1625,6 +1625,9 @@ class KeyWords:
                 return True  # Return True if a matching keyword is found
         return False  # Return False if no keyword matches
 
+    def contains_keywords(self, param: str) ->bool:
+        return self.hash_set.__contains__(param)
+
 
 class QuestionChecker:
     QUESTION_WORDS = {
