@@ -1,7 +1,7 @@
 from collections import deque
 
-from AXPython import Responder, TimeGate
-from LivinGrimoire import AlgPart
+from LivinGrimoirePacket.AXPython import Responder, TimeGate
+from LivinGrimoirePacket.LivinGrimoire import AlgPart
 
 
 class APSleep(AlgPart):

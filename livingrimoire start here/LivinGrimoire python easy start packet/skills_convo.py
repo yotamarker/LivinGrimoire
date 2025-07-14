@@ -1,4 +1,6 @@
-from LivinGrimoirePacket.AXPython import RailBot, AXContextCmd, QuestionChecker, PhraseInflector, KeyWords, CodeParser
+from LivinGrimoirePacket.AXPython import RailBot, AXContextCmd, QuestionChecker, PhraseInflector, KeyWords, CodeParser, \
+    PercentDripper, Responder, AXNPC2, AXStringSplit, Excluder, AnnoyedQ
+from LivinGrimoirePacket.AlgParts import APMad
 from LivinGrimoirePacket.LivinGrimoire import Skill
 
 
@@ -59,6 +61,118 @@ class DiRail(Skill):
         elif param == "triggers":
             return "code 7 to engage. stop to turn off"
         return "note unavailable"
+
+
+class DiOneWorder(Skill):
+    def __init__(self, phrase: str = "chi"):
+        super().__init__()  # Call the superclass constructor
+        self.set_skill_type(3)  # continuous skill
+        self.cry: str = f'{phrase} '
+        self.drip: PercentDripper = PercentDripper()  # Assuming PercentDripper is implemented
+        self.mode: bool = False
+        self.drip.setLimit(90)
+
+    def set_cry(self, cry):
+        self.cry = cry + " "
+
+    def set_drip_percent(self, n: int):
+        self.drip.setLimit(n)
+
+    def input(self, ear, skin, eye):
+        if not ear:
+            return
+        if CodeParser.extract_code_number(ear) == 8:
+            self.mode = not self.mode
+            self.setSimpleAlg("toggled")
+            return
+        if self.mode and ear == "stop":
+            self.mode = False
+            self.setSimpleAlg("ok")
+            return
+        if self.mode and self.drip.drip():
+            # can add heavy duty algorithms here
+            self.setSimpleAlg(self.convert_to_chi(ear))
+
+    def convert_to_chi(self, input_str):
+        # Split the input string into words
+        words = input_str.split()
+
+        # Initialize an empty result string
+        result = ""
+
+        # Iterate through each word
+        for _ in words:
+            # Append "chi" to the result
+            result += self.cry
+
+        # Remove the trailing space
+        if result:
+            result = result[:-1]
+
+        return result
+
+    def skillNotes(self, param: str) -> str:
+        if param == "triggers":
+            return "say code 8 to toggle skill, stop to turn off"
+        return "talks like a cute pet"
+
+
+class DiCusser(Skill):
+    def __init__(self, responder: Responder, memory_size: int = 15, reply_chance: int = 90, ):
+        # responder needs be initialized with varargs of cuss words
+        # reply_chance < 100 prevents infinite cussing between 2 bots
+        super().__init__()
+        self.set_skill_type(3)  # continuous skill
+        self.npc: AXNPC2 = AXNPC2(memory_size, reply_chance)
+        self.splitter: AXStringSplit = AXStringSplit()
+        self._initialized: bool = False
+        self.filter: Responder = responder
+        self._excluder: Excluder = Excluder()  # exclude start and end trigger words of other skills from interacting in this skill
+        self._excluder.add_starts_with("tell me")
+        self._excluder.add_ends_with("over")
+        self.annoyedq: AnnoyedQ = AnnoyedQ(5)  # memory size in regards to detecting repeatition which is annoying
+        self.violenceTRG: PercentDripper = PercentDripper()  # chance of violence as reaction to repeatition.
+
+    def input(self, ear: str, skin: str, eye: str):
+        # prevent clash with other skills; excluder contains other classes trigger words
+        if self._excluder.exclude(ear):
+            return
+        # memory load from .txt
+        if not self._initialized:
+            self.npc.responder.queue = self.splitter.split(self.getKokoro().grimoireMemento.load("blabberv4"))
+            self._initialized = True
+        # auto skill activation via DiBicameral skill:
+        if "diblabberv4" == self.getKokoro().toHeart.get("dibicameral", "null"):
+            self.algPartsFusion(4, APMad(self.npc.forceRespond()))
+        if len(ear) == 0: # ***
+            return
+        # triggered by usage of remembered repeating strings
+        # self.annoyedq.learn(ear)
+        # if self.annoyedq.AnnoyedLevel(ear,1):
+        #     if self.violenceTRG.drip():
+        #         self.algPartsFusion(3, APMad("attacking"))
+        #         return
+        #     self.algPartsFusion(4, APMad(self.npc.forceRespond()))
+        #     return
+        # filter escape
+        if not self.filter.strContainsResponse(ear):
+            return
+        # blabber
+        temp_str = self.npc.strRespond(ear)
+        if len(temp_str) > 0:
+            self.algPartsFusion(4, APMad(self.npc.forceRespond()))
+        if not self.npc.learn(ear):
+            # str learn
+            if not self.npc.strLearn(ear):
+                return
+        self.getKokoro().grimoireMemento.save("blabberv4", self.splitter.stringBuilder(self.npc.responder.queue))
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "cussing skill"
+        elif param == "triggers":
+            return "try cussing and repeat to teach"
+        return "note unavalible"
 
 # ╔════════════════════════════════════════════════╗
 # ║              UNDERUSED / TEMPLATE SKILLS       ║
