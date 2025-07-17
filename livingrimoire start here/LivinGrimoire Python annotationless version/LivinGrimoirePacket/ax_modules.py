@@ -2999,28 +2999,28 @@ class Catche:
         super().__init__()
         self._limit = size
         self._keys = UniqueItemSizeLimitedPriorityQueue(size)
-        self._d1 = {}
+        self.d1 = {}
 
     def insert(self, key, value):
         # update
-        if self._d1.__contains__(key):
-            self._d1[key] = value
+        if self.d1.__contains__(key):
+            self.d1[key] = value
             return
         # insert:
         if self._keys.size() == self._limit:
             temp = self._keys.peak()
-            del self._d1[temp]
+            del self.d1[temp]
         self._keys.insert(key)
-        self._d1[key] = value
+        self.d1[key] = value
 
     def clear(self):
         self._keys.clear()
-        self._d1.clear()
+        self.d1.clear()
 
     def read(self, key):
-        if not self._d1.__contains__(key):
+        if not self.d1.__contains__(key):
             return "null"
-        return self._d1[key]
+        return self.d1[key]
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
