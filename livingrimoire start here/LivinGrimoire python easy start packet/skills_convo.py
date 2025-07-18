@@ -1,5 +1,5 @@
 from LivinGrimoirePacket.AXPython import RailBot, AXContextCmd, QuestionChecker, PhraseInflector, KeyWords, CodeParser, \
-    PercentDripper, Responder, AXNPC2, AXStringSplit, Excluder, AnnoyedQ
+    PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ
 from LivinGrimoirePacket.AlgParts import APMad
 from LivinGrimoirePacket.LivinGrimoire import Skill
 
@@ -127,22 +127,16 @@ class DiCusser(Skill):
         self.splitter: AXStringSplit = AXStringSplit()
         self._initialized: bool = False
         self.filter: Responder = responder
-        self._excluder: Excluder = Excluder()  # exclude start and end trigger words of other skills from interacting in this skill
-        self._excluder.add_starts_with("tell me")
-        self._excluder.add_ends_with("over")
         self.annoyedq: AnnoyedQ = AnnoyedQ(5)  # memory size in regards to detecting repeatition which is annoying
         self.violenceTRG: PercentDripper = PercentDripper()  # chance of violence as reaction to repeatition.
 
     def input(self, ear: str, skin: str, eye: str):
-        # prevent clash with other skills; excluder contains other classes trigger words
-        if self._excluder.exclude(ear):
-            return
         # memory load from .txt
         if not self._initialized:
-            self.npc.responder.queue = self.splitter.split(self.getKokoro().grimoireMemento.load("blabberv4"))
+            self.npc.responder.queue = self.splitter.split(self.getKokoro().grimoireMemento.load("dicuss"))
             self._initialized = True
         # auto skill activation via DiBicameral skill:
-        if "diblabberv4" == self.getKokoro().toHeart.get("dibicameral", "null"):
+        if "dicuss" == self.getKokoro().toHeart.get("dibicameral", "null"):
             self.algPartsFusion(4, APMad(self.npc.forceRespond()))
         if len(ear) == 0: # ***
             return
