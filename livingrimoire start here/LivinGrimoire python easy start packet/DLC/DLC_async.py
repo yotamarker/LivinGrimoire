@@ -1,5 +1,6 @@
+from DLC.skills_async import DaExePath, DaRainAlerts
 from LivinGrimoirePacket.LivinGrimoire import Brain
-from skills_async import DaExePath, DaRainAlerts
+
 
 
 def add_DLC_skills(brain: Brain):

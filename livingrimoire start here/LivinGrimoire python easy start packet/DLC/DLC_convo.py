@@ -1,6 +1,7 @@
+from DLC.skills_convo import DiRail, DiOneWorder, DiCusser
 from LivinGrimoirePacket.AXPython import Responder
 from LivinGrimoirePacket.LivinGrimoire import Brain
-from skills_convo import DiRail, DiOneWorder, DiCusser
+
 
 
 def add_DLC_skills(brain: Brain):

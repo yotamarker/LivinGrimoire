@@ -1,6 +1,7 @@
+from DLC.skills_games import DiHugAttack, DiYoga, DiMezzoflationGame, DiTeaParty, DiMagic8Ball
 from LivinGrimoirePacket.LivinGrimoire import Brain
 from LivinGrimoirePacket.UniqueSkills import DiGamificationSkillBundle, DiGamificationScouter
-from skills_games import DiHugAttack, DiYoga, DiMezzoflationGame, DiTeaParty, DiMagic8Ball
+
 
 
 def add_DLC_skills(brain: Brain):

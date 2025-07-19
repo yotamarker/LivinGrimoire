@@ -159,7 +159,7 @@ class DiCusser(Skill):
             # str learn
             if not self.npc.strLearn(ear):
                 return
-        self.getKokoro().grimoireMemento.save("blabberv4", self.splitter.stringBuilder(self.npc.responder.queue))
+        self.getKokoro().grimoireMemento.save("dicuss", self.splitter.stringBuilder(self.npc.responder.queue))
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":

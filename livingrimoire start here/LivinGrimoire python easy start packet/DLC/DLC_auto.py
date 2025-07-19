@@ -1,7 +1,8 @@
+from DLC.skills_automatic import DiParrot, DiBurperV2, DiSleep, DiStandBy, DiYandere
 from LivinGrimoirePacket.AXPython import Responder
 from LivinGrimoirePacket.LivinGrimoire import Brain
 from LivinGrimoirePacket.UniqueSkills import DiBicameral
-from skills_automatic import DiParrot, DiBurperV2, DiSleep, DiStandBy, DiYandere
+
 
 
 def add_DLC_skills(brain: Brain):
