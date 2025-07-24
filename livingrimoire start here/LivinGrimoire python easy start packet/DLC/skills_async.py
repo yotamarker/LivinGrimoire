@@ -7,7 +7,6 @@ from subprocess import call  # for calc skill DiCalculator
 from LivinGrimoirePacket.AXPython import AXFunnel
 from LivinGrimoirePacket.LivinGrimoire import Skill
 
-import os
 import sys
 
 
