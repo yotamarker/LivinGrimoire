@@ -1,7 +1,7 @@
 import random
 
 from LivinGrimoirePacket.AXPython import TimeGate, UniqueResponder, AXFunnel, EventChat, Responder, PercentDripper, \
-    OnOffSwitch, Magic8Ball
+    OnOffSwitch, Magic8Ball, RegexUtil
 from LivinGrimoirePacket.LivinGrimoire import Skill
 
 
@@ -264,6 +264,42 @@ class DiMagic8Ball(Skill):
         elif param == "triggers":
             return "ask a question starting with should i or will i"
         return "note unavalible"
+
+
+class DiMemoryGame(Skill):
+    def __init__(self):
+        super().__init__()
+        self.score = 0
+        self.game_on = False
+        self.game_str = ""
+        self.game_chars: Responder = Responder("r", "g", "b", "y")
+
+    def input(self, ear, skin, eye):
+        if ear == "memory game on":
+            self.game_on = True
+            self.score = 0
+            self.game_str = self.game_chars.getAResponse()
+            self.setSimpleAlg(self.game_str)
+
+        if self.game_on:
+            temp = RegexUtil.extractRegex("^[rgby]+$", ear)
+            if temp:
+                if temp == self.game_str:
+                    temp = self.game_chars.getAResponse()
+                    self.game_str += temp
+                    self.score += 1
+                    self.setSimpleAlg(temp)
+                else:
+                    self.game_on = False
+                    self.setSimpleAlg(f"you scored {self.score}")
+                    self.score = 0
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "memory game which ends upon mismatch."
+        elif param == "triggers":
+            return "Commands: 'memory game on' to start, valid inputs are combinations of 'r', 'g', 'b', 'y'."
+        return "sequence-based memory game skill"
 
 
 # ╔════════════════════════════════════════════════╗

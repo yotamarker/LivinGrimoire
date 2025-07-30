@@ -2,8 +2,11 @@
 # ║                OVERUSED SKILLS                 ║
 # ╚════════════════════════════════════════════════╝
 import random
+import string
 
-from LivinGrimoirePacket.AXPython import AXCmdBreaker, PercentDripper, TimeUtils, Notes, RegexUtil, Responder, Cron
+from LivinGrimoirePacket.AXPython import AXCmdBreaker, PercentDripper, TimeUtils, Notes, RegexUtil, Responder, Cron, \
+    DrawRnd, AXContextCmd, OnOffSwitch, EventChat, UniqueResponder
+from LivinGrimoirePacket.AlgParts import APHappy, APSad
 from LivinGrimoirePacket.LivinGrimoire import Skill
 
 
@@ -200,6 +203,212 @@ class DiAlarmer(Skill):
 # ╚════════════════════════════════════════════════╝
 
 
+class DiMisser(Skill):
+    def __init__(self):
+        super().__init__()
+        self._cron: Cron = Cron("15:00", 50, 2)
+        self._responder: Responder = Responder("welcome", "i have missed you", "welcome back")
+
+    # Override
+    def input(self, ear: str, skin: str, eye: str):
+        if ear == "i am home":
+            self._cron.setStartTime(TimeUtils.getPastInXMin(10))
+            self.setVerbatimAlg(4, self._responder.getAResponse())
+            return
+        if self._cron.trigger():
+            n: int = self._cron.getCounter()
+            match n:
+                case _:
+                    self.setVerbatimAlg(4, f'hmph {n}')
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "Expresses a welcome message otherwise fires up worry events"
+        elif param == "triggers":
+            return "i am home or scheduled cron trigger in constructor"
+        return "emotional reconnection skill"
+
+
+class DiSmoothie0(Skill):
+    def __init__(self):
+        super().__init__()
+        self.draw = DrawRnd("grapefruits", "oranges", "apples", "peaches", "melons", "pears", "carrot")
+        self.cmd = AXContextCmd()
+        self.cmd.contextCommands.insert("recommend a smoothie")
+        self.cmd.commands.insert("yuck")
+        self.cmd.commands.insert("lame")
+        self.cmd.commands.insert("nah")
+        self.cmd.commands.insert("no")
+
+    def input(self, ear, skin, eye):
+        if self.cmd.engageCommand(ear):
+            self.setSimpleAlg(f"{self.draw.drawAndRemove()} and {self.draw.drawAndRemove()}")
+            self.draw.reset()
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "smoothie recipe recommender"
+        elif param == "triggers":
+            return "recommend a smoothie"
+        return "smoothie skill"
+
+
+class DiSmoothie1(Skill):
+    def __init__(self):
+        super().__init__()
+        self.base = Responder("grapefruits", "oranges", "apples", "peaches", "melons", "pears", "carrot")
+        self.thickeners = DrawRnd("bananas", "mango", "strawberry", "pineapple", "dates")
+        self.cmd = AXContextCmd()
+        self.cmd.contextCommands.insert("recommend a smoothie")
+        self.cmd.commands.insert("yuck")
+        self.cmd.commands.insert("lame")
+        self.cmd.commands.insert("nah")
+        self.cmd.commands.insert("no")
+
+    def input(self, ear, skin, eye):
+        if self.cmd.engageCommand(ear):
+            self.setSimpleAlg(
+                f"use {self.base.getAResponse()} as a base than add {self.thickeners.drawAndRemove()}\n and {self.thickeners.drawAndRemove()}")
+            self.thickeners.reset()
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "thick smoothie recipe recommender"
+        elif param == "triggers":
+            return "recommend a smoothie"
+        return "smoothie skill"
+
+
+class DiJumbler(Skill):
+    # jumble a string
+    def __init__(self):
+        super().__init__()
+        self.cmdBreaker: AXCmdBreaker = AXCmdBreaker("jumble")
+
+    def input(self, ear, skin, eye):
+        temp = self.cmdBreaker.extractCmdParam(ear)
+        if not temp:  # In Python, an empty string is considered False in a boolean context
+            return
+        self.setSimpleAlg(self.jumble_string(temp))
+
+    @staticmethod
+    def jumble_string(s: str) -> str:
+        # Convert the string to a list (because strings in Python are immutable)
+        list_s = list(s)
+
+        # Use random.shuffle() to shuffle the list
+        random.shuffle(list_s)
+
+        # Convert the list back to a string
+        jumbled_s = ''.join(list_s)
+
+        return jumbled_s
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "Receives a string command and returns a randomized jumble of its characters."
+        elif param == "triggers":
+            return "Triggered by saying jumble followed by a string parameter."
+        return "string manipulation skill"
+
+class DiHoneyBunny(Skill):
+    def __init__(self):
+        super().__init__()  # Call the parent class constructor
+        self.on_off_switch: OnOffSwitch = OnOffSwitch()
+        self.on_off_switch.setOn(Responder("honey bunny"))
+        self.user = "user"
+        self.drip: PercentDripper = PercentDripper()
+        self.responses: Responder = Responder("user", "i love you user", "hadouken", "shoryuken",
+                                              "user is a honey bunny", "hadoken user", "shoryukens user",
+                                              "i demand attention", "hey user", "uwu")
+        self._buffer = 10
+        self._buffer_counter = 0
+        self._bool1: bool = False
+
+    def set_buffer(self, buffer):
+        self._buffer = buffer
+
+    def input(self, ear, skin, eye):
+        if len(ear) > 0:
+            self._buffer_counter = 0
+            temp = RegexUtil.extractRegex(r'(?<=my name is\s)(.*)', ear)
+            if temp:
+                self.user = temp
+                self.algPartsFusion(4, APHappy(f"got it {self.user}"))
+                return
+        elif self._bool1 and self._buffer_counter < self._buffer:
+            self._buffer_counter += 1
+        self._bool1 = self.on_off_switch.getMode(ear)
+        if self._bool1 and self.drip.drip():
+            if self._buffer_counter > self._buffer - 1:
+                self.algPartsFusion(4, APSad(self.responses.getAResponse().replace("user", self.user)))
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "Responds affectionately when activated and the drip threshold is met. Learns user identity dynamically."
+        elif param == "triggers":
+            return "Keywords: \"honey bunny\" to activate, \"my name is\" to set user identity, \"stop\" to deactivate."
+        return "attention-seeking emotional skill"
+
+class DiPassGen(Skill):
+    def __init__(self):
+        super().__init__()  # Call the parent class constructor
+
+
+    def input(self, ear, skin, eye):
+        if ear == "generate a password":
+            self.setSimpleAlg(self.generate_password())
+
+    @staticmethod
+    def generate_password(length=12):
+        # characters = string.ascii_letters + string.digits + string.punctuation
+        characters = string.ascii_letters + string.digits
+        password = ''.join(random.choice(characters) for i in range(length))
+        return password
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "password generator"
+        elif param == "triggers":
+            return "generate a password"
+        return "password generator"
+
 # ╔════════════════════════════════════════════════╗
 # ║                GRAVEYARD SKILLS                ║
 # ╚════════════════════════════════════════════════╝
+
+
+class DiBuyer(Skill):
+    # boilerplate skill for multistep tasks with regards to input/input ranges
+    # the skill is a heruistic answer to LLMs inability for precision algorithms
+    def __init__(self):
+        super().__init__()  # Call the parent class constructor
+        self.trg: bool = False
+        self.on: set[str] = {"order me a pizza", "order me a pineapple pizza"}
+        self.off: set[str] = {"ok your order is on the way","your order is on the way","ok your order is on its way"}
+        self.ec: EventChat = EventChat(UniqueResponder("i would like to order a pineapple pizza please"),"hello this is dominos pizza may i take your order please")
+        self.ec.add_key_value("large or medium", "large please")
+        self.ec.add_key_value("would you like a drink with that", "no thanks")
+        self.ec.add_key_value("that will be 17 dollars", "i will pay cash to the delivery guy")
+        self.ec.add_key_value("what is the address", "64 rum road")
+        self.ec.add_key_value("large or medium", "large please")
+        self.ec.add_items(UniqueResponder("thanks","thank you"),"ok your order is on the way","your order is on the way","ok your order is on its way")
+        self.ec.add_key_value("order me a pizza", "will do")
+        self.ec.add_key_value("order me a pineapple pizza", "ok i will order your unhealthy pizza")
+
+    def input(self, ear: str, skin: str, eye: str):
+        if self.on.__contains__(ear):
+            self.trg = True
+        if self.trg:
+            n = self.ec.response(ear)
+            if n:
+                self.setSimpleAlg(n)
+            if self.off.__contains__(ear):
+                self.trg = False
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "pizza ordering skill"
+        elif param == "triggers":
+            return "order me a pizza, order me a pineapple pizza"
+        return "smoothie skill"

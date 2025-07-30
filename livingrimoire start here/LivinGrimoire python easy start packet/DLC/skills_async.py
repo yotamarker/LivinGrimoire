@@ -8,6 +8,7 @@ from LivinGrimoirePacket.AXPython import AXFunnel
 from LivinGrimoirePacket.LivinGrimoire import Skill
 
 import sys
+import feedparser  # for DiRSS skill
 
 
 def get_api_key(api_key_name: str):
@@ -264,10 +265,60 @@ class DaDeepseekRun(ShorniSplash):
         response = requests.post(api_url, json=payload, headers=headers)
         return response.json().get("response", "No response from API")
 
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "deepseek rest API"
+        elif param == "triggers":
+            return "end your input with run."
+        return "note unavailable"
+
 
 # ╔════════════════════════════════════════════════╗
 # ║              UNDERUSED / TEMPLATE SKILLS       ║
 # ╚════════════════════════════════════════════════╝
+
+
+class DaRSSFeed(ShorniSplash):
+    def __init__(self, rss_URL: str):
+        super().__init__()
+        self.rss_feed: str = rss_URL
+        self._list_result: list[str] = []
+
+    def trigger(self, ear, skin, eye) -> bool:
+        return ear == "rss feed"
+
+    @staticmethod
+    def _async_func(this_cls):
+        temp: list[str] = DaRSSFeed.get_rss_titles(this_cls.rss_feed)
+        temp2: list[str] = []
+        for item in temp:
+            temp2.append(item)
+            temp2.append('')
+            if len(item) > 20:
+                temp2.append('')
+        this_cls._list_result = temp2
+
+    @staticmethod
+    def get_rss_titles(rss_url) -> list[str]:
+        feed = feedparser.parse(rss_url)
+        return [entry.title for entry in feed.entries]  # [:15]
+
+    def input(self, ear: str, skin: str, eye: str):
+        if self.trigger(ear, skin, eye):
+            my_thread = threading.Thread(target=self._async_func, args=(self,))
+            my_thread.daemon = True
+            my_thread.start()
+
+        if len(self._list_result) > 0:
+            self.setVebatimAlgFromList(4, self._list_result)
+            self._list_result = []
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "get rss feed"
+        elif param == "triggers":
+            return "say rss feed"
+        return "note unavailable"
 
 
 # ╔════════════════════════════════════════════════╗
