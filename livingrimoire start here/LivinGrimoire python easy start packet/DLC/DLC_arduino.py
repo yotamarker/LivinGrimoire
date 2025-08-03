@@ -1,9 +1,11 @@
-from AXPython import RegexUtil
-from LivinGrimoire import Skill, Brain
+
 import serial
 import time
 import atexit
 import serial.tools.list_ports
+
+from LivinGrimoirePacket.AXPython import RegexUtil
+from LivinGrimoirePacket.LivinGrimoire import Skill, Brain
 
 
 # terminal: pip install pyserial
@@ -47,6 +49,13 @@ class SerialReader:
         return "i do not know"
 
 
+
+
+# ╔════════════════════════════════════════════════╗
+# ║                OVERUSED SKILLS                 ║
+# ╚════════════════════════════════════════════════╝
+
+
 class DiArduinoTemperature(Skill):
     # example skill for reading Arduino data
     def __init__(self):
@@ -69,6 +78,17 @@ class DiBlinker(Skill):
             self.setVerbatimAlg(4, "blinking")
             ser.write(b'1')
 
+
+# ╔════════════════════════════════════════════════╗
+# ║              UNDERUSED / TEMPLATE SKILLS       ║
+# ╚════════════════════════════════════════════════╝
+
+
+# ╔════════════════════════════════════════════════╗
+# ║                GRAVEYARD SKILLS                ║
+# ╚════════════════════════════════════════════════╝
+
+# DLCdynamic dispatch  point:
 
 def add_DLC_skills(brain: Brain):
     if ser is None:

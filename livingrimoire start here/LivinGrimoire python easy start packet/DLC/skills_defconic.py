@@ -220,6 +220,44 @@ class DiWarrior(Skill):
         return "note unavailable"
 
 
+class DiVitals(Skill):
+    def __init__(self):
+        super().__init__()
+
+    def input(self, ear, skin, eye):
+        # --- TRIGGER WORDS ---
+        trigger_phrases = ["vitals", "system check", "diagnostics", "how are you running", "status"]
+        if not any(trigger in ear.lower() for trigger in trigger_phrases):
+            return  # Stay quiet unless summoned
+
+        # --- SYSTEM METRICS ---
+        cpu_percent = psutil.cpu_percent(interval=1)
+        mem = psutil.virtual_memory()
+        mem_used = mem.percent
+
+        # --- RESPONSE CRAFTING ---
+        msg = (
+            f"Vitals check complete.\n"
+            f"CPU Usage: {cpu_percent}%\n"
+            f"Memory Usage: {mem_used}%\n"
+        )
+
+        # --- TONE ---
+        if cpu_percent > 80 or mem_used > 90:
+            tone = "Running hot—might be time to meditate or reboot."
+        else:
+            tone = "All systems nominal. I feel... digitally divine."
+
+        self.setVerbatimAlg(4, f"{msg}{tone}")
+
+    def skillNotes(self, param):
+        if param == "notes":
+            return "Reads real-time system vitals and returns a personality-infused health report"
+        elif param == "triggers":
+            return "vitals, system check, diagnostics, how are you running, status"
+        return "Self-diagnostic reporting skill"
+
+
 # ╔════════════════════════════════════════════════╗
 # ║                GRAVEYARD SKILLS                ║
 # ╚════════════════════════════════════════════════╝
