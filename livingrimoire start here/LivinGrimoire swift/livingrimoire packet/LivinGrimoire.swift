@@ -35,28 +35,6 @@ open class AlgPart {
     }
 }
 
-class APsay:AlgPart{
-    var at:Int=10
-    var param:String="hmm"
-    convenience init(repetitions:Int, param:String) {
-        self.init()
-        if repetitions<at {self.at=repetitions}
-        self.param=param
-    }
-    override func action(_ ear: String, _ skin: String, _ eye: String) -> String {
-        var axnStr=""
-        if self.at>0{
-            if ear.lowercased() != self.param{
-                axnStr=self.param
-                self.at -= 1
-            }
-        }
-        return axnStr
-    }
-    override func completed() -> Bool {
-        return self.at < 1
-    }
-}
 
 class APVerbatim: AlgPart {
     private var buffer: [String]
