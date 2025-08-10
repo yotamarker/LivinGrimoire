@@ -2161,9 +2161,9 @@ class TimedMessages {
 
 class AXLearnability {
     private var algSent: Bool = false
-    private var defcons: Set<String> = []
-    private var defcon5: Set<String> = []
-    private var goals: Set<String> = []
+    var defcons: Set<String> = []
+    var defcon5: Set<String> = []
+    var goals: Set<String> = []
     private var trgTolerance: TrgTolerance
     
     init(_ tolerance: Int) {
@@ -2213,9 +2213,9 @@ class AXLearnability {
 
 class AlgorithmV2 {
     private var priority: Int
-    private var alg: Any
+    private var alg: Algorithm
     
-    init(_ priority: Int, _ alg: Any) {
+    init(_ priority: Int, _ alg: Algorithm) {
         self.priority = priority
         self.alg = alg
     }
@@ -2228,11 +2228,11 @@ class AlgorithmV2 {
         self.priority = priority
     }
     
-    func getAlg() -> Any {
+    func getAlg() -> Algorithm {
         return self.alg
     }
     
-    func setAlg(_ alg: Any) {
+    func setAlg(_ alg: Algorithm) {
         self.alg = alg
     }
 }
@@ -2271,6 +2271,7 @@ class SkillHubAlgDispenser {
     }
     
     // builder pattern
+    @discardableResult
     func addSkill(_ skill: Skill) -> SkillHubAlgDispenser {
         skill.setKokoro(self._kokoro)
         self._skills.append(skill)
@@ -2415,6 +2416,7 @@ class AXSkillBundle {
     }
     
     // Builder pattern
+    @discardableResult
     func addSkill(_ skill: Skill) -> AXSkillBundle {
         skill.setKokoro(self.kokoro)
         self.skills.append(skill)
@@ -2481,6 +2483,7 @@ class AXGamification {
     
     // game grind points used for rewards
     // consumables, items or upgrades this makes games fun
+    @discardableResult
     func reward(_ cost: Int) -> Bool {
         if cost < self._counter {
             self._counter -= cost
