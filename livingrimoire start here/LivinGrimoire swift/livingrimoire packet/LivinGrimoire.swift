@@ -591,7 +591,7 @@ open class Brain {
             break
         }
     }
-    
+    @discardableResult
     func chained(_ skill: Skill) -> Brain {
         // Chained add skill
         addSkill(skill)

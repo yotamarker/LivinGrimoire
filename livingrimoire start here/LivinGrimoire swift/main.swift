@@ -9,9 +9,8 @@ import Foundation
 
 
 let brain = Brain()
-    .chained(DiHelloWorld())
-    .chained(DiTime())
-    .chained(DiSysOut())
+
+loadPersonality(brain)
 
 let brainQueue = DispatchQueue(label: "com.livingrimoire.queue")
 let tickInterval: TimeInterval = 2
