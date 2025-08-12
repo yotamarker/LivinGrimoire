@@ -3602,7 +3602,7 @@ class ButtonEngager {
 
 class AXShoutOut {
     private var isActive: Bool = false
-    let handshake: Responder = Responder()
+    var handshake: Responder = Responder()
     
     init() {}
     
@@ -3644,14 +3644,13 @@ class AXHandshake {
     private var shoutout: AXShoutOut
     private var userName: String
     private var dripper: PercentDripper
-    private var handshake: Responder
     
     init() {
         self.trgTime = TrgTime()
         self.trgTolerance = TrgTolerance(10)
         self.shoutout = AXShoutOut()
         // default handshakes (valid reply to shout out)
-        self.handshake = Responder("what", "yes", "i am here")
+        self.shoutout.handshake = Responder("what", "yes", "i am here")
         self.userName = ""
         self.dripper = PercentDripper()
     }
@@ -3673,7 +3672,7 @@ class AXHandshake {
     func setHandShake(_ responder: Responder) -> AXHandshake {
         // which responses would acknowledge the shout-out?
         // such as *see default handshakes for examples suggestions
-        handshake = responder
+        self.shoutout.handshake = responder
         return self
     }
     
