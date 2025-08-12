@@ -1,40 +1,12 @@
-from pathlib import Path
-
 import requests
 import threading
 from subprocess import call  # for calc skill DiCalculator
 
+from DLC.api_keys import *  #  api keys import(place file in DLC dir)
 from LivinGrimoirePacket.AXPython import AXFunnel
 from LivinGrimoirePacket.LivinGrimoire import Skill
-
-import sys
 import feedparser  # for DiRSS skill
 
-
-def get_api_key(api_key_name: str):
-    """Load API key from file, works in both development and packaged EXE"""
-    # Get the correct base directory
-    if getattr(sys, 'frozen', False):
-        # Running as EXE - use the dist/livin_grimoire directory
-        base_dir = Path(sys.executable).parent
-    else:
-        # Running from source - use the script's directory
-        base_dir = Path(__file__).parent
-
-    # Construct the path to the API key file
-    key_path = base_dir / 'api_keys' / f'{api_key_name}.txt'
-
-    # Check if file exists
-    if not key_path.is_file():
-        raise FileNotFoundError(
-            f"API key file not found at: {key_path}\n"
-            "Please create a 'weather_apikey.txt' file in the 'api_keys' directory "
-            "containing your OpenWeatherMap API key."
-        )
-
-    # Read and return the API key
-    with open(key_path, 'r') as f:
-        return f.read().strip()
 
 class ShorniSplash(Skill):
     def __init__(self):
@@ -75,7 +47,7 @@ class DaRainAlerts(ShorniSplash):
         super().__init__()
         self.city: str = city
         # your https://openweathermap.org/api api key. place it in DLC/api_keys
-        self.apikey: str = get_api_key("weather_apikey")
+        self.apikey: str = WEATHER_APIKEY
         self._funnel: AXFunnel = AXFunnel()
         self._funnel.setDefault("temp")
         self._funnel.addK("so hot today").addK("so cold today").addK("what is the temperature?").addK("temperature")
@@ -211,7 +183,7 @@ class DaDeepseekRun(ShorniSplash):
         super().__init__()
         self.input_text = ""  # Temporary storage for input text
         #  deepseek api key (place it in DLC/api_keys/deepseek_api_key.txt)
-        self.apikey: str = get_api_key("deepseek_api_key")
+        self.apikey: str = DEEPSEEK_API_KEY
 
     def trigger(self, ear: str, skin: str, eye: str) -> bool:
         # Check if the ear string ends with the word "run"
