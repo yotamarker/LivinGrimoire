@@ -94,10 +94,24 @@ def talk_to_waifu(prompt, history):
     # Add current prompt
     full_prompt += f"Human: {prompt}\npomni:"
 
+    # response = requests.post(
+    #     "http://localhost:11434/api/generate",
+    #     json={"model": "llama3", "prompt": full_prompt}
+    # )
     response = requests.post(
         "http://localhost:11434/api/generate",
-        json={"model": "llama3", "prompt": full_prompt},
-        stream=True
+        json={
+            "model": "llama3",
+            "prompt": full_prompt,
+            "options": {
+                "num_predict": 25,
+                "temperature": 0.1,
+                "top_k": 10,
+                "top_p": 0.5,
+                "repeat_penalty": 1.2
+            }
+        }
+        # stream=True is removed. Default is False.
     )
 
     full_reply = ""
@@ -125,6 +139,7 @@ def start_waifu_conversation(user_input):
         daemon=True
     )
     thread.start()
+
 
 class DiLLMOver(Skill):
     def __init__(self):
@@ -156,7 +171,7 @@ class DiLLMOver(Skill):
 
         # Clean wrapper function call
         if ear.endswith("over"):
-            start_waifu_conversation(ear)
+            start_waifu_conversation(ear.rpartition(' ')[0])
 
     @staticmethod
     def sanitize_string(text: str) -> str:
