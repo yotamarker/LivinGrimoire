@@ -90,7 +90,7 @@
             If a1 Is Nothing Then
                 Return
             End If
-            Me.outAlg = a1.GetAlg()
+            Me.outAlg = a1.GetAlgorithm()
             Me.outpAlgPriority = a1.GetPriority()
         End Sub
 
@@ -158,7 +158,7 @@
             Dim a1 As AlgorithmV2 = skillHub.dispenseAlgorithm(ear, skin, eye)
             If a1 Is Nothing Then Return
 
-            Me.outAlg = a1.GetAlg()
+            Me.outAlg = a1.GetAlgorithm()
             Me.outpAlgPriority = a1.GetPriority()
             ml.PendAlg()
         End Sub
