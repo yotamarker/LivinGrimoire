@@ -78,7 +78,7 @@ public class DiBicameral : Skill
 
         if (msgCol.GetMsg())
         {
-            string temp = msgCol.GetLastMSG();
+            string temp = msgCol.GetLastMsg();
             if (!temp.Contains("#"))
             {
                 SetSimpleAlg(temp);
@@ -110,7 +110,7 @@ public class DiSkillBundle : Skill
         {
             return;
         }
-        this.outAlg = a1.GetAlg();
+        this.outAlg = a1.GetAlgorithm();
         this.outpAlgPriority = a1.GetPriority();
     }
 
@@ -189,7 +189,7 @@ public class SkillBranch : Skill
         // alg engage
         AlgorithmV2? a1 = skillHub.DispenseAlgorithm(ear, skin, eye);
         if (a1 == null) { return; }
-        this.outAlg = a1.GetAlg();
+        this.outAlg = a1.GetAlgorithm();
         this.outpAlgPriority = a1.GetPriority();
         ml.PendAlg();
     }
@@ -207,10 +207,10 @@ public class SkillBranch : Skill
     }
 
     // learnability params
-    public void AddDefcon(string defcon) { ml.defcons.Add(defcon); }
-    public void AddGoal(string goal) { ml.goals.Add(goal); }
+    public void AddDefcon(string defcon) { ml.Defcon5.Add(defcon); }
+    public void AddGoal(string goal) { ml.Goals.Add(goal); }
     // while alg is pending, cause alg mutation ignoring learnability tolerance:
-    public void AddDefconLV5(string defcon5) { ml.defcon5.Add(defcon5); }
+    public void AddDefconLV5(string defcon5) { ml.Defcon5.Add(defcon5); }
 
     public new void SetKokoro(Kokoro kokoro)
     {
