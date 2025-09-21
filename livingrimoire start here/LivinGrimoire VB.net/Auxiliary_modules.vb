@@ -454,22 +454,17 @@ Module Auxiliary_modules
         Public Shared Function ExtractAllRegexes(pattern As String, input As String) As List(Of String)
             Dim results As New List(Of String)()
 
-            If String.IsNullOrEmpty(input) Then
+            If String.IsNullOrEmpty(input) OrElse String.IsNullOrEmpty(pattern) Then
                 Return results
             End If
 
-            Try
-                Dim regex As New Regex(pattern)
-                Dim matches As MatchCollection = regex.Matches(input)
+            Dim matches As MatchCollection = Regex.Matches(input, pattern)
 
-                For Each match As Match In matches
-                    If match.Success Then
-                        results.Add(match.Value)
-                    End If
-                Next
-            Catch ex As Exception
-                ' Handle regex compilation errors if needed
-            End Try
+            For Each match As Match In matches
+                If match.Success Then
+                    results.Add(match.Value)
+                End If
+            Next
 
             Return results
         End Function
@@ -3157,7 +3152,7 @@ Module Auxiliary_modules
             If _dictionary.ContainsKey(key) Then
                 Return _dictionary(key).GetAResponse()
             End If
-            Return Nothing
+            Return ""
         End Function
     End Class
     Public Class TrgParrot

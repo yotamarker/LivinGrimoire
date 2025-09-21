@@ -255,22 +255,22 @@ class AXStringSplit {
     // May be used to prepare data before saving or after loading
     // The advantage is less data fields. Example: {skills: s1_s2_s3}
 
-    private var saparator: String
+    private var separator: String
 
     init() {
-        self.saparator = "_"
+        self.separator = "_"
     }
 
-    func setSaparator(_ saparator: String) {
-        self.saparator = saparator
+    func setSeparator(_ saparator: String) {
+        self.separator = saparator
     }
 
     func split(_ str1: String) -> [String] {
-        return str1.components(separatedBy: saparator)
+        return str1.components(separatedBy: separator)
     }
 
     func stringBuilder(_ l1: [String]) -> String {
-        return l1.joined(separator: saparator)
+        return l1.joined(separator: separator)
     }
 }
 
@@ -764,12 +764,12 @@ class LGPointInt {
     func toString() -> String {
         return "Point(\(x),\(y))"
     }
-}
-
-func distance(_ a: LGPointInt, _ b: LGPointInt) -> Double {
-    let dx = Double(a.x - b.x)
-    let dy = Double(a.y - b.y)
-    return (dx * dx + dy * dy).squareRoot()
+    
+    func distance(_ a: LGPointInt, _ b: LGPointInt) -> Double {
+        let dx = Double(a.x - b.x)
+        let dy = Double(a.y - b.y)
+        return (dx * dx + dy * dy).squareRoot()
+    }
 }
 
 
@@ -3030,7 +3030,7 @@ class RailBot {
     
     /// Saves learned data using the provided Kokoro instance.
     func saveLearnedData(_ kokoro: Kokoro) {
-        guard let wrapper = elizaWrapper else { return }
+        guard elizaWrapper != nil else { return }
         ElizaDBWrapper.sleepNSave(ec, kokoro)
     }
     
@@ -3122,12 +3122,12 @@ class AXFunnelResponder {
         return ""
     }
     
-    func funnelWalrusOperator(_ key: String) -> String? {
+    func funnelWalrusOperator(_ key: String) -> String {
         // Default funnel = nil
         if let responder = self.dic[key] {
             return responder.getAResponse()
         }
-        return nil
+        return ""
     }
 }
 
