@@ -1,6 +1,6 @@
 ﻿public class Personality
 {
-    public void LoadSkills(Brain brain)
+    public static void LoadSkills(Brain brain)
     {
         brain.AddSkill(new DiHelloWorld());
         brain.AddSkill(new DiTime());
