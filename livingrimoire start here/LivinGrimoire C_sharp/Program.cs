@@ -1,4 +1,5 @@
 ﻿Brain brain = new Brain();
-brain.Chained(new DiHelloWorld()).Chained(new DiPrinter());
+new Personality().LoadSkills(brain);
 brain.Think("hello");
+brain.Think("what is the time");
 Console.ReadLine();
