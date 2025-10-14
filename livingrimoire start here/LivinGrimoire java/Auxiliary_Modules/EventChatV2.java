@@ -6,7 +6,8 @@ import java.util.HashSet;
 import java.util.Map;
 
 public class EventChatV2 {
-    private final Map<String, LimUniqueResponder> dic = new HashMap<>();
+//    private final Map<String, LimUniqueResponder> dic = new HashMap<>(); // old version
+    private final Map<String, WeightedResponder> dic = new HashMap<>();
     private final HashSet<String> modifiedKeys = new HashSet<>();
     private final int lim;
 
@@ -24,9 +25,9 @@ public class EventChatV2 {
     }
 
     // Add items
-    public void addItems(LimUniqueResponder ur, String... args) {
+    public void addItems(WeightedResponder ur, String... args) {
         for (String arg : args) {
-            dic.put(arg, ur.clone());
+            dic.put(arg, ur.cloneObj());
         }
     }
 
@@ -35,7 +36,7 @@ public class EventChatV2 {
         if (value.isEmpty()||value.equals("null")){return;}
         AXStringSplit tool1 = new AXStringSplit();
         String[] values = tool1.split(value);
-        if (!dic.containsKey(key)){dic.put(key, new LimUniqueResponder(lim));}
+        if (!dic.containsKey(key)){dic.put(key, new WeightedResponder(lim));}
         for (String item : values) {
             dic.get(key).addResponse(item);
         }
@@ -46,7 +47,7 @@ public class EventChatV2 {
         if (dic.containsKey(key)) {
             dic.get(key).addResponse(value);
         } else {
-            dic.put(key, new LimUniqueResponder(lim));
+            dic.put(key, new WeightedResponder(lim));
             dic.get(key).addResponse(value);
         }
     }
