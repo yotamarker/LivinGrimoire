@@ -36,7 +36,6 @@ class RndMp3Player:
 
         pygame.mixer.music.load(file_path)
         pygame.mixer.music.play()
-        print(f"🎶 Now playing: {selected_file}")
 
     @staticmethod
     def play_specific_mp3(dir_name:str, selected_file:str):
@@ -50,15 +49,11 @@ class RndMp3Player:
 
         pygame.mixer.music.load(file_path)
         pygame.mixer.music.play()
-        print(f"🎶 Now playing: {selected_file}")
 
     @staticmethod
     def stop_playing():
         if pygame.mixer.get_init() and pygame.mixer.music.get_busy():
             pygame.mixer.music.stop()
-            print("🛑 Playback stopped.")
-        else:
-            print("⚠️ No music is currently playing.")
 
     @staticmethod
     def is_playing() -> bool:
@@ -119,14 +114,16 @@ class DiRndMp3Player(Skill):
         if not os.path.exists(mp3_dir):
             os.makedirs(mp3_dir)
             print(f"📁 Created 'mp3s' directory at: {mp3_dir}")
+        self.isActive = False
 
     def input(self, ear: str, skin: str, eye: str):
         if ear == "play random":
             self.setVerbatimAlg(4, "playing random mp3")
             RndMp3Player.play_rnd_mp3()
         elif ear == "stop":
-            self.setVerbatimAlg(4, "stopped playback")
-            RndMp3Player.stop_playing()
+            if RndMp3Player.is_playing():
+                self.setVerbatimAlg(4, "stopped playback")
+                RndMp3Player.stop_playing()
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":

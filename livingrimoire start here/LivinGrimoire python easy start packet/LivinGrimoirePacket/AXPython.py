@@ -11,6 +11,7 @@ import random
 import time
 import datetime
 from datetime import timedelta
+from random import SystemRandom
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -109,6 +110,7 @@ from datetime import timedelta
 # │ 🎛️ OUTPUT MANAGEMENT       │
 # └────────────────────────────┘
 # - LimUniqueResponder
+# - WeightedResponder
 # - EventChatV2
 # - PercentDripper
 # - AXTimeContextResponder
@@ -2606,48 +2608,100 @@ class LimUniqueResponder:
         return cloned_responder
 
 
+class WeightedResponder:
+    def __init__(self, lim: int) -> None:
+        self.responses: list[str] = []
+        self.lim: int = lim
+
+    def get_a_response(self) -> str:
+        size = len(self.responses)
+        if size == 0:
+            return ""
+
+        weights: list[int] = [i + 1 for i in range(size)]
+        total_weight: int = sum(weights)
+        pick: int = SystemRandom().randint(0, total_weight - 1)
+
+        cumulative = 0
+        for i, weight in enumerate(weights):
+            cumulative += weight
+            if pick < cumulative:
+                return self.responses[i]
+
+        return self.responses[-1]
+
+    def responses_contains_str(self, item: str) -> bool:
+        return item in self.responses
+
+    def str_contains_response(self, item: str) -> bool:
+        for response in self.responses:
+            if response and response in item:
+                return True
+        return False
+
+    def add_response(self, s1: str) -> None:
+        if s1 in self.responses:
+            self.responses.remove(s1)
+            self.responses.append(s1)
+            return
+        if len(self.responses) > self.lim - 1:
+            self.responses.pop(0)
+        self.responses.append(s1)
+
+    def add_responses(self, *replies: str) -> None:
+        for value in replies:
+            self.add_response(value)
+
+    def get_savable_str(self) -> str:
+        return "_".join(self.responses)
+
+    def get_last_item(self) -> str:
+        return self.responses[-1] if self.responses else ""
+
+    def clone_obj(self) -> 'WeightedResponder':
+        cloned = WeightedResponder(self.lim)
+        cloned.responses = self.responses.copy()
+        return cloned
+
+
+
 class EventChatV2:
     def __init__(self, lim: int):
-        self.dic: dict[str, LimUniqueResponder] = {}
+        self.lim: int = lim
+        self.dic: dict[str, WeightedResponder] = {}
         self.modified_keys: set[str] = set()
-        self.lim = lim
 
     def get_modified_keys(self) -> set[str]:
         return self.modified_keys
 
     def key_exists(self, key: str) -> bool:
-        # if the key was active true is returned
         return key in self.modified_keys
 
-    # Add items
-    def add_items(self, ur: LimUniqueResponder, *args: str) -> None:
+    def add_items(self, ur: WeightedResponder, *args: str) -> None:
         for arg in args:
-            self.dic[arg] = ur.clone()
+            self.dic[arg] = ur.clone_obj()
 
     def add_from_db(self, key: str, value: str) -> None:
         if not value or value == "null":
             return
         values = value.split("_")  # assuming AXStringSplit splits on "_"
         if key not in self.dic:
-            self.dic[key] = LimUniqueResponder(self.lim)
+            self.dic[key] = WeightedResponder(self.lim)
         for item in values:
             self.dic[key].add_response(item)
 
-    # Add key-value pair
     def add_key_value(self, key: str, value: str) -> None:
         self.modified_keys.add(key)
         if key in self.dic:
             self.dic[key].add_response(value)
         else:
-            self.dic[key] = LimUniqueResponder(self.lim)
+            self.dic[key] = WeightedResponder(self.lim)
             self.dic[key].add_response(value)
 
-    def add_key_values(self, eliza_results: list) -> None:
+    def add_key_values(self, eliza_results: list[AXKeyValuePair]) -> None:
         for pair in eliza_results:
-            # Access the key and value of each AXKeyValuePair object
             self.add_key_value(pair.get_key(), pair.get_value())
 
-    # Get response
     def response(self, in1: str) -> str:
         return self.dic[in1].get_a_response() if in1 in self.dic else ""
 

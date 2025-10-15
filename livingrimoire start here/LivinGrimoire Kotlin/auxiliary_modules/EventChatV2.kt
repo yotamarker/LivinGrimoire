@@ -1,8 +1,12 @@
 package auxiliary_modules
 
+import java.util.HashMap
+import java.util.HashSet
+
 class EventChatV2    // Constructor
     (private val lim: Int) {
-    private val dic: MutableMap<String, LimUniqueResponder> = HashMap()
+    //    private final Map<String, LimUniqueResponder> dic = new HashMap<>(); // old version
+    private val dic: MutableMap<String, WeightedResponder> = HashMap()
     val modifiedKeys = HashSet<String>()
 
     fun keyExists(key: String): Boolean {
@@ -11,9 +15,9 @@ class EventChatV2    // Constructor
     }
 
     // Add items
-    fun addItems(ur: LimUniqueResponder, vararg args: String) {
+    fun addItems(ur: WeightedResponder, vararg args: String) {
         for (arg in args) {
-            dic[arg] = ur.clone()
+            dic[arg] = ur.cloneObj()
         }
     }
 
@@ -24,7 +28,7 @@ class EventChatV2    // Constructor
         val tool1 = AXStringSplit()
         val values = tool1.split(value)
         if (!dic.containsKey(key)) {
-            dic[key] = LimUniqueResponder(lim)
+            dic[key] = WeightedResponder(lim)
         }
         for (item in values) {
             dic[key]!!.addResponse(item)
@@ -37,7 +41,7 @@ class EventChatV2    // Constructor
         if (dic.containsKey(key)) {
             dic[key]!!.addResponse(value!!)
         } else {
-            dic[key] = LimUniqueResponder(lim)
+            dic[key] = WeightedResponder(lim)
             dic[key]!!.addResponse(value!!)
         }
     }
