@@ -104,6 +104,7 @@ import Foundation
 // │ 🎛️ OUTPUT MANAGEMENT       │
 // └────────────────────────────┘
 // - LimUniqueResponder
+// - WeightedResponder
 // - EventChatV2
 // - PercentDripper
 // - AXTimeContextResponder
@@ -3251,9 +3252,86 @@ class LimUniqueResponder {
     }
 }
 
+class WeightedResponder {
+    private var responses: [String]
+    private let lim: Int
+
+    init(_ lim: Int) {
+        self.responses = []
+        self.lim = lim
+    }
+
+    func getAResponse() -> String {
+        let size = responses.count
+        if size == 0 { return "" }
+
+        var weights = [Int](repeating: 0, count: size)
+        var totalWeight = 0
+        for i in 0..<size {
+            weights[i] = i + 1
+            totalWeight += weights[i]
+        }
+
+        let pick = Int.random(in: 0..<totalWeight)
+        var cumulative = 0
+        for i in 0..<size {
+            cumulative += weights[i]
+            if pick < cumulative {
+                return responses[i]
+            }
+        }
+
+        return responses[size - 1]
+    }
+
+    func responsesContainsStr(_ item: String) -> Bool {
+        return responses.contains(item)
+    }
+
+    func strContainsResponse(_ item: String) -> Bool {
+        for response in responses {
+            if response.isEmpty { continue }
+            if item.contains(response) { return true }
+        }
+        return false
+    }
+
+    func addResponse(_ s1: String) {
+        if let index = responses.firstIndex(of: s1) {
+            responses.remove(at: index)
+            responses.append(s1)
+            return
+        }
+        if responses.count > lim - 1 {
+            responses.removeFirst()
+        }
+        responses.append(s1)
+    }
+
+    func addResponses(_ replies: String...) {
+        for value in replies {
+            addResponse(value)
+        }
+    }
+
+    func getSavableStr() -> String {
+        return responses.joined(separator: "_")
+    }
+
+    func getLastItem() -> String {
+        return responses.last ?? ""
+    }
+
+    func cloneObj() -> WeightedResponder {
+        let cloned = WeightedResponder(self.lim)
+        cloned.responses = self.responses
+        return cloned
+    }
+}
+
 
 class EventChatV2 {
-    private var dic: [String: LimUniqueResponder] = [:]
+    private var dic: [String: WeightedResponder] = [:]
     private var modifiedKeys: Set<String> = []
     private let lim: Int
     
@@ -3271,9 +3349,9 @@ class EventChatV2 {
     }
     
     // Add items
-    func addItems(_ ur: LimUniqueResponder, _ args: String...) {
+    func addItems(_ ur: WeightedResponder, _ args: String...) {
         for arg in args {
-            dic[arg] = ur.clone()
+            dic[arg] = ur.cloneObj()
         }
     }
     
@@ -3283,7 +3361,7 @@ class EventChatV2 {
         }
         let values = value.components(separatedBy: "_")
         if dic[key] == nil {
-            dic[key] = LimUniqueResponder(lim)
+            dic[key] = WeightedResponder(lim)
         }
         for item in values {
             dic[key]?.addResponse(item)
@@ -3296,7 +3374,7 @@ class EventChatV2 {
         if let responder = dic[key] {
             responder.addResponse(value)
         } else {
-            let newResponder = LimUniqueResponder(lim)
+            let newResponder = WeightedResponder(lim)
             newResponder.addResponse(value)
             dic[key] = newResponder
         }

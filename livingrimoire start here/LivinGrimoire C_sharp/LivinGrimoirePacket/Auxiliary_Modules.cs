@@ -100,6 +100,7 @@ using System.Linq;
 // │ 🎛️ OUTPUT MANAGEMENT       │
 // └────────────────────────────┘
 // - LimUniqueResponder
+// - WeightedResponder
 // - EventChatV2
 // - PercentDripper
 // - AXTimeContextResponder
@@ -3978,10 +3979,106 @@ public class LimUniqueResponder
         return clonedResponder;
     }
 }
+
+public class WeightedResponder
+{
+    private List<string> responses;
+    private readonly int lim;
+
+    public WeightedResponder(int lim)
+    {
+        responses = new List<string>();
+        this.lim = lim;
+    }
+
+    public string GetAResponse()
+    {
+        int size = responses.Count;
+        if (size == 0) return "";
+
+        int totalWeight = 0;
+        int[] weights = new int[size];
+        for (int i = 0; i < size; i++)
+        {
+            weights[i] = i + 1;
+            totalWeight += weights[i];
+        }
+
+        Random rnd = new Random();
+        int pick = rnd.Next(totalWeight);
+
+        int cumulative = 0;
+        for (int i = 0; i < size; i++)
+        {
+            cumulative += weights[i];
+            if (pick < cumulative)
+                return responses[i];
+        }
+
+        return responses[size - 1];
+    }
+
+    public bool ResponsesContainsStr(string item)
+    {
+        return responses.Contains(item);
+    }
+
+    public bool StrContainsResponse(string item)
+    {
+        foreach (string response in responses)
+        {
+            if (string.IsNullOrEmpty(response)) continue;
+            if (item.Contains(response)) return true;
+        }
+        return false;
+    }
+
+    public void AddResponse(string s1)
+    {
+        if (responses.Contains(s1))
+        {
+            responses.Remove(s1);
+            responses.Add(s1);
+            return;
+        }
+        if (responses.Count > lim - 1)
+        {
+            responses.RemoveAt(0);
+        }
+        responses.Add(s1);
+    }
+
+    public void AddResponses(params string[] replies)
+    {
+        foreach (string value in replies)
+        {
+            AddResponse(value);
+        }
+    }
+
+    public string GetSavableStr()
+    {
+        return string.Join("_", responses);
+    }
+
+    public string GetLastItem()
+    {
+        if (responses.Count == 0) return "";
+        return responses[responses.Count - 1];
+    }
+
+    public WeightedResponder CloneObj()
+    {
+        WeightedResponder clonedResponder = new WeightedResponder(this.lim);
+        clonedResponder.responses = new List<string>(this.responses);
+        return clonedResponder;
+    }
+}
+
 public class EventChatV2
 {
-    private Dictionary<string, LimUniqueResponder> _dictionary = new Dictionary<string, LimUniqueResponder>();
-    private HashSet<string> _modifiedKeys = new HashSet<string>();
+    private Dictionary<string, WeightedResponder> _dictionary = new();
+    private HashSet<string> _modifiedKeys = new();
     private readonly int _lim;
 
     public EventChatV2(int lim)
@@ -4001,26 +4098,25 @@ public class EventChatV2
     }
 
     // Add items
-    public void AddItems(LimUniqueResponder ur, params string[] args)
+    public void AddItems(WeightedResponder ur, params string[] args)
     {
-        foreach (var arg in args)
+        foreach (string arg in args)
         {
-            _dictionary[arg] = ur.Clone();
+            _dictionary[arg] = ur.CloneObj();
         }
     }
 
     public void AddFromDB(string key, string value)
     {
-        if (string.IsNullOrEmpty(value) || value == "null")
-        {
-            return;
-        }
+        if (string.IsNullOrEmpty(value) || value == "null") return;
+
         string[] values = value.Split('_');
         if (!_dictionary.ContainsKey(key))
         {
-            _dictionary[key] = new LimUniqueResponder(_lim);
+            _dictionary[key] = new WeightedResponder(_lim);
         }
-        foreach (var item in values)
+
+        foreach (string item in values)
         {
             _dictionary[key].AddResponse(item);
         }
@@ -4036,7 +4132,7 @@ public class EventChatV2
         }
         else
         {
-            var newResponder = new LimUniqueResponder(_lim);
+            var newResponder = new WeightedResponder(_lim);
             newResponder.AddResponse(value);
             _dictionary[key] = newResponder;
         }
@@ -4046,7 +4142,6 @@ public class EventChatV2
     {
         foreach (var pair in elizaResults)
         {
-            // Access the key and value of each AXKeyValuePair object
             AddKeyValue(pair.GetKey(), pair.GetValue());
         }
     }
@@ -4079,6 +4174,7 @@ public class EventChatV2
         return string.Empty;
     }
 }
+
 public class PercentDripper
 {
     private int _limit;
