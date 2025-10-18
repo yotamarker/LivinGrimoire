@@ -1,6 +1,7 @@
-﻿Imports System.Text.RegularExpressions
-Imports System.Collections.Generic
+﻿Imports System.Collections.Generic
+Imports System.Security.Cryptography
 Imports System.Text
+Imports System.Text.RegularExpressions
 
 ' ╔════════════════════════════════════════════════════════════════════════╗
 ' ║ TABLE OF CONTENTS                                                      ║
@@ -98,6 +99,7 @@ Imports System.Text
 ' │ 🎛️ OUTPUT MANAGEMENT       │
 ' └────────────────────────────┘
 ' - LimUniqueResponder
+' - WeightedResponder
 ' - EventChatV2
 ' - PercentDripper
 ' - AXTimeContextResponder
@@ -3275,8 +3277,89 @@ Module Auxiliary_modules
             Return clonedResponder
         End Function
     End Class
+
+    Public Class WeightedResponder
+        Private responses As List(Of String)
+        Private ReadOnly lim As Integer
+
+        Public Sub New(lim As Integer)
+            responses = New List(Of String)()
+            Me.lim = lim
+        End Sub
+
+        Public Function GetAResponse() As String
+            Dim size As Integer = responses.Count
+            If size = 0 Then Return ""
+
+            Dim totalWeight As Integer = 0
+            Dim weights(size - 1) As Integer
+            For i As Integer = 0 To size - 1
+                weights(i) = i + 1
+                totalWeight += weights(i)
+            Next
+
+            Dim rnd As New Random()
+            Dim pick As Integer = rnd.Next(totalWeight)
+
+            Dim cumulative As Integer = 0
+            For i As Integer = 0 To size - 1
+                cumulative += weights(i)
+                If pick < cumulative Then
+                    Return responses(i)
+                End If
+            Next
+
+            Return responses(size - 1)
+        End Function
+
+        Public Function ResponsesContainsStr(item As String) As Boolean
+            Return responses.Contains(item)
+        End Function
+
+        Public Function StrContainsResponse(item As String) As Boolean
+            For Each response As String In responses
+                If String.IsNullOrEmpty(response) Then Continue For
+                If item.Contains(response) Then Return True
+            Next
+            Return False
+        End Function
+
+        Public Sub AddResponse(s1 As String)
+            If responses.Contains(s1) Then
+                responses.Remove(s1)
+                responses.Add(s1)
+                Return
+            End If
+            If responses.Count > lim - 1 Then
+                responses.RemoveAt(0)
+            End If
+            responses.Add(s1)
+        End Sub
+
+        Public Sub AddResponses(ParamArray replies() As String)
+            For Each value As String In replies
+                AddResponse(value)
+            Next
+        End Sub
+
+        Public Function GetSavableStr() As String
+            Return String.Join("_", responses)
+        End Function
+
+        Public Function GetLastItem() As String
+            If responses.Count = 0 Then Return ""
+            Return responses(responses.Count - 1)
+        End Function
+
+        Public Function CloneObj() As WeightedResponder
+            Dim clonedResponder As New WeightedResponder(Me.lim)
+            clonedResponder.responses = New List(Of String)(Me.responses)
+            Return clonedResponder
+        End Function
+    End Class
+
     Public Class EventChatV2
-        Private _dictionary As New Dictionary(Of String, LimUniqueResponder)()
+        Private _dictionary As New Dictionary(Of String, WeightedResponder)()
         Private _modifiedKeys As New HashSet(Of String)()
         Private ReadOnly _lim As Integer
 
@@ -3294,9 +3377,9 @@ Module Auxiliary_modules
         End Function
 
         ' Add items
-        Public Sub AddItems(ur As LimUniqueResponder, ParamArray args As String())
+        Public Sub AddItems(ur As WeightedResponder, ParamArray args As String())
             For Each arg In args
-                _dictionary(arg) = ur.Clone()
+                _dictionary(arg) = ur.CloneObj()
             Next
         End Sub
 
@@ -3306,7 +3389,7 @@ Module Auxiliary_modules
             End If
             Dim values As String() = value.Split("_"c)
             If Not _dictionary.ContainsKey(key) Then
-                _dictionary(key) = New LimUniqueResponder(_lim)
+                _dictionary(key) = New WeightedResponder(_lim)
             End If
             For Each item In values
                 _dictionary(key).AddResponse(item)
@@ -3319,7 +3402,7 @@ Module Auxiliary_modules
             If _dictionary.ContainsKey(key) Then
                 _dictionary(key).AddResponse(value)
             Else
-                Dim newResponder = New LimUniqueResponder(_lim)
+                Dim newResponder = New WeightedResponder(_lim)
                 newResponder.AddResponse(value)
                 _dictionary(key) = newResponder
             End If
