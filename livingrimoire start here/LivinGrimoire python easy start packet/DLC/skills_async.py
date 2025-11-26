@@ -53,7 +53,8 @@ class DaRainAlerts(ShorniSplash):
         self._funnel.addK("so hot today").addK("so cold today").addK("what is the temperature?").addK("temperature")
         self._funnel.addKV("temp", "temp")
         self._funnel.addKV("rain alerts", "rain alerts")
-        self._funnel.addKV("get weather", "get weather")
+        self._funnel.addKV("give me the forecast", "forecast")
+        self._funnel.addKV("forecast", "forecast")  # Add this line
         self.cmd: str = "nothing"
 
     def trigger(self, ear, skin, eye) -> bool:
@@ -67,7 +68,8 @@ class DaRainAlerts(ShorniSplash):
         match this_cls.cmd:
             case "rain alerts":
                 this_cls._result = this_cls.getRainAlerts(this_cls.apikey)
-            case "get weather":
+            case "forecast":
+                this_cls.setSimpleAlg("storm_bg")
                 this_cls._result = this_cls.get_weather(this_cls.apikey)
             case "temp":
                 this_cls._result = this_cls.get_temperature_in_celsius(this_cls.apikey)
@@ -77,7 +79,7 @@ class DaRainAlerts(ShorniSplash):
         params = {
             "q": self.city,
             "appid": api_key,
-            "units": "metric",  # You can change to "imperial" for Fahrenheit
+            "units": "metric",
         }
 
         response = requests.get(base_url, params=params)
@@ -86,11 +88,11 @@ class DaRainAlerts(ShorniSplash):
         if "weather" in data:
             weather_description = data["weather"][0]["description"]
             if "rain" in weather_description.lower():
-                return f"It's going to rain in {self.city}! ☔"
+                return f"The skies darken over {self.city}. I feel the clouds gathering, heavy with rain. A storm approaches - take shelter, my friend."
             else:
-                return f"No rain expected in {self.city}. Enjoy the weather! ☀️"
+                return f"The heavens smile upon {self.city} today. No rain clouds dare challenge my dominion over the skies. Enjoy the clear weather, mortal."
         else:
-            return "Unable to fetch weather data."
+            return "Even my powers cannot pierce this meteorological veil. The weather data remains hidden from me."
 
     def get_weather(self, api_key):
         base_url = "http://api.openweathermap.org/data/2.5/weather?"
@@ -103,18 +105,19 @@ class DaRainAlerts(ShorniSplash):
             main_info = weather_data["main"]
             current_temperature_kelvin = main_info["temp"]
             current_temperature_celsius = current_temperature_kelvin - 273.15
-            current_pressure = main_info["pressure"]
-            current_humidity = main_info["humidity"]
+            # current_pressure = main_info["pressure"]
+            # current_humidity = main_info["humidity"]
 
             weather_description = weather_data["weather"][0]["description"]
 
-            result_string = f"Temperature: {current_temperature_celsius:.2f}°C\n"
-            result_string += f"Atmospheric pressure (in hPa): {current_pressure}\n"
-            result_string += f"Humidity (in percentage): {current_humidity}\n"
-            result_string += f"Description: {weather_description}"
+            # result_string = f"I, Storm, command the very elements around {self.city}:\n\n"
+            result_string = f"{current_temperature_celsius:.2f}°C - feel the energy in the air!\n"
+            # result_string += f"Atmospheric pressure: {current_pressure} hPa - the weight of the sky itself\n"
+            # result_string += f"Humidity: {current_humidity}% - the moisture I weave into clouds\n"
+            result_string += f"{weather_description} - as I have willed it to be"
             return result_string
         else:
-            return "City Not Found"
+            return "This city eludes my atmospheric senses. Are you certain of its existence, mortal?"
 
     def get_temperature_in_celsius(self, api_key):
         base_url = "http://api.openweathermap.org/data/2.5/weather?"
@@ -127,16 +130,29 @@ class DaRainAlerts(ShorniSplash):
             main_info = weather_data["main"]
             current_temperature_kelvin = main_info["temp"]
             current_temperature_celsius = current_temperature_kelvin - 273.15
-            return f"{current_temperature_celsius:.2f}°C"
+
+            # Storm's dramatic temperature descriptions
+            if current_temperature_celsius > 30:
+                temp_comment = "The sun's fury burns bright - I could summon clouds to grant relief"
+            elif current_temperature_celsius > 20:
+                temp_comment = "A pleasant warmth graces the air - perfect weather under my watch"
+            elif current_temperature_celsius > 10:
+                temp_comment = "A gentle chill whispers through the winds - refreshing"
+            elif current_temperature_celsius > 0:
+                temp_comment = "Winter's touch is upon us - feel the crisp air I command"
+            else:
+                temp_comment = "The cold bites deep - even my storm clouds would bring warmth compared to this"
+
+            return f"The temperature in {self.city} is {current_temperature_celsius:.2f}°C. {temp_comment}"
         else:
-            return "City Not Found"
+            return "My atmospheric senses cannot find this city. The winds bring me no data."
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
-            return "weather information"
+            return "As Storm, I command the very weather you inquire about"
         elif param == "triggers":
-            return "temp for temperature. rain alerts and get weather"
-        return "note unavailable"
+            return "temp for temperature, rain alerts, forecast, and get weather"
+        return "The knowledge you seek is beyond my current reach"
 
 
 class DaExePath(Skill):
