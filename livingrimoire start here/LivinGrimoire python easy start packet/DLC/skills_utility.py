@@ -4,10 +4,12 @@
 import random
 import string
 
+from typing_extensions import override
+
 from LivinGrimoirePacket.AXPython import AXCmdBreaker, PercentDripper, TimeUtils, Notes, RegexUtil, Responder, Cron, \
     DrawRnd, AXContextCmd, OnOffSwitch, EventChat, UniqueResponder
 from LivinGrimoirePacket.AlgParts import APHappy, APSad
-from LivinGrimoirePacket.LivinGrimoire import Skill
+from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro
 
 
 class DiSayer(Skill):
@@ -151,6 +153,14 @@ class DiAlarmer(Skill):
         self.msg_extra: str = ""
         self._alarm_armed: bool = False
 
+    @override
+    def setKokoro(self, kokoro: Kokoro):
+        self._kokoro = kokoro
+        alarm_time: str = self._kokoro.grimoireMemento.load("dialarmer")
+        if alarm_time != "null":
+            self._cron.setStartTime(alarm_time)
+            self._alarm_armed = True
+
     def setCron(self, cron):
         self._cron = cron
 
@@ -186,8 +196,9 @@ class DiAlarmer(Skill):
                     self.setSimpleAlg(f"alarm set to {temp}")
                     self.msg_extra = ""
                     self._alarm_armed = True
+                    self._cron.setStartTime(temp)
+                    self._kokoro.grimoireMemento.save("dialarmer",temp)
                     return
-
         if self._cron.triggerWithoutRenewal():
             self.setSimpleAlg(f"beep beep beep {self.msg_extra}")
 
@@ -363,7 +374,7 @@ class DiPassGen(Skill):
     def generate_password(length=12):
         # characters = string.ascii_letters + string.digits + string.punctuation
         characters = string.ascii_letters + string.digits
-        password = ''.join(random.choice(characters) for i in range(length))
+        password = ''.join(random.choice(characters) for _ in range(length))
         return password
 
     def skillNotes(self, param: str) -> str:

@@ -7,7 +7,7 @@ from DLC.skills_games import DiHugAttack, DiYoga, DiMezzoflationGame, DiTeaParty
 from DLC.skills_monitor import AHAware
 from DLC.skills_sound_effects import DiVoiceEffects, DiRndMp3Player
 from DLC.skills_utility import DiSayer, DiTime, DiNoteTaker, DiAlarmer
-from LG_DB_V1 import LivinGrimoirePandaDB
+from LG_SQLite_DB import SQLiteDictionaryDB
 from LivinGrimoirePacket.AXPython import Responder
 from LivinGrimoirePacket.LivinGrimoire import Brain
 from LivinGrimoirePacket.UniqueSkills import DiBicameral, DiGamificationSkillBundle, DiGamificationScouter, \
@@ -16,7 +16,7 @@ from LivinGrimoirePacket.UniqueSkills import DiBicameral, DiGamificationSkillBun
 
 def add_DLC_skills(brain: Brain):
     # utility skills:
-    brain.logicChobit.setDatabase(LivinGrimoirePandaDB())
+    brain.logicChobit.setDatabase(SQLiteDictionaryDB())
     brain.add_skill(DiSayer())
     brain.add_skill(DiTime())
     brain.add_skill(DiNoteTaker().add_notes("workout", "study", "play video games"))
