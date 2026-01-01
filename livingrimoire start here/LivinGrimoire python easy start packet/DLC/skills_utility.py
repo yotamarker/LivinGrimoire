@@ -151,6 +151,7 @@ class DiAlarmer(Skill):
         self.off: Responder = Responder("shut up", "stop")
         self._cron: Cron = Cron("", 3, 3)
         self.msg_extra: str = ""
+        self.default_alarm: str = "beep beep beep"
         self._alarm_armed: bool = False
 
     @override
@@ -163,6 +164,11 @@ class DiAlarmer(Skill):
 
     def setCron(self, cron):
         self._cron = cron
+
+    def set_default_alarm(self, alarm: str):
+        if alarm and not any(c in alarm for c in ";<>/\\*&^$%#"):
+            self.default_alarm = alarm
+        return self
 
     def input(self, ear, skin, eye):
         # Turn off alarm
@@ -200,7 +206,10 @@ class DiAlarmer(Skill):
                     self._kokoro.grimoireMemento.save("dialarmer",temp)
                     return
         if self._cron.triggerWithoutRenewal():
-            self.setSimpleAlg(f"beep beep beep {self.msg_extra}")
+            if len(self.msg_extra) > 0:
+                self.setSimpleAlg(self.default_alarm,self.msg_extra)
+            else:
+                self.setSimpleAlg(self.default_alarm)
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
