@@ -336,3 +336,97 @@ class DiImprint_recorder(Skill):
         elif param == "triggers":
             return "Activated by verbal commands like 'recorder on'. stop recording to stop."
         return "Note unavailable"
+
+
+class DiCMD(Skill):
+    # this class passes preset commands to the kokoro object, to be used by other skills.
+    # it's a middleman passing messages for example from a logical skill to a hardware skill
+    # see DiKokoroOut for example usage
+    def __init__(self):
+        super().__init__()
+        self.modes = set()
+
+    def addModes(self, *modes: str):
+        for m in modes:
+            if isinstance(m, str):
+                self.modes.add(m)
+        return self
+
+    # Override
+    def input(self, ear: str, skin: str, eye: str):
+        self._kokoro.toHeart["cmd"] = ""
+        if ear in self.modes:
+            self._kokoro.toHeart["cmd"] = ear
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "sends commands via the kokoro object to other skills"
+        elif param == "triggers":
+            return "anything in the hashset attribute"
+        return "note unavalible"
+
+class DiKokoroOut(Skill):
+    # example utilization of DiCMD
+    def __init__(self):
+        super().__init__()
+        self.set_skill_type(3)  # continuous skill
+        self.set_skill_lobe(2)  # hardware chobits
+
+    def input(self, ear: str, skin: str, eye: str):
+        t = self._kokoro.toHeart["cmd"]
+        if len(t)>0:
+            print(t)
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "prints to console"
+        elif param == "triggers":
+            return "automatic for any input"
+        return "note unavalible"
+
+class Shinka(Skill):
+    """
+    this unique skill upgrades a base skill with upgrade skills
+    when an upgrade skill wants to run, it overrides the base skill
+    su classes can be coded with logic to equip and unequip upgrade skills at runtime
+    """
+    def __init__(self, base_skill:Skill):
+        super().__init__()
+        self.upgrades: list["Shinka"] = []
+        self.active_upgrade = -1
+        self.base_skill = base_skill
+
+    def input(self, ear: str, skin: str, eye: str):
+        for i in range(len(self.upgrades)):
+            self.upgrades[i].input(ear, skin, eye)
+            if self.upgrades[i].pendingAlgorithm():
+                self.active_upgrade = i
+                return
+        self.base_skill.input(ear, skin, eye)
+
+    def setKokoro(self, kokoro: Kokoro):
+        self._kokoro = kokoro  # potential usage in sub classes for runtime upgrades mode.
+        self.base_skill._kokoro = kokoro
+        for upgrade in self.upgrades:
+            upgrade.setKokoro(kokoro)
+
+    def pendingAlgorithm(self) -> bool:
+        return self.base_skill.pendingAlgorithm() or self.active_upgrade > -1
+
+    def output(self, neuron: Neuron):
+        if self.active_upgrade>-1:
+            self.upgrades[self.active_upgrade].output(neuron)
+            self.active_upgrade = -1
+            return
+        self.base_skill.output(neuron)
+
+    def skillNotes(self, param: str) -> str:
+        return self.base_skill.skillNotes(param)
+
+    def add_skill_tree(self, skill_tree: "Shinka") -> "Shinka":
+        self.upgrades.append(skill_tree)
+        return self
+
+    def clear_upgrades(self):
+        self.upgrades.clear()
+        self.active_upgrade = -1
