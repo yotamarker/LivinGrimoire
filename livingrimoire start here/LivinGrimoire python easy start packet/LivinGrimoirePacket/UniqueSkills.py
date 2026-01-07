@@ -388,7 +388,7 @@ class Shinka(Skill):
     """
     this unique skill upgrades a base skill with upgrade skills
     when an upgrade skill wants to run, it overrides the base skill
-    su classes can be coded with logic to equip and unequip upgrade skills at runtime
+    subclasses can be coded with logic to equip and unequip upgrade skills at runtime
     """
     def __init__(self, base_skill:Skill):
         super().__init__()
