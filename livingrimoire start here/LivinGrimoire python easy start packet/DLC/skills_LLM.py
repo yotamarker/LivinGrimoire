@@ -18,6 +18,18 @@ In the Ollama terminal, pull a model: ollama pull llama3
 '''
 
 '''
+manage Ollama(its a program that runs the LLMs on your machine) models from the cmd:
+*pull a model:*
+ollama pull openhermes
+or:
+ollama pull gemma13b
+*List installed models:*
+ollama list
+*delete a model:*
+ollama rm gemma27b
+'''
+
+'''
 These are the moddable vars:
 
 model: which LLM to use (e.g. "llama3", "mistral", etc.)
@@ -85,14 +97,14 @@ def talk_to_waifu(prompt, history):
     global is_working, current_reply
 
     # Build the full prompt with conversation history
-    full_prompt = "This is a conversation with Pomni, a loving waifubot:\n\n"
+    full_prompt = "You are a caring nanny. Speak warmly and kindly.\n\n"
 
     # Add previous conversation history
     for message in history[-6:]:  # Keep last 6 messages for context
         full_prompt += f"{message}\n"
 
     # Add current prompt
-    full_prompt += f"Human: {prompt}\npomni:"
+    full_prompt += f"Human: {prompt}\n:"
 
     # response = requests.post(
     #     "http://localhost:11434/api/generate",
@@ -101,13 +113,13 @@ def talk_to_waifu(prompt, history):
     response = requests.post(
         "http://localhost:11434/api/generate",
         json={
-            "model": "llama3",
+            "model": "gemma3:12b",
             "prompt": full_prompt,
             "options": {
-                "num_predict": 25,
-                "temperature": 0.1,
-                "top_k": 10,
-                "top_p": 0.5,
+                "num_predict": 300,
+                "temperature": 0.6,
+                "top_k": 40,
+                "top_p": 0.9,
                 "repeat_penalty": 1.2
             }
         }
@@ -144,7 +156,7 @@ def start_waifu_conversation(user_input):
 class DiLLMOver(Skill):
     def __init__(self):
         super().__init__()
-        initial_prompt = "Your name is Pomni. directive: nurse and protect."
+        initial_prompt = "directive: nurse and protect."
         conversation_history.append(f"System: {initial_prompt}")
 
     # Override
@@ -160,7 +172,7 @@ class DiLLMOver(Skill):
             self.setSimpleAlg(self.sanitize_string(reply))
             # Add both user input and bot response to history
             conversation_history.append(f"Human: {user_input}")
-            conversation_history.append(f"Pomni: {reply}")
+            conversation_history.append(f"{reply}")
 
             # Optional: Limit history size to prevent it from growing too large
             if len(conversation_history) > 20:  # Keep last 20 messages
