@@ -79,6 +79,9 @@ from random import SystemRandom
 # - QuestionChecker
 # - TrgMinute
 # - TrgEveryNMinutes
+# - ScheduleBeefer
+# - OncePerDayGateV0
+# - NSilenceCyclesAfterStr
 
 # ┌──────────────────────────────────────────────┐
 # │ 🧪 SPECIAL SKILLS DEPENDENCIES               │
@@ -96,10 +99,6 @@ from random import SystemRandom
 # ┌────────────────────────────┐
 # │ 🗣️ SPEECH ENGINES          │
 # └────────────────────────────┘
-# - ChatBot
-# - ElizaDeducer
-# - PhraseMatcher
-# - ElizaDeducerInitializer (ElizaDeducer)
 # - ElizaDBWrapper
 # - RailBot
 # - EventChat
@@ -1208,7 +1207,7 @@ class AXInputWaiter:
     def reset(self):
         self._trgTolerance.reset()
 
-    def wait(self, s1: str) -> False:
+    def wait(self, s1: str) -> bool:
         # return true till any input detected or till x times of no input detection
         if not s1 == "":
             self._trgTolerance.disable()
@@ -1506,7 +1505,7 @@ class AXStandBy:
         self._tg:TimeGate = TimeGate(pause)
         self._tg.openForPauseMinutes()
 
-    def standBy(self, ear: str) -> bool:
+    def standBy(self, ear: str) -> bool | None:
         # only returns true after pause minutes of no input
         if len(ear) > 0:
             # restart count
@@ -1516,6 +1515,7 @@ class AXStandBy:
             # time out without input, stand by is true
             self._tg.openForPauseMinutes()
             return True
+        return False
 
 
 class Cycler:
@@ -1710,6 +1710,68 @@ class TrgEveryNMinutes:
     # override
     def reset(self):
         self._timeStamp = TimeUtils.getCurrentTimeStamp()
+
+
+class ScheduleBeefer:
+    # adds logic to schedule triggered events. for example for answering GM only once per day
+    def __init__(self):
+        self.triggerable = True
+    def reset(self):
+        self.triggerable = True
+
+    def check(self, event_happened: bool) -> bool:
+        if self.triggerable and event_happened:
+            self.triggerable = False
+            return True
+        return False
+
+    def check3Possibilities(self, event_happened: bool) -> int:
+        if self.triggerable and event_happened:
+            self.triggerable = False
+            return 2  # event happened and within tolerance (tolerance was reset)
+        if event_happened:
+            return 1  # annoyed due to repetition
+        return 0  # event did not even happen
+
+
+class OncePerDayGateV0:
+    def __init__(self):
+        self.last_yday = -1
+        self.triggered_today = False
+
+    def check(self, event_happened: bool) -> bool:
+        # Fast integer day-of-year check
+        yday = time.localtime().tm_yday
+
+        # New day → reset
+        if yday != self.last_yday:
+            self.last_yday = yday
+            self.triggered_today = False
+
+        # If event happened and we haven't triggered today
+        if event_happened and not self.triggered_today:
+            self.triggered_today = True
+            return True
+
+        return False
+
+class NSilenceCyclesAfterStr:
+    # ret true is input is "" N times in a row after input:srt was not empty
+    # used for detecting pauses.
+    def __init__(self, N):
+        self.N = N
+        self.c = 0
+
+    def check(self, s: str) -> bool:
+        # on a row of silence:
+        if self.c > 0 and len(s) == 0:
+            self.c += 1
+            if self.c == self.N:
+                self.c = 0
+                return True
+        if len(s)  > 0:
+            self.c = 1
+        return False
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -2082,261 +2144,6 @@ class Responder:
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                           SPEECH ENGINES                               ║
 # ╚════════════════════════════════════════════════════════════════════════╝
-
-
-class ChatBot:
-    """
-chatbot = ChatBot(5)
-
-chatbot.addParam("name", "jinpachi")
-chatbot.addParam("name", "sakura")
-chatbot.addParam("verb", "eat")
-chatbot.addParam("verb", "code")
-
-chatbot.addSentence("i can verb #")
-
-chatbot.learnParam("ryu is a name")
-chatbot.learnParam("ken is a name")
-chatbot.learnParam("drink is a verb")
-chatbot.learnParam("rest is a verb")
-
-chatbot.learnV2("hello ryu i like to code")
-chatbot.learnV2("greetings ken")
-for i in range(1, 10):
-    print(chatbot.talk())
-    print(chatbot.getALoggedParam())
-"""
-
-    def __init__(self, logParamLim):
-        self.sentences: RefreshQ = RefreshQ(5)
-        self.wordToList: dict[str, RefreshQ] = {}
-        self.rand = random.Random()
-        self.allParamRef: dict[str, str] = {}
-        self.paramLim: int = 5
-        self.loggedParams: RefreshQ = RefreshQ(5)
-        self.conjuration: str = "is a"
-        self.loggedParams.setLimit(logParamLim)
-
-    def setConjuration(self, conjuration):
-        self.conjuration = conjuration
-
-    def setSentencesLim(self, lim):
-        self.sentences.setLimit(lim)
-
-    def setParamLim(self, paramLim):
-        self.paramLim = paramLim
-
-    def getWordToList(self):
-        return self.wordToList
-
-    def talk(self):
-        result = self.sentences.getRNDElement()
-        return self.clearRecursion(result)
-
-    def clearRecursion(self, result):
-        params = RegexUtil.extractAllRegexes("(\\w+)(?= #)", result)
-        for strI in params:
-            temp = self.wordToList.get(strI)
-            s1 = temp.getRNDElement()
-            result = result.replace(strI + " #", s1)
-        if "#" not in result:
-            return result
-        else:
-            return self.clearRecursion(result)
-
-    def addParam(self, category, value):
-        if category not in self.wordToList:
-            temp = RefreshQ(self.paramLim)
-            self.wordToList[category] = temp
-        self.wordToList[category].insert(value)
-        self.allParamRef[value] = category
-
-    def addKeyValueParam(self, kv):
-        if kv.getKey() not in self.wordToList:
-            temp = RefreshQ(self.paramLim)
-            self.wordToList[kv.getKey()] = temp
-        self.wordToList[kv.getKey()].insert(kv.getValue())
-        self.allParamRef[kv.getValue()] = kv.getKey()
-
-    def addSubject(self, category, value):
-        if category not in self.wordToList:
-            temp = RefreshQ(1)
-            self.wordToList[category] = temp
-        self.wordToList[category].insert(value)
-        self.allParamRef[value] = category
-
-    def addSentence(self, sentence):
-        self.sentences.insert(sentence)
-
-    def learn(self, s1):
-        s1 = " " + s1
-        for key in self.wordToList.keys():
-            s1 = s1.replace(" " + key, " {} #".format(key))
-        self.sentences.insert(s1.strip())
-
-    def learnV2(self, s1) -> bool:
-        # returns true if sentence has params
-        # meaning sentence has been learnt
-        OGStr: str = s1
-        s1 = " " + s1
-        for key in self.allParamRef.keys():
-            s1 = s1.replace(" " + key, " {} #".format(self.allParamRef[key]))
-        s1 = s1.strip()
-        if not OGStr == s1:
-            self.sentences.insert(s1)
-            return True
-        return False
-
-    def learnParam(self, s1):
-        if self.conjuration not in s1:
-            return
-        category = RegexUtil.afterWord(self.conjuration, s1)
-        if category not in self.wordToList:
-            return
-        param = s1.replace("{} {}".format(self.conjuration, category), "").strip()
-        self.wordToList[category].insert(param)
-        self.allParamRef[param] = category
-        self.loggedParams.insert(s1)
-
-    def addParamFromAXPrompt(self, kv):
-        if kv.getKey() not in self.wordToList:
-            return
-        self.wordToList[kv.getKey()].insert(kv.getValue())
-        self.allParamRef[kv.getValue()] = kv.getKey()
-
-    def addRefreshQ(self, category, q1: RefreshQ):
-        self.wordToList[category] = q1
-
-    def getALoggedParam(self):
-        return self.loggedParams.getRNDElement()
-
-
-class ElizaDeducer:
-    """
-    This class populates a special chat dictionary
-    based on the matches added via its add_phrase_matcher function.
-    See subclass ElizaDeducerInitializer for example:
-    ed = ElizaDeducerInitializer(2)  # 2 = limit of replies per input
-    """
-    def __init__(self, lim: int):
-        self.babble2: list['PhraseMatcher'] = []
-        self.pattern_index: dict[str, list['PhraseMatcher']] = {}
-        self.response_cache: dict[str, list['AXKeyValuePair']] = {}
-        self.ec2 = EventChatV2(lim)  # Chat dictionary, use getter for access. Hardcoded replies can also be added
-
-    def get_ec2(self) -> 'EventChatV2':
-        return self.ec2
-
-    def learn(self, msg: str) -> None:
-        # Populate EventChat dictionary
-        # Check cache first
-        if msg in self.response_cache:
-            self.ec2.add_key_values(list(self.response_cache[msg]))
-
-        # Search for matching patterns
-        potential_matchers = self.get_potential_matchers(msg)
-        for pm in potential_matchers:
-            if pm.matches(msg):
-                response = pm.respond(msg)
-                self.response_cache[msg] = response
-                self.ec2.add_key_values(response)
-
-    def learned_bool(self, msg: str) -> bool:
-        # Same as learn method but returns true if it learned new replies
-        learned = False
-        # Populate EventChat dictionary
-        # Check cache first
-        if msg in self.response_cache:
-            self.ec2.add_key_values(list(self.response_cache[msg]))
-            learned = True
-
-        # Search for matching patterns
-        potential_matchers = self.get_potential_matchers(msg)
-        for pm in potential_matchers:
-            if pm.matches(msg):
-                response = pm.respond(msg)
-                self.response_cache[msg] = response
-                self.ec2.add_key_values(response)
-                learned = True
-        return learned
-
-    def respond(self, str1: str) -> str:
-        return self.ec2.response(str1)
-
-    def respond_latest(self, str1: str) -> str:
-        # Get most recent reply/data
-        return self.ec2.response_latest(str1)
-
-    def get_potential_matchers(self, msg: str) -> list['PhraseMatcher']:
-        potential_matchers = []
-        for key in self.pattern_index:
-            if key in msg:
-                potential_matchers.extend(self.pattern_index[key])
-        return potential_matchers
-
-    def add_phrase_matcher(self, pattern: str, *kv_pairs: str) -> None:
-        kvs = [AXKeyValuePair(kv_pairs[i], kv_pairs[i + 1]) for i in range(0, len(kv_pairs), 2)]
-        matcher = PhraseMatcher(pattern, kvs)
-        self.babble2.append(matcher)
-        self.index_pattern(pattern, matcher)
-
-    def index_pattern(self, pattern: str, matcher: 'PhraseMatcher') -> None:
-        for word in pattern.split():
-            self.pattern_index.setdefault(word, []).append(matcher)
-
-class PhraseMatcher:
-    def __init__(self, matcher: str, responses: list['AXKeyValuePair']):
-        self.matcher = re.compile(matcher)
-        self.responses = responses
-
-    def matches(self, str1: str) -> bool:
-        m = self.matcher.match(str1)
-        return m is not None
-
-    def respond(self, str1: str) -> list['AXKeyValuePair']:
-        m = self.matcher.match(str1)
-        result = []
-        if m:
-            tmp = len(m.groups())
-            for kv in self.responses:
-                temp_kv = AXKeyValuePair(kv.key, kv.value)
-                for i in range(tmp):
-                    s = m.group(i + 1)
-                    temp_kv.key = temp_kv.key.replace(f"{{{i}}}", s).lower()
-                    temp_kv.value = temp_kv.value.replace(f"{{{i}}}", s).lower()
-                result.append(temp_kv)
-        return result
-
-
-class ElizaDeducerInitializer(ElizaDeducer):
-    def __init__(self, lim: int):
-        # Recommended lim = 5; it's the limit of responses per key in the EventChat dictionary
-        # The purpose of the lim is to make saving and loading data easier
-        super().__init__(lim)
-        self.initialize_babble2()
-
-    def initialize_babble2(self) -> None:
-        self.add_phrase_matcher(
-            r"(.*) is (.*)",
-            "what is {0}", "{0} is {1}",
-            "explain {0}", "{0} is {1}"
-        )
-
-        self.add_phrase_matcher(
-            r"if (.*) or (.*) than (.*)",
-            "{0}", "{2}",
-            "{1}", "{2}"
-        )
-
-        self.add_phrase_matcher(
-            r"if (.*) and (.*) than (.*)",
-            "{0}", "{1}"
-        )
-
-        self.add_phrase_matcher(
-            r"(.*) because (.*)",
-            "{1}", "i guess {0}"
-        )
 
 class ElizaDBWrapper:
     # This (function wrapper) class adds save load functionality to the ElizaDeducer Object
@@ -2852,7 +2659,7 @@ class AXPrompt:
         self.isActive: bool = False
         self.index = 0
         self.prompts: list[Prompt] = []
-        self.kv: AXKeyValuePair = AXKeyValuePair()
+        self.kv: AXKeyValuePair | None = AXKeyValuePair()
 
     def addPrompt(self, p1):
         self.prompts.append(p1)
@@ -3446,7 +3253,7 @@ class EV3DaisyChainAndMode(TrGEV3):
                 # not all gates return true
                 return False
             # all gates return true
-            return True
+        return True
 
 
 class EV3DaisyChainOrMode(TrGEV3):
@@ -3473,7 +3280,7 @@ class EV3DaisyChainOrMode(TrGEV3):
                 # at least 1 gate is engaged
                 return True
             # all gates are not engaged
-            return False
+        return False
 
 
 class Map:
@@ -3721,7 +3528,7 @@ class PersistentQuestion:
 
 
 class AXLSpeechModifier(AXLHousing):
-    def __init__(self, dic: [str, str]):
+    def __init__(self, dic: dict[str, str]):
         self.dic = dic
 
     # Override
@@ -3981,123 +3788,3 @@ class Excluder:
             if len(RegexUtil.extractRegex(temp_str, ear)) > 0:
                 return True
         return False
-
-
-class ElizaDeducerInitializer2(ElizaDeducer):
-    def __init__(self, lim: int):
-        # Recommended lim = 5; it's the limit of responses per key in the EventChat dictionary
-        # The purpose of the lim is to make saving and loading data easier
-        super().__init__(lim)
-        self.initialize_babble2()
-
-    def initialize_babble2(self) -> None:
-        # Adding phrase matchers for various patterns and responses to enhance conversation logic
-
-        # Description
-        # self.add_phrase_matcher(
-        #     r"(.*) is (.*)",
-        #     "what is {0}", "{0} is {1}",
-        #     "explain {0}", "{0} is {1}"
-        # )
-
-        # Comparison
-        # self.add_phrase_matcher(
-        #     r"(.*) are (.*) than (.*)",
-        #     "who is {1} {0} or {2}", "{0}",
-        #     "who is {1} {2} or {0}", "{0}",
-        #     "who are {1} {2} or {0}", "{0}",
-        #     "who are {1} {0} or {2}", "{0}"
-        # )
-
-        # Why
-        self.add_phrase_matcher(
-            r"(.*) because (.*)",
-            "tell me why {0}", "{1}",
-            "explain why {0}", "{0} because {1}"
-        )
-
-        # Triple OR
-        # self.add_phrase_matcher(
-        #     r"if (.*) or (.*) or (.*) than (.*)",
-        #     "{0}", "{3}",
-        #     "{1}", "{3}",
-        #     "{2}", "{3}"
-        # )
-
-        # OR
-        # self.add_phrase_matcher(
-        #     r"if (.*) or (.*) than (.*)",
-        #     "{0}", "{2}",
-        #     "{1}", "{2}"
-        # )
-
-        # How
-        self.add_phrase_matcher(
-            r"to (.*) simply (.*)",
-            "explain how to {0}", "{1}"
-        )
-
-        # XOR
-        # self.add_phrase_matcher(
-        #     r"if (.*) xor (.*) than (.*)",
-        #     "{0} and not {1}", "{2}",
-        #     "{1} and not {0}", "{2}"
-        # )
-
-        # If
-        # self.add_phrase_matcher(
-        #     r"if (.*) than (.*)",
-        #     "{0}", "{1}"
-        # )
-
-        # say
-        self.add_phrase_matcher(
-            r"say (.*)",
-            "speak", "{0}"
-        )
-
-        # Reverse If
-        # self.add_phrase_matcher(
-        #     r"(.*) if (.*)",
-        #     "{1}", "{0}",
-        #     "{1}", "than {0} I guess"
-        # )
-
-        # Likes
-        self.add_phrase_matcher(
-            r"(.*) like (.*)",
-            "what do {0} like", "{0} like {1}"
-        )
-        self.add_phrase_matcher(
-            r"(.*) likes (.*)",
-            "what does {0} like", "{0} likes {1}"
-        )
-        # Anti-bully 1
-        # self.add_phrase_matcher(
-        #     r"you are just a (.*)",
-        #     "you are just a {0}", "i will be the best {0} then",
-        #     "you are just a {0}", "kiss my {0} butt",
-        #     "you are just a {0}", "shiku shiku"
-        # )
-
-        # Anti-bully 2
-        # self.add_phrase_matcher(
-        #     r"you damn (.*)",
-        #     "you damn {0}", "but i am the best {0}",
-        #     "you damn {0}", "kiss my {0} butt",
-        #     "you damn {0}", "meanie"
-        # )
-
-        # contacts
-        self.add_phrase_matcher(
-            r"(.*) owns the email (.*)",
-            "email {0}", "{1}",
-            "what is the email for {0}", "{1}"
-        )
-
-        # phone
-        self.add_phrase_matcher(
-            r"(.*)'s phone is (.*)",
-            "phone {0}", "{1}",
-            "what is the phone for {0}", "{1}"
-        )

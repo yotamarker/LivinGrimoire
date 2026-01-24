@@ -5,7 +5,9 @@ class AbsDictionaryDB:
         """Returns action string"""
         pass
 
+    # noinspection PyMethodMayBeStatic
     def load(self, key: str) -> str:
+        _ = key
         return "null"
 
 
@@ -177,6 +179,14 @@ class Skill:
         if 1 <= skill_lobe <= 5:
             self._skill_lobe = skill_lobe
 
+    def manifest(self):
+        # runs when the skill is added, used for life cycle processes(if needed)
+        return
+
+    def ghost(self):
+        # runs when the skill is removed, used for life cycle processes(if needed)
+        return
+
     def skillNotes(self, param: str) -> str:
         return "notes unknown"
 
@@ -300,12 +310,14 @@ class Chobits:
         # add a skill (builder design patterned func))
         if self._isThinking:
             return
+        skill.manifest()
         skill.set_skill_type(1)
         skill.setKokoro(self._kokoro)
         self.dClasses.append(skill)
 
     def addSkillAware(self, skill: Skill):
         # add a skill with Chobit Object in their c'tor
+        skill.manifest()
         skill.set_skill_type(2)
         skill.setKokoro(self._kokoro)
         self._awareSkills.append(skill)
@@ -313,6 +325,7 @@ class Chobits:
     def add_continuous_skill(self, skill):
         if self._isThinking:
             return
+        skill.manifest()
         skill.set_skill_type(3)
         skill.setKokoro(self._kokoro)
         self.cts_skills.append(skill)
@@ -321,11 +334,15 @@ class Chobits:
         # remove all skills
         if self._isThinking:
             return
+        for skill in self.dClasses:
+            skill.ghost()
         self.dClasses.clear()
 
     def clear_continuous_skills(self):
         if self._isThinking:
             return
+        for skill in self.cts_skills:
+            skill.ghost()
         self.cts_skills.clear()
 
     def clear_all_skills(self):
@@ -342,6 +359,7 @@ class Chobits:
             return
         if skill not in self.dClasses:
             return
+        skill.ghost()
         self.dClasses.remove(skill)
 
     def remove_continuous_skill(self, skill):
@@ -349,6 +367,7 @@ class Chobits:
             return
         if skill not in self.cts_skills:
             return
+        skill.ghost()
         self.cts_skills.remove(skill)
 
     def remove_skill(self, skill: Skill):
@@ -473,6 +492,23 @@ class Brain:
                 self.skin.add_skill(skill)
             case 5:  # Eye skill
                 self.eye.add_skill(skill)
+
+    def remove_skill(self, skill: Skill):
+        """
+        removes a skill from the correct Chobits based on its skill_lobe attribute.
+        Just pass the skill—the Brain handles its removal.
+        """
+        match skill.get_skill_lobe():
+            case 1:  # Logical skill
+                self.logicChobit.remove_skill(skill)
+            case 2:  # Hardware skill
+                self.hardwareChobit.remove_skill(skill)
+            case 3:  # Ear skill
+                self.ear.remove_skill(skill)
+            case 4:  # Skin skill
+                self.skin.remove_skill(skill)
+            case 5:  # Eye skill
+                self.eye.remove_skill(skill)
 
     def chained(self, skill: Skill)-> 'Brain':
         #  chained add skill
