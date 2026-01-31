@@ -178,7 +178,7 @@ class PricePerUnit(PopulatorFunc):
         Returns 5 instead of 5.00 for whole numbers.
         """
         if self.cache.check_and_add(str1):
-            return False
+            return
 
         pattern = (
             r"^(?P<product>\w+)\s+costs\s+"
@@ -189,7 +189,7 @@ class PricePerUnit(PopulatorFunc):
         clean = str1.strip()
         match = re.match(pattern, clean, re.IGNORECASE)
         if not match:
-            return False
+            return
 
         product = match.group("product")
         cost = float(match.group("cost"))
@@ -201,7 +201,7 @@ class PricePerUnit(PopulatorFunc):
         cost_per_unit_str = f"{cost_per_unit:.2f}".rstrip("0").rstrip(".")
 
         railbot.learn_key_value(f"{product} price per unit", cost_per_unit_str)
-        return True
+        return
 
 
 # ╔══════════════════════════════════════════════════════════════╗
@@ -224,6 +224,28 @@ class PricePerUnit(PopulatorFunc):
 # ╚══════════════════════════════════════════════════════════════╝
 
 
+class NoNos(PopulatorFunc):
+    def __init__(self):
+        super().__init__()
+        self.regex = "nonos"
+        self.cache: StringCache = StringCache()
+
+    @staticmethod
+    def remove_ing_from_string(s):
+        return " ".join(
+            w[:-3] if w.endswith("ing") else w
+            for w in s.split()
+        )
+
+    def populate(self, railbot: RailBot, str1: str):
+        m = re.fullmatch(r"(.*)\s+is a nono", str1)
+        x = m.group(1) if m else ""
+        x = NoNos.remove_ing_from_string(x)
+        print(f"x is {x}")
+        if len(x)>0:
+            railbot.learn_key_value(f"may i {x}", f"no you are not allowed to {x}")
+
+
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                           INDEXING                           ║
 # ╚══════════════════════════════════════════════════════════════╝
@@ -238,7 +260,7 @@ class SnippetStore(PopulatorFunc):
 
     def populate(self, railbot: RailBot, str1: str):
         if self.cache.check_and_add(str1):
-            return False
+            return
 
         keyword = "code"
 
@@ -248,8 +270,7 @@ class SnippetStore(PopulatorFunc):
             for item1 in self.exclusions:
                 v1 = v1.replace(item1, "")
             railbot.learn_key_value(f"{keyword} {v1}", v2)
-            return True
-        return False
+            return
 
 
 class KeysFunnel(PopulatorFunc):
@@ -277,5 +298,10 @@ class KeysFunnel(PopulatorFunc):
 
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                           RECIPES                            ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                           PipeLine                           ║
 # ╚══════════════════════════════════════════════════════════════╝
 
