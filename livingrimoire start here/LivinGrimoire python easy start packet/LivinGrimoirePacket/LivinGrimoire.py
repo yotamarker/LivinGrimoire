@@ -310,24 +310,24 @@ class Chobits:
         # add a skill (builder design patterned func))
         if self._isThinking:
             return
-        skill.manifest()
         skill.set_skill_type(1)
         skill.setKokoro(self._kokoro)
+        skill.manifest()
         self.dClasses.append(skill)
 
     def addSkillAware(self, skill: Skill):
         # add a skill with Chobit Object in their c'tor
-        skill.manifest()
         skill.set_skill_type(2)
         skill.setKokoro(self._kokoro)
+        skill.manifest()
         self._awareSkills.append(skill)
 
     def add_continuous_skill(self, skill):
         if self._isThinking:
             return
-        skill.manifest()
         skill.set_skill_type(3)
         skill.setKokoro(self._kokoro)
+        skill.manifest()
         self.cts_skills.append(skill)
 
     def clear_regular_skills(self):
