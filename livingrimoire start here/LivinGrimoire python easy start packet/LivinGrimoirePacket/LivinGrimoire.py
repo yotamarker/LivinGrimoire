@@ -102,7 +102,7 @@ class Neuron:
 class Skill:
     def __init__(self):
         # The variables start with an underscore (_) because they are protected
-        self._kokoro = None  # consciousness, shallow ref class to enable interskill communications
+        self._kokoro: Kokoro|None = None  # consciousness, shallow ref class to enable interskill communications
         self._outAlg: Algorithm  # skills output
         self._outAlg = None
         self._outpAlgPriority: int = -1  # defcon 1->5
@@ -469,6 +469,10 @@ class Brain:
     # ret feedback (last output)
     def getLogicChobitOutput(self) -> str:
         return self._logicChobitOutput
+
+    def set_database(self, db: AbsDictionaryDB):
+        # sets same database to all chobits
+        self.logicChobit.setDatabase(db)
 
     # live
     def doIt(self, ear: str, skin: str, eye: str):

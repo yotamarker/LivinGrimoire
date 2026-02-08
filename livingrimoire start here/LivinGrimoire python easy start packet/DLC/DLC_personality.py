@@ -16,7 +16,7 @@ from LivinGrimoirePacket.UniqueSkills import DiBicameral, DiGamificationSkillBun
 
 def add_DLC_skills(brain: Brain):
     # utility skills:
-    brain.logicChobit.setDatabase(SQLiteDictionaryDB())
+    brain.set_database(SQLiteDictionaryDB())
     brain.add_skill(DiSayer())
     brain.add_skill(DiTime())
     brain.add_skill(DiNoteTaker().add_notes("workout", "study", "play video games"))
