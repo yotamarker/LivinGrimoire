@@ -1,13 +1,155 @@
+import datetime
 import random
 
 from LivinGrimoirePacket.AXPython import TimeGate, UniqueResponder, AXFunnel, EventChat, Responder, PercentDripper, \
     OnOffSwitch, Magic8Ball, RegexUtil
 from LivinGrimoirePacket.LivinGrimoire import Skill
+import math
+from datetime import date, datetime
+import re
 
 
 # ╔════════════════════════════════════════════════╗
 # ║                OVERUSED SKILLS                 ║
 # ╚════════════════════════════════════════════════╝
+
+
+class DiWorkOut(Skill):
+    # this skill gamifies workouts. the grind reward can be modded for subclasses
+    def __init__(self):
+        super().__init__()
+        self.last_date = ""
+        self.xp_farmed = 0
+        self.accumulation = 0
+        self.max_rest_days = 2
+        self.credit = 0
+        self.xp_base = 10
+
+    # -------------------------
+    # Moddable hooks
+    # -------------------------
+    def on_farm_event(self) -> str:
+        return getattr(self, "farm_event", "i worked out")
+
+    def reward_request(self) -> str:
+        return getattr(self, "req", "may i play video games")
+
+    def reward_xp(self, streak: int) -> int:
+        return int(self.xp_base* (1 + math.log(1 + streak)))
+
+    # -------------------------
+    # Utility
+    # -------------------------
+    @staticmethod
+    def is_ymd_format(s: str) -> bool:
+        return bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", s))
+
+    @staticmethod
+    def to_int(s: str, default):
+        s = s.strip()
+        if s.startswith("-") and s[1:].isdigit():
+            return -int(s[1:])
+        if s.isdigit():
+            return int(s)
+        return default
+
+    @staticmethod
+    def days_from_today(date_str, fmt="%Y-%m-%d"):
+        target = datetime.strptime(date_str, fmt).date()
+        return (target - date.today()).days
+
+    def xp_to_level(self) -> float:
+        return round(self.xp_farmed ** (1 / 3), 2)
+
+    # -------------------------
+    # Persistence
+    # -------------------------
+    def load_state(self):
+        ld = self._kokoro.grimoireMemento.load(f"{self.skill_name}_last_date")
+        self.last_date = ld if self.is_ymd_format(ld) else date.today().strftime("%Y-%m-%d")
+
+        self.xp_farmed = self.to_int(
+            self._kokoro.grimoireMemento.load(f"{self.skill_name}_xp"), 0
+        )
+        self.accumulation = self.to_int(
+            self._kokoro.grimoireMemento.load(f"{self.skill_name}_accumulation"), 0
+        )
+
+    def save_state(self):
+        self._kokoro.grimoireMemento.save(f"{self.skill_name}_xp", str(self.xp_farmed))
+        self._kokoro.grimoireMemento.save(
+            f"{self.skill_name}_accumulation", str(self.accumulation)
+        )
+        self._kokoro.grimoireMemento.save(
+            f"{self.skill_name}_last_date", date.today().strftime("%Y-%m-%d")
+        )
+
+    # -------------------------
+    # Farming logic
+    # -------------------------
+    def register_workout(self):
+        self.credit += 1
+        dif = self.days_from_today(self.last_date)
+
+        if dif == 0:
+            streak = 1
+        elif dif < self.max_rest_days:
+            self.accumulation += 1
+            streak = self.accumulation
+        else:
+            self.accumulation = 1
+            streak = 1
+
+        self.xp_farmed += self.reward_xp(streak)
+        self.save_state()
+        self.setSimpleAlg(f"you farmed {self.xp_farmed} experience points")
+
+    # -------------------------
+    # Queries
+    # -------------------------
+    def query_power_level(self):
+        self.setSimpleAlg(f"your level is {self.xp_to_level()}")
+
+    def query_play_games(self):
+        if self.credit > 0:
+            self.credit = max(0, self.credit - 1)
+            self.setSimpleAlg("yes you may sweetheart")
+        else:
+            self.credit = 0
+            self.setSimpleAlg("no you may not you need to workout first")
+
+    # -------------------------
+    # Lifecycle
+    # -------------------------
+    def manifest(self):
+        self.load_state()
+
+    # -------------------------
+    # Input routing
+    # -------------------------
+    def input(self, ear: str, skin: str, eye: str):
+        if not ear:
+            return
+
+        match ear:
+            case _ if ear == self.on_farm_event():
+                self.register_workout()
+
+            case _ if ear == self.reward_request():
+                self.query_play_games()
+
+            case "what is my power level":
+                self.query_power_level()
+
+    # -------------------------
+    # Metadata
+    # -------------------------
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "moddable workout skill with override hooks for event and reward"
+        elif param == "triggers":
+            return f"{self.on_farm_event()}; what is my power level; may i play video games"
+        return "note unavailable"
 
 
 class DiHugAttack(Skill):

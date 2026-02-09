@@ -190,6 +190,10 @@ class Skill:
     def skillNotes(self, param: str) -> str:
         return "notes unknown"
 
+    @property
+    def skill_name(self) -> str:
+        return self.__class__.__name__
+
 
 class DiHelloWorld(Skill):
     def __init__(self):
