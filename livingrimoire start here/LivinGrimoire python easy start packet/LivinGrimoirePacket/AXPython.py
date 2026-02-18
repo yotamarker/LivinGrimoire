@@ -909,6 +909,25 @@ class CityMapWithPublicTransport:
 # ╚════════════════════════════════════════════════════════════════════════╝
 
 
+class MonthlyTrigger:
+    def __init__(self, day=1,hour=22,minute = 35):
+        self.last_run_month = None
+        self.d = day
+        self.h = hour
+        self.minute = minute
+
+    def tick(self):
+        now = datetime.now()
+
+        # Check date + time
+        if now.day == self.d and now.hour == self.h and now.minute == self.minute:
+            # Ensure it runs only once per month
+            if self.last_run_month != now.month:
+                self.last_run_month = now.month
+                return True
+        return False
+
+
 class CodeParser:
     @staticmethod
     def extract_code_number(s):

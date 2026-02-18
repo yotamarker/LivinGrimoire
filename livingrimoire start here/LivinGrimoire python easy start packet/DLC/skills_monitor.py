@@ -1,6 +1,8 @@
-from LivinGrimoirePacket.AXPython import Responder, AXFunnel, UniqueRandomGenerator
+from __future__ import annotations
+from LivinGrimoirePacket.AXPython import Responder, AXFunnel, UniqueRandomGenerator, AXPassword, TrgEveryNMinutes, \
+    MonthlyTrigger, TimeUtils
 from LivinGrimoirePacket.AlgParts import APHappy
-from LivinGrimoirePacket.LivinGrimoire import Skill, Chobits
+from LivinGrimoirePacket.LivinGrimoire import Skill, Chobits, Brain
 
 
 # ╔════════════════════════════════════════════════╗
@@ -83,6 +85,85 @@ class AHAware(Skill):
                 self.algPartsFusion(4, APHappy(self.ggReplies.getAResponse()))
             case self._call:
                 self.setSimpleAlg(self.replies.getAResponse())
+
+class AHPassword(Skill):
+    # this skill swaps between two sets of contradicting skills
+    def __init__(self, brain:Brain):
+        super().__init__()
+        self.set_skill_type(2)
+        self.hidden_skills: list[Skill] = []
+        self.negation_skills: list[Skill] = []
+        self.pass_gate: AXPassword = AXPassword()
+        self.brain = brain
+        self.reset_gate: TrgEveryNMinutes = TrgEveryNMinutes(TimeUtils.getCurrentTimeStamp(),10)
+        self.bond = MonthlyTrigger()
+
+    def add_hidden_skill(self, skill: Skill) -> AHPassword:
+        self.hidden_skills.append(skill)
+        return self
+
+    def add_negation_skill(self, skill: Skill) -> AHPassword:
+        self.negation_skills.append(skill)
+        return self
+
+    @staticmethod
+    def to_int(s: str, default):
+        s = s.strip()
+        if s.startswith("-") and s[1:].isdigit():
+            return -int(s[1:])
+        if s.isdigit():
+            return int(s)
+        return default
+
+    def manifest(self):
+        code = self.to_int(self._kokoro.grimoireMemento.load(f"{self.skill_name}_code"), 0)
+        self.pass_gate.openGate('code 0')
+        self.pass_gate.codeUpdate(f'code {code}')
+        self.pass_gate.closeGate()
+
+    def input(self, ear: str, skin: str, eye: str):
+        if self.bond.tick():
+            # code reveal event
+            self.setSimpleAlg(f'hidden mode pass is code {self.pass_gate.getCodeEvent()}')
+
+        if len(ear) == 0:
+            return
+        if ear == "close gate":
+            # engage negation skills
+            gate_open = self.pass_gate.isOpen()
+            if gate_open:
+                self.pass_gate.closeGate()
+                self.setSimpleAlg("discreet mode engaged")
+                for skill in self.hidden_skills:
+                    self.brain.remove_skill(skill)
+                for skill in self.negation_skills:
+                    self.brain.add_skill(skill)
+            else:
+                self.setSimpleAlg("discreet mode already engaged")
+
+        if self.reset_gate.trigger():
+            self.pass_gate.resetAttempts()
+
+        if not self.pass_gate.isOpen():
+            self.pass_gate.openGate(ear)
+            if self.pass_gate.isOpen():
+                # engage hidden skills set disable negation skills
+                self.setSimpleAlg("hidden mode successfully engaged")
+                for skill in self.negation_skills:
+                    self.brain.remove_skill(skill)
+                for skill in self.hidden_skills:
+                    self.brain.add_skill(skill)
+        else:
+            if self.pass_gate.codeUpdate(ear):
+                self._kokoro.grimoireMemento.save(f"{self.skill_name}_code", str(self.pass_gate.getCodeEvent()))
+                self.setSimpleAlg("bond code updated")
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "swap sets of opposite skills"
+        elif param == "triggers":
+            return f"code number, close gate"
+        return "note unavailable"
 
 
 # ╔════════════════════════════════════════════════╗

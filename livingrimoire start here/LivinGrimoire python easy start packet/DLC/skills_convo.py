@@ -81,7 +81,7 @@ class DiOneWorder(Skill):
     def input(self, ear, skin, eye):
         if not ear:
             return
-        if CodeParser.extract_code_number(ear) == 8:
+        if CodeParser.extract_code_number(ear) == 8 or ear == "chi":
             self.mode = not self.mode
             self.setSimpleAlg("toggled")
             return
