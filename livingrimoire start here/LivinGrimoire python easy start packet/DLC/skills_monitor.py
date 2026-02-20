@@ -97,6 +97,8 @@ class AHPassword(Skill):
         self.brain = brain
         self.reset_gate: TrgEveryNMinutes = TrgEveryNMinutes(TimeUtils.getCurrentTimeStamp(),10)
         self.bond = MonthlyTrigger()
+        self.funnel = AXFunnel(default="bye")
+        self.funnel.addK("close gate").addK("bye bye")
 
     def add_hidden_skill(self, skill: Skill) -> AHPassword:
         self.hidden_skills.append(skill)
@@ -128,7 +130,7 @@ class AHPassword(Skill):
 
         if len(ear) == 0:
             return
-        if ear == "close gate":
+        if self.funnel.funnel(ear) == "bye":
             # engage negation skills
             gate_open = self.pass_gate.isOpen()
             if gate_open:
@@ -162,7 +164,7 @@ class AHPassword(Skill):
         if param == "notes":
             return "swap sets of opposite skills"
         elif param == "triggers":
-            return f"code number, close gate"
+            return f"code number, close gate, bye"
         return "note unavailable"
 
 
