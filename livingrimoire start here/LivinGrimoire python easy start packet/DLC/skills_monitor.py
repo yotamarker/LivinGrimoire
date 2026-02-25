@@ -1,6 +1,9 @@
 from __future__ import annotations
+
+import random
+
 from LivinGrimoirePacket.AXPython import Responder, AXFunnel, UniqueRandomGenerator, AXPassword, TrgEveryNMinutes, \
-    MonthlyTrigger, TimeUtils
+    MonthlyTrigger, TimeUtils, AXLearnability, TimeGate
 from LivinGrimoirePacket.AlgParts import APHappy
 from LivinGrimoirePacket.LivinGrimoire import Skill, Chobits, Brain
 
@@ -166,6 +169,176 @@ class AHPassword(Skill):
         elif param == "triggers":
             return f"code number, close gate, bye"
         return "note unavailable"
+
+
+class DiNothing(Skill):
+    """A skill that does absolutely nothing."""
+
+    def __init__(self):
+        super().__init__()
+
+
+class AHReequip(Skill):
+    """Equips a skill as needed."""
+
+    def __init__(self, brain: Brain):
+        super().__init__()
+        self.set_skill_type(2)
+
+        # Core attributes
+        self.brain = brain
+        self.skills: dict[str, Skill] = {}
+        self.skill_names: set[str] = set()
+        self.active_skill = DiNothing()
+        self.active_key = "default"
+
+        # Learner configuration
+        self.learner = AXLearnability(tolerance=3)
+        self.learner.defcons.add("lame")
+        self.learner.goals.update(["thanks", "good"])
+        self.learner.defcon5.add("wrong")
+
+    def manifest(self):
+        """Load skills from memory manifest."""
+        for key in self.skills:
+            memory_key = f"{self.skill_name}_{key}"
+            loaded_skill = self._kokoro.grimoireMemento.load(memory_key)
+
+            if loaded_skill and loaded_skill != "null" and loaded_skill in self.skills:
+                self.skills[key] = self.skills[loaded_skill]
+
+    def manual_skill_add(self, skill: Skill, *keys: str) -> "AHReequip":
+        """Manually add a skill with multiple access keys."""
+        self.add_skill(skill)
+        for key in keys:
+            self.skills[key] = skill
+        return self
+
+    def get_random_skill(self) -> Skill:
+        """Return a random skill from available skills, or DoNothing if none exist."""
+        if not self.skills:
+            return DiNothing()
+
+        random_skill_name = random.choice(list(self.skill_names))
+        return self.skills[random_skill_name]
+
+    def add_skill(self, skill: Skill) -> "AHReequip":
+        """Add a skill to the available skills collection."""
+        self.skills[skill.skill_name] = skill
+        self.skill_names.add(skill.skill_name)
+        return self
+
+    def input(self, ear: str, skin: str, eye: str):
+        """Process input and handle skill reequipping."""
+
+        # Check for reequip trigger
+        if ear.startswith("please") or ear.endswith("please"):
+            self._handle_reequip_request(ear)
+            return
+
+        # Check for skill mutation
+        if self.learner.mutateSkill(ear):
+            self._handle_skill_mutation()
+
+    def _handle_reequip_request(self, ear: str):
+        """Handle a reequip request from input."""
+        skill_key = ear.replace("please", "").strip()
+
+        if skill_key not in self.skills:
+            # Check if skill exists in memory
+            self._load_skill_from_memory(skill_key)
+
+        # Equip the requested skill
+        self._equip_skill(skill_key)
+
+        self.learner.pendAlgWithoutConfirmation()
+        self.setSimpleAlg(f"{self.active_skill.skill_name} skill equipped")
+
+    def _load_skill_from_memory(self, skill_key: str):
+        """Load a skill from memory if available."""
+        memory_key = f"{self.skill_name}_{skill_key}"
+        loaded_skill = self._kokoro.grimoireMemento.load(memory_key)
+
+        if loaded_skill and loaded_skill != "null" and loaded_skill in self.skills:
+            self.skills[skill_key] = self.skills[loaded_skill]
+            print(f"Loaded skill {loaded_skill} for the key cmd: {skill_key}")
+        else:
+            self.skills[skill_key] = self.get_random_skill()
+
+    def _handle_skill_mutation(self):
+        """Handle skill mutation when learner detects a mutation trigger."""
+        self.brain.remove_skill(self.active_skill)
+
+        # Get random new skill and save to memory
+        new_skill = self.get_random_skill()
+        self.skills[self.active_key] = new_skill
+
+        memory_key = f"{self.skill_name}_{self.active_key}"
+        self._kokoro.grimoireMemento.save(memory_key, new_skill.skill_name)
+
+        # Equip the new skill
+        self.active_skill = new_skill
+        self.brain.add_skill(self.active_skill)
+
+        self.setSimpleAlg(f"{self.active_skill.skill_name} skill reequipped")
+        self.learner.pendAlgWithoutConfirmation()
+
+    def _equip_skill(self, skill_key: str):
+        """Equip a skill by its key."""
+        self.brain.remove_skill(self.active_skill)
+        self.active_skill = self.skills[skill_key]
+        self.active_key = skill_key
+        self.brain.add_skill(self.active_skill)
+
+
+class AHDebuff(Skill):
+    """Equips a skill as needed."""
+
+    def __init__(self, brain: Brain, debuff_minutes:int = 30):
+        super().__init__()
+        self.set_skill_type(2)
+
+        # Core attributes
+        self.brain = brain
+        self.skills: set[Skill] = set()
+        self.funnel:AXFunnel = AXFunnel()
+        self.funnel.setDefault("debuff")
+        self.funnel.addK("shut up").addK("chill").addK("quite")
+        self.tg = TimeGate(debuff_minutes)
+        self.debuffed: bool = False
+
+    def add_skill(self, skill: Skill) -> "AHDebuff":
+        """Add a skill to the available skills collection."""
+        self.skills.add(skill)
+        return self
+
+    def manifest(self):
+        for skill in self.skills:
+            self.brain.add_skill(skill)
+
+    def buff(self):
+        for skill in self.skills:
+            self.brain.add_skill(skill)
+
+    def input(self, ear: str, skin: str, eye: str):
+        if self.funnel.funnel(ear) == "debuff" and not self.debuffed:
+            self.debuffed = True
+            #unhook skills:
+            for skill in self.skills:
+                self.brain.remove_skill(skill)
+            self.tg.openForPauseMinutes()
+            self.setSimpleAlg("debuffing")
+            return
+        if ear == "buff":
+            self.debuffed = False
+            self.tg.close()
+            self.buff()
+            return
+        if self.debuffed:
+            if self.tg.isClosed():
+                self.debuffed = False
+                self.setSimpleAlg("buffing")
+                self.buff()
 
 
 # ╔════════════════════════════════════════════════╗
