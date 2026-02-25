@@ -917,7 +917,7 @@ class MonthlyTrigger:
         self.minute = minute
 
     def tick(self):
-        now = datetime.now()
+        now = datetime.datetime.now()
 
         # Check date + time
         if now.day == self.d and now.hour == self.h and now.minute == self.minute:
@@ -1912,6 +1912,31 @@ class AXLearnability:
             self.algSent = False
             mutate = not self.trgTolerance.trigger()
             if mutate:
+                self.trgTolerance.reset()
+            return mutate
+        # ^ Negative result, mutate the alg if this occurs too much
+        return False
+
+    def mutateSkill(self, input1):
+        # persistently tests feedback till definitive feedback, before deciding about recommending skill mutation.
+        # Recommendation to mutate the algorithm? true/false
+        if not self.algSent:
+            return False  # No alg sent => no reason to mutate
+        if input1 in self.goals:
+            self.trgTolerance.reset()
+            self.algSent = False
+            return False
+        # Goal manifested; the sent algorithm is good => no need to mutate the alg
+        if input1 in self.defcon5:
+            self.trgTolerance.reset()
+            self.algSent = False
+            return True
+        # ^ Something bad happened probably because of the sent alg
+        # Recommend alg mutation
+        if input1 in self.defcons:
+            mutate = not self.trgTolerance.trigger()
+            if mutate:
+                self.algSent = False
                 self.trgTolerance.reset()
             return mutate
         # ^ Negative result, mutate the alg if this occurs too much
