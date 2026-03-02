@@ -209,6 +209,21 @@ class PricePerUnit(PopulatorFunc):
 # ╚══════════════════════════════════════════════════════════════╝
 
 
+class Nickname(PopulatorFunc):
+    def __init__(self):
+        super().__init__()
+        self.regex = "nickname"
+        self.regex_code = r"call me (.+)"
+
+    def populate(self, railbot: RailBot, str1: str):
+        if len(str1) == 0:
+            return
+        match = re.search(self.regex_code, str1)
+        if match:
+            nickname = match.group(1)
+            railbot.learn_key_value("hi",f"hi {nickname}")
+
+
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                         CONVERTERS                           ║
 # ╚══════════════════════════════════════════════════════════════╝
@@ -251,28 +266,6 @@ class NoNos(PopulatorFunc):
 # ╚══════════════════════════════════════════════════════════════╝
 
 
-class SnippetStore(PopulatorFunc):
-    def __init__(self):
-        super().__init__()
-        self.regex = "snippet"
-        self.exclusions: set[str] = set()
-        self.cache: StringCache = StringCache()
-
-    def populate(self, railbot: RailBot, str1: str):
-        if self.cache.check_and_add(str1):
-            return
-
-        keyword = "code"
-
-        pattern = rf"{keyword}\s+(.*?)\s+ok\s+(.*)"
-        v1, v2 = re.fullmatch(pattern, str1).groups()
-        if len(v1)>0 and len(v2)>0:
-            for item1 in self.exclusions:
-                v1 = v1.replace(item1, "")
-            railbot.learn_key_value(f"{keyword} {v1}", v2)
-            return
-
-
 class KeysFunnel(PopulatorFunc):
     def __init__(self):
         super().__init__()
@@ -299,6 +292,46 @@ class KeysFunnel(PopulatorFunc):
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                           RECIPES                            ║
 # ╚══════════════════════════════════════════════════════════════╝
+
+
+class Snippet(PopulatorFunc):
+    def __init__(self):
+        super().__init__()
+        self.regex = "snippet"
+        self.regex_code1 = r"^(.*?)\s+snippet"
+        self.regex_code2 = r"snippet\s+(.*?)$"
+
+
+    def populate(self, railbot: RailBot, str1: str):
+        if len(str1) == 0:
+            return
+        match = re.search(self.regex_code1, str1)
+        if match:
+            param1 = match.group(1)
+            match = re.search(self.regex_code2, str1)
+            if match:
+                param2 = match.group(1)
+                railbot.learn_key_value(f'{param1} snippet', f"{param2}")
+
+
+class Composition(PopulatorFunc):
+    def __init__(self):
+        super().__init__()
+        self.regex = "composition"
+        self.regex_code1 = r"^(.*?)\s+ingredients are"
+        self.regex_code2 = r"ingredients are\s+(.*?)$"
+
+
+    def populate(self, railbot: RailBot, str1: str):
+        if len(str1) == 0:
+            return
+        match = re.search(self.regex_code1, str1)
+        if match:
+            param1 = match.group(1)
+            match = re.search(self.regex_code2, str1)
+            if match:
+                param2 = match.group(1)
+                railbot.learn_key_value(f'{param1} ingredients', f"{param2}")
 
 
 # ╔══════════════════════════════════════════════════════════════╗
