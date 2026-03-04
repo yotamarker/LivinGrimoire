@@ -3,9 +3,9 @@ from __future__ import annotations
 import random
 
 from LivinGrimoirePacket.AXPython import Responder, AXFunnel, UniqueRandomGenerator, AXPassword, TrgEveryNMinutes, \
-    MonthlyTrigger, TimeUtils, AXLearnability, TimeGate
+    MonthlyTrigger, TimeUtils, AXLearnability, TimeGate, AXStandBy
 from LivinGrimoirePacket.AlgParts import APHappy
-from LivinGrimoirePacket.LivinGrimoire import Skill, Chobits, Brain
+from LivinGrimoirePacket.LivinGrimoire import Skill, Chobits, Brain, AlgPart
 
 
 # ╔════════════════════════════════════════════════╗
@@ -339,6 +339,166 @@ class AHDebuff(Skill):
                 self.debuffed = False
                 self.setSimpleAlg("buffing")
                 self.buff()
+
+
+class ChobitsUnlocked(Chobits):
+    def __init__(self, base:Chobits):
+        super().__init__()
+        self.base = base
+
+    def get_type1_skills(self)->list[Skill]:
+        return self.base.dClasses
+
+    def get_type2_skills(self)->list[Skill]:
+        return self.base._awareSkills
+
+    def get_type3_skills(self)->list[Skill]:
+        return self.base.cts_skills
+
+
+class APHibernate(AlgPart):
+    # this alg part removes all skills from the brain object except the anchor skill
+    def __init__(self, anchor:Skill, brain:Brain):
+        super().__init__()
+        self.brain = brain
+        self.logical_chobit:ChobitsUnlocked = ChobitsUnlocked(brain.logicChobit)
+        self.hardware_chobit: ChobitsUnlocked = ChobitsUnlocked(brain.hardwareChobit)
+        self.ear_chobit: ChobitsUnlocked = ChobitsUnlocked(brain.ear)
+        self.skin_chobit: ChobitsUnlocked = ChobitsUnlocked(brain.skin)
+        self.eye_chobit: ChobitsUnlocked = ChobitsUnlocked(brain.eye)
+        self.skill = anchor
+        self.done = False
+
+    @staticmethod
+    def clr_chobit(chobit:ChobitsUnlocked):
+        chobit.get_type1_skills().clear()
+        chobit.get_type2_skills().clear()
+        chobit.get_type3_skills().clear()
+
+    def action(self, ear: str, skin: str, eye: str) -> str:
+        self.clr_chobit(self.logical_chobit)
+        self.clr_chobit(self.hardware_chobit)
+        self.clr_chobit(self.ear_chobit)
+        self.clr_chobit(self.skin_chobit)
+        self.clr_chobit(self.eye_chobit)
+        self.brain.add_skill(self.skill)
+        self.done = True
+        return "all skills nuked"
+
+    def completed(self) -> bool:
+        return self.done
+
+
+class APImprintEngram(AlgPart):
+    # the skills stored in the engram are added to the brain obj
+    def __init__(self, engram:BrainEngram, brain:Brain):
+        super().__init__()
+        self.brain = brain
+        self.engram = engram
+        self.done = False
+
+    def action(self, ear: str, skin: str, eye: str) -> str:
+        self.engram.impring_brain_engram(self.brain)
+        self.done = True
+        return "soul shard reactivated"
+
+    def completed(self) -> bool:
+        return self.done
+
+
+class Engram:
+    # storage of personality constract(skill sets)
+    def __init__(self, chobit:Chobits):
+        temp: ChobitsUnlocked = ChobitsUnlocked(chobit)
+        self.skills: list[Skill] = []
+        for skill in temp.get_type1_skills():
+            self.skills.append(skill)
+
+        self.aware_skills: list[Skill] = []
+        for skill in temp.get_type2_skills():
+            self.aware_skills.append(skill)
+
+        self.cts_skills: list[Skill] = []
+        for skill in temp.get_type3_skills():
+            self.cts_skills.append(skill)
+
+    def imprint_engram(self,chobit:Chobits):
+        for skill in self.skills:
+            print(f'now readding {skill.skill_name}')
+            chobit.add_skill(skill)
+        for skill in self.aware_skills:
+            print(f'now readding {skill.skill_name}')
+            chobit.add_skill(skill)
+        for skill in self.cts_skills:
+            print(f'now readding {skill.skill_name}')
+            chobit.add_skill(skill)
+
+    def remove_skill(self, skill:Skill):
+        while skill in self.skills:
+            self.skills.remove(skill)
+        while skill in self.aware_skills:
+            self.aware_skills.remove(skill)
+        while skill in self.cts_skills:
+            self.cts_skills.remove(skill)
+
+
+class BrainEngram:
+    # full storage of full personality constract(skill sets)
+    def __init__(self, brain:Brain):
+        self.logic_engram: Engram = Engram(brain.logicChobit)
+        self.hardware_engram: Engram = Engram(brain.hardwareChobit)
+        #120425 upgrade
+        self.ear_engram: Engram = Engram(brain.ear)
+        self.skin_engram: Engram = Engram(brain.skin)
+        self.eye_engram: Engram = Engram(brain.eye)
+
+    def impring_brain_engram(self, brain:Brain):
+        self.logic_engram.imprint_engram(brain.logicChobit)
+        self.hardware_engram.imprint_engram(brain.hardwareChobit)
+        self.ear_engram.imprint_engram(brain.ear)
+        self.skin_engram.imprint_engram(brain.skin)
+        self.eye_engram.imprint_engram(brain.eye)
+
+    def remove_skill(self, skill:Skill):
+        self.logic_engram.remove_skill(skill)
+        self.hardware_engram.remove_skill(skill)
+        # self.ear_engram.remove_skill(skill)
+        self.skin_engram.remove_skill(skill)
+        # self.eye_engram.remove_skill(skill)
+
+
+class AHHibernate(Skill):
+    """this skill removes all skills but itself, or it restores all removed skills
+    the same principle of work as soulkiller from cyberpunk
+    the use of this skill is to lower the cost of computing resources when the AI
+    ecosystem is not in use
+    """
+    def __init__(self, brain:Brain, hibernation_minutes=30,standby_minutes=2):
+        super().__init__()
+        self.brain = brain
+        self.hibernating = False
+        self.engram:BrainEngram = BrainEngram(brain)
+        self.tg:TimeGate = TimeGate(hibernation_minutes)
+        self.standby:AXStandBy = AXStandBy(standby_minutes)
+
+    # Override
+    def input(self, ear: str, skin: str, eye: str):
+        #stand by/hibernate command?
+        if not self.hibernating:
+            if ear == "hibernate" or self.standby.standBy(ear):
+                #save engram
+                self.engram = BrainEngram(self.brain)
+                self.engram.remove_skill(self)
+                #engage soulkiller with exclusion
+                self.hibernating = True
+                self.tg.openForPauseMinutes()
+                self.algPartsFusion(4,APHibernate(self,self.brain))
+        else:
+            # end hibernation time/wake up command?->wake up and restore removed skills
+            if self.tg.isClosed() or ear == "wake up":
+                self.hibernating = False
+                self.algPartsFusion(4, APImprintEngram(self.engram, self.brain))
+
 
 
 # ╔════════════════════════════════════════════════╗
