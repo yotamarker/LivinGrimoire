@@ -309,7 +309,8 @@ class AHDebuff(Skill):
 
     def add_skill(self, skill: Skill) -> "AHDebuff":
         """Add a skill to the available skills collection."""
-        self.skills.add(skill)
+        if not skill.get_skill_type() == 2:
+            self.skills.add(skill)
         return self
 
     def manifest(self):
@@ -498,6 +499,83 @@ class AHHibernate(Skill):
             if self.tg.isClosed() or ear == "wake up":
                 self.hibernating = False
                 self.algPartsFusion(4, APImprintEngram(self.engram, self.brain))
+
+
+class AHBuff(Skill):
+    """
+    when skill set key is spoken its skill set is added to the brain for N m inutes
+    example use: fun speech patterns
+    """
+    def __init__(self, brain:Brain, buff_minutes=10):
+        super().__init__()
+        self.set_skill_type(2) # skill that adds/removes other skills
+        self.buffs:dict[str,list[Skill]] = {"chill": []}
+        self.active: str = "chill"
+        self.brain = brain
+        self.tg:TimeGate = TimeGate(buff_minutes)
+        self.buffed: bool = False
+
+    def manifest(self):
+        for skill in self.buffs["chill"]:
+            self.brain.add_skill(skill)
+
+    def add_skill_set(self, key:str, *skills:Skill)->AHBuff:
+        if len(key) == 0:
+           return self
+        if not key in self.buffs:
+            self.buffs[key] = []
+        for skill in skills:
+            if not skill.get_skill_type() == 2:
+                self.buffs[key].append(skill)
+        return self
+
+    def add_default_skills(self, *skills:Skill)->AHBuff:
+        for skill in skills:
+            if not skill.get_skill_type() == 2:
+                self.buffs["chill"].append(skill)
+        return self
+
+    def input(self, ear: str, skin: str, eye: str):
+        if not self.buffed and ear == "chill":
+            return
+        if ear in self.buffs:
+            self.buffed = True
+            if ear == "chill":
+                self.setSimpleAlg("chilling")
+            else:
+                self.tg.openForPauseMinutes()
+                self.setSimpleAlg("buffing")
+            for skill in self.buffs[self.active]:
+                self.brain.remove_skill(skill)
+            for skill in self.buffs[ear]:
+                self.brain.add_skill(skill)
+            self.active = ear
+            return
+        if self.buffed and (self.tg.isClosed()):
+            self.buffed = False
+            self.setSimpleAlg("chilling")
+            for skill in self.buffs[self.active]:
+                self.brain.remove_skill(skill)
+            for skill in self.buffs["chill"]:
+                self.brain.add_skill(skill)
+            self.active = "chill"
+
+
+class DiTest(Skill):
+    def __init__(self):
+        super().__init__()
+
+    # Override
+    def input(self, ear: str, skin: str, eye: str):
+        if ear == "hello":
+            self.setVerbatimAlg(4, "toasty test")  # # 1->5 1 is the highest algorithm priority
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "plain toasty test skill"
+        elif param == "triggers":
+            return "say hello"
+        return "note unavalible"
 
 
 
