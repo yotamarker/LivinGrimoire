@@ -316,23 +316,23 @@ class Chobits:
             return
         skill.set_skill_type(1)
         skill.setKokoro(self._kokoro)
-        skill.manifest()
         self.dClasses.append(skill)
+        skill.manifest()
 
     def addSkillAware(self, skill: Skill):
         # add a skill with Chobit Object in their c'tor
         skill.set_skill_type(2)
         skill.setKokoro(self._kokoro)
-        skill.manifest()
         self._awareSkills.append(skill)
+        skill.manifest()
 
     def add_continuous_skill(self, skill):
         if self._isThinking:
             return
         skill.set_skill_type(3)
         skill.setKokoro(self._kokoro)
-        skill.manifest()
         self.cts_skills.append(skill)
+        skill.manifest()
 
     def clear_regular_skills(self):
         # remove all skills
@@ -363,16 +363,16 @@ class Chobits:
             return
         if skill not in self.dClasses:
             return
-        skill.ghost()
         self.dClasses.remove(skill)
+        skill.ghost()
 
     def remove_continuous_skill(self, skill):
         if self._isThinking:
             return
         if skill not in self.cts_skills:
             return
-        skill.ghost()
         self.cts_skills.remove(skill)
+        skill.ghost()
 
     def remove_skill(self, skill: Skill):
         """remove any type of skill (except aware skills)"""

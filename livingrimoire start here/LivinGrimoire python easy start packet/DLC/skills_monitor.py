@@ -5,7 +5,7 @@ import random
 from LivinGrimoirePacket.AXPython import Responder, AXFunnel, UniqueRandomGenerator, AXPassword, TrgEveryNMinutes, \
     MonthlyTrigger, TimeUtils, AXLearnability, TimeGate, AXStandBy
 from LivinGrimoirePacket.AlgParts import APHappy
-from LivinGrimoirePacket.LivinGrimoire import Skill, Chobits, Brain, AlgPart
+from LivinGrimoirePacket.LivinGrimoire import Skill, Chobits, Brain, AlgPart, DiSysOut
 
 
 # ╔════════════════════════════════════════════════╗
@@ -577,11 +577,37 @@ class DiTest(Skill):
             return "say hello"
         return "note unavalible"
 
+class DiInstaller(Skill):
+    """
+    this skill lets you package a bunch(do so in the subclass).
+    after the adding(the skills) it removes itself from the brain.
+    the input method, therefore never runs
+    """
+    def __init__(self,brain:Brain):
+        super().__init__()
+        self.skills: list[Skill] = []
+        self.brain = brain
+
+    def manifest(self):
+        for skill in self.skills:
+            self.brain.add_skill(skill)
+        self.brain.remove_skill(self)
+
 
 
 # ╔════════════════════════════════════════════════╗
 # ║              UNDERUSED / TEMPLATE SKILLS       ║
 # ╚════════════════════════════════════════════════╝
+
+
+class DiInstallerTest(DiInstaller):
+    def __init__(self,brain:Brain):
+        super().__init__(brain)
+        self.skills.append(DiTest())
+        self.skills.append(DiSysOut())
+
+    def input(self, ear: str, skin: str, eye: str):
+        self.setSimpleAlg("this does not run the skill is unequipped")
 
 
 # ╔════════════════════════════════════════════════╗
