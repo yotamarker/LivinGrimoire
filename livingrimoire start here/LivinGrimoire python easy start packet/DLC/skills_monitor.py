@@ -232,7 +232,7 @@ class AHReequip(Skill):
         """Process input and handle skill reequipping."""
 
         # Check for reequip trigger
-        if ear.startswith("please") or ear.endswith("please"):
+        if ear.endswith("please"):
             self._handle_reequip_request(ear)
             return
 

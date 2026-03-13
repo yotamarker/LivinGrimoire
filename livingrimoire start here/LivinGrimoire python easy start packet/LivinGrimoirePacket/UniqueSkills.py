@@ -384,49 +384,59 @@ class DiKokoroOut(Skill):
             return "automatic for any input"
         return "note unavalible"
 
+
+class DiFunnel(Skill):
+    # default skill for EvoChain
+    # it simply passes the input onwards
+    def __init__(self):
+        super().__init__()
+
+    # Override
+    def input(self, ear: str, skin: str, eye: str):
+        self.setSimpleAlg(ear)
+
 class Shinka(Skill):
     """
-    this unique skill upgrades a base skill with upgrade skills
-    when an upgrade skill wants to run, it overrides the base skill
-    subclasses can be coded with logic to equip and unequip upgrade skills at runtime
+    this is a zipped skill, in which newly added skills have override priority
+    to be active.
+    this is a skill bundle acting as a single skill.
     """
-    def __init__(self, base_skill:Skill):
+
+    def __init__(self, *skills: Skill):
         super().__init__()
-        self.upgrades: list["Shinka"] = []
-        self.active_upgrade = -1
-        self.base_skill = base_skill
+        self.upgrades: list[Skill] = []
+        if not skills:
+            self.upgrades.append(DiFunnel())
+        else:
+            for skill in skills:
+                self.upgrades.append(skill)
+        self.active_upgrade = 0
+
+    def add_skill(self, skill: Skill):
+        if skill.get_skill_type() == 2:
+            return
+        skill.setKokoro(self.getKokoro())
+        self.upgrades.append(skill)
 
     def input(self, ear: str, skin: str, eye: str):
-        for i in range(len(self.upgrades)):
-            self.upgrades[i].input(ear, skin, eye)
-            if self.upgrades[i].pendingAlgorithm():
-                self.active_upgrade = i
+        for i, upgrade in enumerate(reversed(self.upgrades)):
+            idx = len(self.upgrades) - 1 - i
+            upgrade.input(ear, skin, eye)
+            if upgrade.pendingAlgorithm():
+                self.active_upgrade = idx
                 return
-        self.base_skill.input(ear, skin, eye)
 
     def setKokoro(self, kokoro: Kokoro):
         self._kokoro = kokoro  # potential usage in sub classes for runtime upgrades mode.
-        self.base_skill._kokoro = kokoro
         for upgrade in self.upgrades:
             upgrade.setKokoro(kokoro)
 
     def pendingAlgorithm(self) -> bool:
-        return self.base_skill.pendingAlgorithm() or self.active_upgrade > -1
+        return self.upgrades[self.active_upgrade].pendingAlgorithm()
 
     def output(self, neuron: Neuron):
-        if self.active_upgrade>-1:
-            self.upgrades[self.active_upgrade].output(neuron)
-            self.active_upgrade = -1
-            return
-        self.base_skill.output(neuron)
+        self.upgrades[self.active_upgrade].output(neuron)
+        self.active_upgrade = 0
 
     def skillNotes(self, param: str) -> str:
-        return self.base_skill.skillNotes(param)
-
-    def add_skill_tree(self, skill_tree: "Shinka") -> "Shinka":
-        self.upgrades.append(skill_tree)
-        return self
-
-    def clear_upgrades(self):
-        self.upgrades.clear()
-        self.active_upgrade = -1
+        return self.upgrades[self.active_upgrade].skillNotes(param)

@@ -1,0 +1,14 @@
+class DiNeuroSpeech(Skill):
+    def __init__(self):
+        super().__init__()
+        self.set_skill_lobe(6)  # speech pattern skill so 6
+
+    @staticmethod
+    def neuro_decorate(text: str) -> str:
+        return random.choices([text, f"{text} wink", f"{text} heart"], weights=[3, 1, 1])[0]
+
+    # Override
+    def input(self, ear: str, skin: str, eye: str):
+        if len(ear)==0:
+            return
+        self.setSimpleAlg(DiNeuroSpeech.neuro_decorate(ear))
