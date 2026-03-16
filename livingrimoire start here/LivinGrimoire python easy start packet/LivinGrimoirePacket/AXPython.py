@@ -81,6 +81,7 @@ from random import SystemRandom
 # - TrgEveryNMinutes
 # - ScheduleBeefer
 # - OncePerDayGateV0
+# - EveningGate
 # - NSilenceCyclesAfterStr
 
 # ┌──────────────────────────────────────────────┐
@@ -127,6 +128,7 @@ from random import SystemRandom
 # - AXHandshake
 # - Differ
 # - ChangeDetector
+# - AlgRelay
 
 # ┌────────────────────────────┐
 # │ 🧠 LEARNABILITY            │
@@ -1774,6 +1776,29 @@ class OncePerDayGateV0:
 
         return False
 
+
+class EveningGate:
+    # ret true once at hour per each 24 hours
+    def __init__(self, hour=19):
+        self.hour = hour
+        self._triggered_today = False
+        self._current_day = None
+
+    def trigger(self):
+        now = datetime.datetime.now()
+        today = now.date()
+
+        if self._current_day != today:
+            self._current_day = today
+            self._triggered_today = False
+
+        if now.hour == self.hour and not self._triggered_today:
+            self._triggered_today = True
+            return True
+
+        return False
+
+
 class NSilenceCyclesAfterStr:
     # ret true is input is "" N times in a row after input:srt was not empty
     # used for detecting pauses.
@@ -2912,6 +2937,38 @@ class ChangeDetector:
             result = 2
         self.prev = current
         return result
+
+
+class AlgRelay:
+    # this module is used to enhance state machine algorithms
+    # it lets the coder add common cases per state
+    def __init__(self):
+        super().__init__()
+        self.dic: dict[str, int] = {}
+        # code 1: next mode
+        # code 2: goal achieved
+        # code 3: error/failure
+        # code 4: empty str
+        # code 5: any other str
+
+    def add_next_mode(self, *keys: str) -> None:
+        for key in keys:
+            self.dic[key] = 1
+
+    def add_goal_achieved(self, *keys: str) -> None:
+        for key in keys:
+            self.dic[key] = 2
+
+    def add_error(self, *keys: str) -> None:
+        for key in keys:
+            self.dic[key] = 3
+
+    def relay(self, str1: str) -> int:
+        if str1 in self.dic:
+            return self.dic[str1]
+        if len(str1) == 0:
+            return 4
+        return 5
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
