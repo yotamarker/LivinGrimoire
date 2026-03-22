@@ -1709,28 +1709,16 @@ class TrgMinute:
 
 
 class TrgEveryNMinutes:
-    # trigger returns true every minutes interval, post start time
-    def __init__(self, startTime: str, minutes: int):
-        self._minutes: int = minutes  # minute interval between triggerings
-        self._timeStamp = startTime
-        self._trgTime: TrgTime = TrgTime()
-        self._trgTime.setTime(startTime)
+    def __init__(self, minutes):
+        self.interval = timedelta(minutes=minutes)
+        self.next_allowed = datetime.datetime.now()
 
-    def setMinutes(self, minutes: int):
-        if minutes > -1:
-            self._minutes = minutes
-
-    # override
-    def trigger(self) -> bool:
-        if self._trgTime.alarm():
-            self._timeStamp = TimeUtils.getFutureInXMin(self._minutes)
-            self._trgTime.setTime(self._timeStamp)
+    def trigger(self):
+        now = datetime.datetime.now()
+        if now >= self.next_allowed:
+            self.next_allowed = now + self.interval
             return True
         return False
-
-    # override
-    def reset(self):
-        self._timeStamp = TimeUtils.getCurrentTimeStamp()
 
 
 class ScheduleBeefer:
