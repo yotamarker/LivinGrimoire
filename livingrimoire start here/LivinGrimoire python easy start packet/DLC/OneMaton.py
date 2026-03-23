@@ -8,6 +8,7 @@ from LivinGrimoirePacket.LivinGrimoire import Skill
 SensoryInput = namedtuple('SensoryInput', ['ear', 'skin', 'eye'])
 
 class Automata(Skill):
+    # construct automata in subclass constructor by adding automatons.
     def __init__(self):
         super().__init__()
         self.automatas = {}
@@ -42,10 +43,9 @@ class Automaton:
 
 
 
-# trig automatons
-
 
 class AtmtStrTrg(Automaton):
+    # str trig automatons
     def __init__(self, trg: str, skill: Automata):
         super().__init__(skill)
         self.trg = trg
@@ -58,6 +58,7 @@ class AtmtStrTrg(Automaton):
 
 
 class AtmtSetTrg(Automaton):
+    # hashset trig automaton
     def __init__(self, skill: Automata, trg: set[str], declaration:Responder):
         super().__init__(skill)
         self.trg = trg
@@ -71,6 +72,7 @@ class AtmtSetTrg(Automaton):
 
 
 class AtmtDeclare(Automaton):
+    # declares start of process and moves forward after "ok"
     def __init__(self, skill: Automata, responder:Responder):
         super().__init__(skill)
         self.dripper = PercentDripper()
@@ -97,6 +99,7 @@ class AtmtDeclare(Automaton):
 
 
 class AtmtProcessV1(Automaton):
+    # stoys on process till time out or "enough"
     def __init__(self, skill: Automata, whilst:Responder, finished: Responder, canceled: Responder):
         super().__init__(skill)
         self.r2 = whilst
