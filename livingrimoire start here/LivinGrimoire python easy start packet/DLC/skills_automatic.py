@@ -8,27 +8,39 @@ from LivinGrimoirePacket.AXPython import TrgEveryNMinutes, TimeUtils, TrgParrot,
 from LivinGrimoirePacket.AlgParts import APHappy, APSleep
 from LivinGrimoirePacket.LivinGrimoire import Skill, APVerbatim
 
-
-class DiParrot(Skill):
-    def __init__(self, interval_minutes: int = 17, chirp_lim: int = 3):
+class DiAttentionSeeker(Skill):
+    # this skill demands attention when idle for N minutes
+    def __init__(self):
         super().__init__()
-        self.trg: TrgEveryNMinutes = TrgEveryNMinutes(2)
-        self.parrot: TrgParrot = TrgParrot(chirp_lim)
+        self.standby = AXStandBy(5)
+        self.trig_on = "hey"
+        self.trig_off = "be quiet"
+        self.active = True
+        self.r1: Responder = Responder("i am bored", "hadoken", "shoryuken", "give me attention", "boop notice me", "peek a boo")
 
-    # Override
+    def set_pause(self, n:int):
+        if n > 0:
+            self.standby = AXStandBy(n)
+        return self
+
     def input(self, ear: str, skin: str, eye: str):
-        match self.parrot.trigger(self.trg.trigger(), ear):
-            case 1:
-                self.setSimpleAlg("low chirp")
-            case 2:
-                self.setSimpleAlg("chirp")
+        if TimeUtils.isNight():
+            if not self.active:
+                self.active = True
+            return
+        if self.active:
+            if ear == self.trig_off:
+                self.active = False
+                self.setSimpleAlg("attention seeking off")
+                return
+            if self.standby.standBy(ear):
+                self.setSimpleAlg(self.r1.getAResponse())
+            return
 
-    def skillNotes(self, param: str) -> str:
-        if param == "notes":
-            return "parrot simulator"
-        elif param == "triggers":
-            return "auto skill"
-        return "note unavalible"
+        if not self.active:
+            if ear == self.trig_on:
+                self.active = True
+                self.setSimpleAlg("attention seeking on")
 
 
 class DiBurperV2(Skill):
@@ -242,3 +254,25 @@ class DiYandere(Skill):
 # ╔════════════════════════════════════════════════╗
 # ║                GRAVEYARD SKILLS                ║
 # ╚════════════════════════════════════════════════╝
+
+
+class DiParrot(Skill):
+    def __init__(self, interval_minutes: int = 17, chirp_lim: int = 3):
+        super().__init__()
+        self.trg: TrgEveryNMinutes = TrgEveryNMinutes(2)
+        self.parrot: TrgParrot = TrgParrot(chirp_lim)
+
+    # Override
+    def input(self, ear: str, skin: str, eye: str):
+        match self.parrot.trigger(self.trg.trigger(), ear):
+            case 1:
+                self.setSimpleAlg("low chirp")
+            case 2:
+                self.setSimpleAlg("chirp")
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "parrot simulator"
+        elif param == "triggers":
+            return "auto skill"
+        return "note unavalible"
