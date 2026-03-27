@@ -3049,23 +3049,38 @@ class Notes:
         self._index: int = 0
 
     def add(self, s1: str):
-        self._log.append(s1)
+        if not s1 in self._log:
+            self._log.append(s1)
 
     def clear(self):
         self._log.clear()
 
     def getNote(self) -> str:
         if len(self._log) == 0:
-            return "zero notes"
+            return ""
         return self._log[self._index]
 
     def get_next_note(self) -> str:
         if len(self._log) == 0:
-            return "zero notes"
+            return ""
         self._index += 1
         if self._index == len(self._log):
             self._index = 0
         return self._log[self._index]
+
+    def get_note_list(self)->list[str]:
+        return self._log
+
+    def set_note_list(self, l1: list[str]):
+        self._log = l1
+
+    def remove_note(self, note: str):
+        if note in self._log:
+            self._log.remove(note)
+            if len(self._log) == 0:
+                self._index = 0
+            elif self._index >= len(self._log):
+                self._index = len(self._log) - 1
 
 
 class Catche:

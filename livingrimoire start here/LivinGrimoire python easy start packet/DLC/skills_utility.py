@@ -7,7 +7,7 @@ import string
 from typing_extensions import override
 
 from LivinGrimoirePacket.AXPython import AXCmdBreaker, PercentDripper, TimeUtils, Notes, RegexUtil, Responder, Cron, \
-    DrawRnd, AXContextCmd, OnOffSwitch, EventChat, UniqueResponder
+    DrawRnd, AXContextCmd, OnOffSwitch, EventChat, UniqueResponder, AXStringSplit
 from LivinGrimoirePacket.AlgParts import APHappy, APSad
 from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro
 
@@ -114,6 +114,17 @@ class DiNoteTaker(Skill):
     def __init__(self):
         super().__init__()
         self.notes: Notes = Notes()
+        self.active_note = ""
+
+    def save_notes(self):
+        spliter = AXStringSplit()
+        save_str = spliter.stringBuilder(self.notes.get_note_list())
+        self._kokoro.grimoireMemento.save(self.skill_name, save_str)
+
+    def manifest(self):
+        load_str = self._kokoro.grimoireMemento.load(self.skill_name)
+        if len(load_str) > 0 and load_str != "null":
+            self.notes.set_note_list(AXStringSplit().split(load_str))
 
     # Override
     def input(self, ear: str, skin: str, eye: str):
@@ -121,21 +132,35 @@ class DiNoteTaker(Skill):
             return
         match ear:
             case "get note":
-                self.setSimpleAlg(self.notes.getNote())
+                self.active_note = self.notes.getNote()
+                if len(self.active_note) == 0:
+                    self.setSimpleAlg("there are no notes")
+                    return
+                self.setSimpleAlg(self.active_note)
+            case "remove note":
+                if len(self.active_note)>0:
+                    self.notes.remove_note(self.active_note)
+                    self.active_note = ""
+                    self.setSimpleAlg("note removed")
+                    self.save_notes()
             case "clear notes":
                 self.notes.clear()
                 self.setSimpleAlg("notes cleared")
+                self.save_notes()
             case "next note":
-                self.setSimpleAlg(self.notes.get_next_note())
+                temp = self.notes.get_next_note()
+                if len(temp) > 0:
+                    self.active_note = temp
+                    self.setSimpleAlg(temp)
+                    return
+                self.setSimpleAlg("there are no more notes")
             case _:
                 if ear.startswith("note "):
-                    self.notes.add(ear[5:])  # Remove 'note ' prefix
-                    self.setSimpleAlg("noted")
-
-    def add_notes(self, *notes: str) -> 'DiNoteTaker':
-        for note in notes:
-            self.notes.add(note)
-        return self
+                    temp = ear[5:]
+                    if len(temp)>0:
+                        self.notes.add(ear[5:])  # Remove 'note ' prefix
+                        self.setSimpleAlg("noted")
+                        self.save_notes()
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":

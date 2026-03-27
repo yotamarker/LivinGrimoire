@@ -1,6 +1,6 @@
 import re
 
-from LivinGrimoirePacket.AXPython import Catche, SpiderSense, TrgEveryNMinutes, UniqueResponder, TimeUtils, Strategy
+from LivinGrimoirePacket.AXPython import Catche, SpiderSense, TrgEveryNMinutes, UniqueResponder, Strategy
 from LivinGrimoirePacket.AlgParts import APMad, APSad
 from LivinGrimoirePacket.LivinGrimoire import Skill, APVerbatim
 
@@ -17,7 +17,7 @@ class DiTargeteer(Skill):
     def __init__(self):
         super().__init__()
         self.catche = Catche(10)  # Short-term objective memory
-        self.triggers = ["get", "destroy"]
+        self.triggers = ["destroy"]
         self.pattern = re.compile(rf"\b({'|'.join(self.triggers)})\s+(\w+)", re.IGNORECASE)
 
     def input(self, ear: str, skin: str, eye: str):
@@ -41,6 +41,7 @@ class DiTargeteer(Skill):
                 action = self.catche.d1[token]
                 self.setSimpleAlg(f"{action.capitalize()}ing {token} as per directive.")
                 self.catche.d1.pop(token)
+        return None
 
 
 class DiCPUTamaguchi(Skill):
@@ -159,7 +160,7 @@ class DiWarrior(Skill):
     def __init__(self):
         super().__init__()  # Call the parent class constructor
         self.fightSpirit: int = 6
-        self.replenisher = TrgEveryNMinutes(TimeUtils.getCurrentTimeStamp(),5)
+        self.replenisher = TrgEveryNMinutes(5)
         self.evolver = 0  # hits taken
         self.warmode = False
         self.attacked: set[str] = {"punch", "kick", "jab", "uppercut", "roundhouse"}
