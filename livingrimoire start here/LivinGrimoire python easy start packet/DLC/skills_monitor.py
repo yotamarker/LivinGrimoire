@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 
 from LivinGrimoirePacket.AXPython import Responder, AXFunnel, UniqueRandomGenerator, AXPassword, TrgEveryNMinutes, \
-    MonthlyTrigger, TimeUtils, AXLearnability, TimeGate, AXStandBy
+    MonthlyTrigger, AXLearnability, TimeGate, AXStandBy
 from LivinGrimoirePacket.AlgParts import APHappy
 from LivinGrimoirePacket.LivinGrimoire import Skill, Chobits, Brain, AlgPart, DiSysOut
 
@@ -98,7 +98,7 @@ class AHPassword(Skill):
         self.negation_skills: list[Skill] = []
         self.pass_gate: AXPassword = AXPassword()
         self.brain = brain
-        self.reset_gate: TrgEveryNMinutes = TrgEveryNMinutes(TimeUtils.getCurrentTimeStamp(),10)
+        self.reset_gate: TrgEveryNMinutes = TrgEveryNMinutes(10)
         self.bond = MonthlyTrigger()
         self.funnel = AXFunnel(default="bye")
         self.funnel.addK("close gate").addK("bye bye")
