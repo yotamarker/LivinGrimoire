@@ -174,7 +174,7 @@ class DiEmo(Skill):
     def __init__(self):
         super().__init__()
         self.xp = 0
-        self.reseter: TrgEveryNMinutes = TrgEveryNMinutes(30)
+        self.reseter: TrgEveryNMinutes = TrgEveryNMinutes(10)
         self.lim = 3
         self.no_mood: Responder = Responder("bored", "meh", "neutral")
         self.yes_mood: Responder = Responder("good", "i feel good", "okay", "great")
@@ -191,10 +191,7 @@ class DiEmo(Skill):
             self.setSimpleAlg("ouch")
             return
         if self.reseter.trigger():
-            if self.xp < 8:
-                self.xp = 0
-            else:
-                self.xp = 4
+            self.xp = max(0, self.xp - 2)
             self.pain = False
         if ear == "reward me" and not self.pain:
             if self.xp > 3:
