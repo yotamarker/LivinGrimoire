@@ -1,5 +1,7 @@
+import random
+
 from LivinGrimoirePacket.AXPython import RailBot, AXContextCmd, QuestionChecker, PhraseInflector, KeyWords, CodeParser, \
-    PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ
+    PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ, TrgEveryNMinutes
 from LivinGrimoirePacket.AlgParts import APMad
 from LivinGrimoirePacket.LivinGrimoire import Skill
 
@@ -167,6 +169,51 @@ class DiCusser(Skill):
         elif param == "triggers":
             return "try cussing and repeat to teach"
         return "note unavalible"
+
+class DiEmo(Skill):
+    def __init__(self):
+        super().__init__()
+        self.xp = 0
+        self.reseter: TrgEveryNMinutes = TrgEveryNMinutes(30)
+        self.lim = 3
+        self.no_mood: Responder = Responder("bored", "meh", "neutral")
+        self.yes_mood: Responder = Responder("good", "i feel good", "okay", "great")
+        self.pain = False
+
+    def give_math_reward(self):
+        a = random.randint(2, 12)
+        b = random.randint(2, 12)
+        self.setSimpleAlg(f"{a} × {b} = {a * b}")
+
+    def input(self, ear: str, skin: str, eye: str):
+        if skin == "pain":
+            self.pain = True
+            self.setSimpleAlg("ouch")
+            return
+        if self.reseter.trigger():
+            if self.xp < 8:
+                self.xp = 0
+            else:
+                self.xp = 4
+            self.pain = False
+        if ear == "reward me" and not self.pain:
+            if self.xp > 3:
+                self.xp -= 3
+                self.give_math_reward()
+            else:
+                self.setSimpleAlg(f"Need {4 - self.xp} more messages first")  # feedback
+            return
+        if ear == "how are you":
+            if self.pain:
+                self.setSimpleAlg("sad")
+            elif self.xp < 3:
+                self.setSimpleAlg(self.no_mood.getAResponse())
+            else:
+                self.setSimpleAlg(self.yes_mood.getAResponse())
+            return
+        if len(ear)>4:
+            self.xp += 1
+
 
 # ╔════════════════════════════════════════════════╗
 # ║              UNDERUSED / TEMPLATE SKILLS       ║
