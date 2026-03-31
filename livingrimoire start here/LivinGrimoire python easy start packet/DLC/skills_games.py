@@ -34,6 +34,9 @@ class DiWorkOut(Skill):
     def reward_request(self) -> str:
         return getattr(self, "req", "may i play video games")
 
+    def clear_xp(self) -> str:
+        return getattr(self, "clear_exp", "clear workout level")
+
     def reward_xp(self, streak: int) -> int:
         return int(self.xp_base* (1 + math.log(1 + streak)))
 
@@ -79,6 +82,17 @@ class DiWorkOut(Skill):
         self._kokoro.grimoireMemento.save(f"{self.skill_name}_xp", str(self.xp_farmed))
         self._kokoro.grimoireMemento.save(
             f"{self.skill_name}_accumulation", str(self.accumulation)
+        )
+        self._kokoro.grimoireMemento.save(
+            f"{self.skill_name}_last_date", date.today().strftime("%Y-%m-%d")
+        )
+
+    def clear_state(self):
+        self.xp_farmed = 0
+        self.accumulation = 0
+        self._kokoro.grimoireMemento.save(f"{self.skill_name}_xp", "0")
+        self._kokoro.grimoireMemento.save(
+            f"{self.skill_name}_accumulation", "0"
         )
         self._kokoro.grimoireMemento.save(
             f"{self.skill_name}_last_date", date.today().strftime("%Y-%m-%d")
@@ -138,6 +152,9 @@ class DiWorkOut(Skill):
             case _ if ear == self.reward_request():
                 self.query_play_games()
 
+            case _ if ear == self.clear_xp():
+                self.clear_state()
+
             case "what is my power level":
                 self.query_power_level()
 
@@ -148,7 +165,7 @@ class DiWorkOut(Skill):
         if param == "notes":
             return "moddable workout skill with override hooks for event and reward"
         elif param == "triggers":
-            return f"{self.on_farm_event()}; what is my power level; may i play video games"
+            return f"{self.on_farm_event()}; what is my power level; may i play video games; clear workout level"
         return "note unavailable"
 
 
