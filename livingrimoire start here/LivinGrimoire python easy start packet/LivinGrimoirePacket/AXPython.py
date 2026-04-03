@@ -1790,8 +1790,8 @@ class EveningGate:
 class NSilenceCyclesAfterStr:
     # ret true is input is "" N times in a row after input:srt was not empty
     # used for detecting pauses.
-    def __init__(self, N):
-        self.N = N
+    def __init__(self, seconds_per_think_cycle:int, idle_minutes:int):
+        self.N = idle_minutes * 60 // seconds_per_think_cycle
         self.c = 0
 
     def check(self, s: str) -> bool:
@@ -2536,7 +2536,10 @@ class EventChatV2:
         self.modified_keys: set[str] = set()
 
     def get_modified_keys(self) -> set[str]:
-        return self.modified_keys
+        # returns keys for saving, then clears for the next save
+        replica = self.modified_keys.copy()
+        self.modified_keys.clear()
+        return replica
 
     def key_exists(self, key: str) -> bool:
         return key in self.modified_keys
@@ -3892,3 +3895,42 @@ class Excluder:
             if len(RegexUtil.extractRegex(temp_str, ear)) > 0:
                 return True
         return False
+
+
+# RailPunk modules
+
+class DBAntiGlitch:
+    # prevents database hacks with livingrimoire naming convensions
+    @staticmethod
+    def starts_with_trigger(s: str) -> bool:
+        return s.lower().startswith("ah/di")
+
+
+
+class TrgHP:
+    def __init__(self, low: int=-10, high: int=10, regen: int=5):
+        self.hp = 4
+        self.low = low
+        self.high = high
+        self.regen: TrgEveryNMinutes = TrgEveryNMinutes(regen)
+        self.hit: set[str] = {"shut up", "quiet", "be quiet", "silence"}
+
+
+    def trigger(self, ear:str)->bool:
+        # hp regen
+        if self.regen.trigger():
+            self.hp = min(self.high, self.hp + 1)
+        if len(ear)==0:
+            return False
+        # hp deduct
+        if ear in self.hit:
+            self.hp = max(self.low, self.hp - 5)
+            return False
+        # hp usage
+        if self.hp > 0:
+            self.hp -=1
+            return True
+        return False
+
+    def get_hp(self) -> int:
+        return self.hp

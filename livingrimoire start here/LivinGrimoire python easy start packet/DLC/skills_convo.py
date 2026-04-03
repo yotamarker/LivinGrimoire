@@ -1,9 +1,11 @@
 import random
 
 from LivinGrimoirePacket.AXPython import RailBot, AXContextCmd, QuestionChecker, PhraseInflector, KeyWords, CodeParser, \
-    PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ, TrgEveryNMinutes
+    PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ, TrgEveryNMinutes, DBAntiGlitch, TrgHP, \
+    NSilenceCyclesAfterStr
 from LivinGrimoirePacket.AlgParts import APMad
 from LivinGrimoirePacket.LivinGrimoire import Skill
+from LivinGrimoirePacket.RailBotExtensions import RailPunk
 
 
 # ╔════════════════════════════════════════════════╗
@@ -11,58 +13,47 @@ from LivinGrimoirePacket.LivinGrimoire import Skill
 # ╚════════════════════════════════════════════════╝
 
 
-class DiRail(Skill):
-    # DiRail skill for testing purposes
-    def __init__(self, lim_reply_options=5, convo_lim = 15):
+class DiRailPunk(Skill):
+    # this skill swaps between two sets of contradicting skills
+    def __init__(self):
         super().__init__()
-        self.set_skill_type(3)  # continuous skill
-        self.rail_bot = RailBot(lim_reply_options)
-        self.monologer = AXContextCmd()
-        self.monologer.contextCommands.insert("talk more")
-        self.monologer.commands.insert("more")
-        self.silencer: KeyWords = KeyWords("stop","shut up","mute","quiet")
-        self.counter = 0
-        self.convo_lim = convo_lim
+        self.set_skill_type(3)  # backgroundable skill
+        self.trg: TrgHP = TrgHP()
+        self.lim = 2
+        self.r1: Responder = Responder("wink", "heart", "okie", "uwu", "nyaa", "teehee")
+        self.chatbot: RailPunk = RailPunk()
+        self.chatbot.enable_db_wrapper()  # enables railpunk to save load
+        self.idler: NSilenceCyclesAfterStr = NSilenceCyclesAfterStr(3,6)
+        self.chatbot.set_context("stand by")
+        # add railbot populators (plug and play deductions)
+        # monolog
+        self.monolog: set[str] = {"yeah", "elaborate", "elab"}
 
-    @staticmethod
-    def ends_with_ok(input_text):
-        return input_text is not None and input_text.endswith("ok")
-
-    @staticmethod
-    def strip_ok(input_text):
-        return input_text[:-2]
-
-    def input(self, ear, skin=None, eye=None):
-        if not ear:
+    def input(self, ear: str, skin: str, eye: str):
+        # prevent database hacks
+        if DBAntiGlitch.starts_with_trigger(ear):
             return
-        # Add this line to ignore questions
-        if QuestionChecker.is_question(ear):
+        # save and reset context
+        if self.idler.check(ear):
+            self.chatbot.save_learned_data(self.getKokoro())
+            self.chatbot.set_context("stand by")
             return
-        if self.silencer.contains_keywords(ear):
-            self.counter = 0
+        hp_remains = self.trg.trigger(ear)
+        # monolog
+        if hp_remains and ear in self.monolog:
+            temp = self.chatbot.loadable_monolog(self.getKokoro())
+            self.setSimpleAlg(PhraseInflector.inflect_phrase(temp))
+            self.chatbot.learn(ear)
             return
-        if CodeParser.extract_code_number(ear) == 7:
-            # code 7
-            self.counter = self.convo_lim
-            self.setSimpleAlg("listening")
-            return
-        if self.monologer.engageCommand(ear):
-            t1 = self.rail_bot.monolog()
-            if t1:
-                self.setSimpleAlg(PhraseInflector.inflect_phrase(t1))
-                return
-
-        if self.counter > 0:
-            self.counter -= 1
-            self.setSimpleAlg(PhraseInflector.inflect_phrase(self.rail_bot.respond_dialog(ear)))
-        self.rail_bot.learn(ear)
-
-    def skillNotes(self, param):
-        if param == "notes":
-            return "experimental chatbot"
-        elif param == "triggers":
-            return "code 7 to engage. stop to turn off"
-        return "note unavailable"
+        # dialog
+        if hp_remains:
+            reply = self.chatbot.loadable_dialog(ear, self.getKokoro())
+            if len(reply) > 0:
+                if self.trg.get_hp() > self.lim:
+                    self.setSimpleAlg(PhraseInflector.inflect_phrase(reply))
+                else:
+                    self.setSimpleAlg(f"{PhraseInflector.inflect_phrase(reply)} {self.r1.getAResponse()}")
+        self.chatbot.learn(ear)
 
 
 class DiOneWorder(Skill):
@@ -220,3 +211,57 @@ class DiEmo(Skill):
 # ╔════════════════════════════════════════════════╗
 # ║                GRAVEYARD SKILLS                ║
 # ╚════════════════════════════════════════════════╝
+
+
+class DiRail(Skill):
+    # DiRail skill for testing purposes
+    def __init__(self, lim_reply_options=5, convo_lim = 15):
+        super().__init__()
+        self.set_skill_type(3)  # continuous skill
+        self.rail_bot = RailBot(lim_reply_options)
+        self.monologer = AXContextCmd()
+        self.monologer.contextCommands.insert("talk more")
+        self.monologer.commands.insert("more")
+        self.silencer: KeyWords = KeyWords("stop","shut up","mute","quiet")
+        self.counter = 0
+        self.convo_lim = convo_lim
+
+    @staticmethod
+    def ends_with_ok(input_text):
+        return input_text is not None and input_text.endswith("ok")
+
+    @staticmethod
+    def strip_ok(input_text):
+        return input_text[:-2]
+
+    def input(self, ear, skin=None, eye=None):
+        if not ear:
+            return
+        # Add this line to ignore questions
+        if QuestionChecker.is_question(ear):
+            return
+        if self.silencer.contains_keywords(ear):
+            self.counter = 0
+            return
+        if CodeParser.extract_code_number(ear) == 7:
+            # code 7
+            self.counter = self.convo_lim
+            self.setSimpleAlg("listening")
+            return
+        if self.monologer.engageCommand(ear):
+            t1 = self.rail_bot.monolog()
+            if t1:
+                self.setSimpleAlg(PhraseInflector.inflect_phrase(t1))
+                return
+
+        if self.counter > 0:
+            self.counter -= 1
+            self.setSimpleAlg(PhraseInflector.inflect_phrase(self.rail_bot.respond_dialog(ear)))
+        self.rail_bot.learn(ear)
+
+    def skillNotes(self, param):
+        if param == "notes":
+            return "experimental chatbot"
+        elif param == "triggers":
+            return "code 7 to engage. stop to turn off"
+        return "note unavailable"
