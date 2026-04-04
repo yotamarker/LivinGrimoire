@@ -2327,6 +2327,12 @@ class RailBot:
             return self.respond_dialog(ear)
         return self.eliza_wrapper.respond(ear, self.ec, kokoro)
 
+    def loadable_latest_dialog(self, ear, kokoro):
+        """Returns a loadable dialog response."""
+        if self.eliza_wrapper is None:
+            return self.respond_latest(ear)
+        return self.eliza_wrapper.respond_latest(ear, self.ec, kokoro)
+
 
 class EventChat:
     # funnel input to a unique response bundle
