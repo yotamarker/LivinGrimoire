@@ -43,7 +43,6 @@ class DiRailPunk(Skill):
         if hp_remains and ear in self.monolog:
             temp = self.chatbot.loadable_monolog(self.getKokoro())
             self.setSimpleAlg(PhraseInflector.inflect_phrase(temp))
-            self.chatbot.learn(ear)
             return
         # dialog
         if hp_remains:
