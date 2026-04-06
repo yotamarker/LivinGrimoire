@@ -144,6 +144,7 @@ from random import SystemRandom
 # - AXKeyValuePair
 # - CombinatoricalUtils
 # - AXNightRider
+# - RailPunk modules
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -3867,7 +3868,7 @@ class TextEditingSeries:
 class Excluder:
     """
     exclude will return true if the string starts with or ends with the defined starts or ends or strings
-    this helps exclude input from certain skills so as to not overlap with other skills
+    this helps exclude input from certain skills to not overlap with other skills
     e1: Excluder = Excluder()
     e1.add_starts_with("tell me")
     e1.add_ends_with("over")
@@ -3940,3 +3941,39 @@ class TrgHP:
 
     def get_hp(self) -> int:
         return self.hp
+
+
+class Sarcophagus:
+    def __init__(self):
+        """Initialize the sarcophagus with an empty set of shielded items."""
+        self._shielded_items: set[str] = set()
+
+    @property
+    def shielded_items(self) -> set[str]:
+        """Return a copy of the shielded items set (read-only access)."""
+        return self._shielded_items.copy()
+
+    def shield(self, input_str: str) -> bool:
+        """
+        Returns True if the input string contains any item from the shielded set.
+        """
+        for item in self._shielded_items:
+            if item in input_str:
+                return True
+        return False
+
+    def add_item(self, item: str):
+        self._shielded_items.add(item)
+
+    def add_item_via_regex(self, item: str) -> bool:
+        pattern = r"do not say (\w+)"
+        match = re.search(pattern, item, re.IGNORECASE)
+        if match:
+            actual_word = match.group(1)
+            self._shielded_items.add(actual_word)
+            return True
+        return False
+
+    def clear_items(self):
+        """Clear all items from the shielded set."""
+        self._shielded_items.clear()

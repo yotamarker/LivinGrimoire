@@ -253,10 +253,9 @@ class NoNos(PopulatorFunc):
         )
 
     def populate(self, railbot: RailBot, str1: str):
-        m = re.fullmatch(r"(.*)\s+is a nono", str1)
+        m = re.fullmatch(r"(.*)\s+is wrong", str1)
         x = m.group(1) if m else ""
         x = NoNos.remove_ing_from_string(x)
-        print(f"x is {x}")
         if len(x)>0:
             railbot.learn_key_value(f"may i {x}", f"no you are not allowed to {x}")
 
@@ -282,6 +281,41 @@ class KeysFunnel(PopulatorFunc):
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                            LOGING                            ║
 # ╚══════════════════════════════════════════════════════════════╝
+
+
+class EmailPopulator(PopulatorFunc):
+    def __init__(self):
+        super().__init__()
+        self.regex = "emails"
+        self.cache: StringCache = StringCache()
+
+    @override
+    def populate(self, railbot: RailBot, str1: str):
+        """
+        Extracts email from strings like:
+        'the email for John is john@example.com'
+        'the email for Sarah is sarah@gmail.com'
+
+        Stores as: "what is the mail for John" -> "john@example.com"
+        """
+        if self.cache.check_and_add(str1):
+            return False
+
+        pattern = (
+            r"^the email for\s+(?P<name>\w+(?:\s+\w+)?)\s+is\s+"
+            r"(?P<email>[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$"
+        )
+
+        clean = str1.strip()
+        match = re.match(pattern, clean, re.IGNORECASE)
+        if not match:
+            return False
+
+        name = match.group("name").strip()
+        email = match.group("email")
+
+        railbot.learn_key_value(f"what is the mail for {name}", email)
+        return True
 
 
 # ╔══════════════════════════════════════════════════════════════╗
@@ -332,6 +366,26 @@ class Composition(PopulatorFunc):
             if match:
                 param2 = match.group(1)
                 railbot.learn_key_value(f'{param1} ingredients', f"{param2}")
+
+
+class Walkthrough(PopulatorFunc):
+    def __init__(self):
+        super().__init__()
+        self.regex = "walkthrough"
+        self.regex_code1 = r"^(.*?)\s+walkthrough is"
+        self.regex_code2 = r"walkthrough is\s+(.*?)$"
+
+
+    def populate(self, railbot: RailBot, str1: str):
+        if len(str1) == 0:
+            return
+        match = re.search(self.regex_code1, str1)
+        if match:
+            param1 = match.group(1)
+            match = re.search(self.regex_code2, str1)
+            if match:
+                param2 = match.group(1)
+                railbot.learn_key_value(f'{param1} walkthrough', f"{param2}")
 
 
 # ╔══════════════════════════════════════════════════════════════╗

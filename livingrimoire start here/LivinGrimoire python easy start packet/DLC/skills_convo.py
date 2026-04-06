@@ -2,10 +2,10 @@ import random
 
 from LivinGrimoirePacket.AXPython import RailBot, AXContextCmd, QuestionChecker, PhraseInflector, KeyWords, CodeParser, \
     PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ, TrgEveryNMinutes, DBAntiGlitch, TrgHP, \
-    NSilenceCyclesAfterStr
+    NSilenceCyclesAfterStr, Sarcophagus
 from LivinGrimoirePacket.AlgParts import APMad
 from LivinGrimoirePacket.LivinGrimoire import Skill
-from LivinGrimoirePacket.RailBotExtensions import RailPunk
+from LivinGrimoirePacket.RailBotExtensions import RailPunk, PopulatorFunc
 
 
 # ╔════════════════════════════════════════════════╗
@@ -23,20 +23,44 @@ class DiRailPunk(Skill):
         self.r1: Responder = Responder("wink", "heart", "okie", "uwu", "nyaa", "teehee")
         self.chatbot: RailPunk = RailPunk()
         self.chatbot.enable_db_wrapper()  # enables railpunk to save load
-        self.idler: NSilenceCyclesAfterStr = NSilenceCyclesAfterStr(3,6)
+        self.idler: NSilenceCyclesAfterStr = NSilenceCyclesAfterStr(3,5)
         self.chatbot.set_context("stand by")
-        # add railbot populators (plug and play deductions)
         # monolog
         self.monolog: set[str] = {"yeah", "elaborate", "elab"}
+        # focus mode
+        self.focus = False
+        # output filter
+        self.filter: Sarcophagus = Sarcophagus()
+        self.filter_clear:set[str] = {"clear filter", "clear word filter", "clear sarcophagus"}
+
+    def add_output_filter(self, item: str):
+        self.filter.add_item(item)
+
+    def add_populators(self, *pops: PopulatorFunc):
+        # add railbot populators (plug and play deductions)
+        for pop in pops:
+            self.chatbot.add_populator(pop)
 
     def input(self, ear: str, skin: str, eye: str):
         # prevent database hacks
         if DBAntiGlitch.starts_with_trigger(ear):
             return
-        # save and reset context
+        # filter add
+        if self.filter.add_item_via_regex(ear):
+            self.setSimpleAlg("ok i will not use that nono word")
+            return
+        if ear in self.filter_clear:
+            self.setSimpleAlg("i am now ungovernable")
+            return
+        # enter focus mode
+        if ear == "focus":
+            self.focus = True
+            self.setSimpleAlg("focusing")
+            return
         if self.idler.check(ear):
             self.chatbot.save_learned_data(self.getKokoro())
             self.chatbot.set_context("stand by")
+            self.focus = False
             return
         hp_remains = self.trg.trigger(ear)
         # monolog
@@ -46,7 +70,14 @@ class DiRailPunk(Skill):
             return
         # dialog
         if hp_remains:
-            reply = self.chatbot.loadable_dialog(ear, self.getKokoro())
+            if not self.focus:
+                reply = self.chatbot.loadable_dialog(ear, self.getKokoro())
+            else:
+                reply = self.chatbot.loadable_latest_dialog(ear, self.getKokoro())
+            # filter output
+            if self.filter.shield(reply):
+                self.chatbot.learn(ear)
+                return
             if len(reply) > 0:
                 if self.trg.get_hp() > self.lim:
                     self.setSimpleAlg(PhraseInflector.inflect_phrase(reply))
