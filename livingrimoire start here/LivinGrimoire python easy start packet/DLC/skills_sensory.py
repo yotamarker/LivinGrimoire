@@ -57,7 +57,8 @@ class DiSTT(Skill):
     RATE = 16000
     MIN_ACTIVE_SECONDS = 0.5
     exit_event = threading.Event()
-    model = whisper.load_model("base")
+    # model = whisper.load_model("base")
+    model = whisper.load_model("large", device="cpu")
     p = pyaudio.PyAudio()
     stream = p.open(
         format=FORMAT,
@@ -96,7 +97,8 @@ class DiSTT(Skill):
         for _ in range(int(DiSTT.RATE / DiSTT.CHUNK * 2)):
             data = DiSTT.stream.read(DiSTT.CHUNK, exception_on_overflow=False)
             samples.append(np.abs(np.frombuffer(data, dtype=np.int16)).mean())
-        DiSTT.silence_threshold = max(np.mean(samples) * 1.5, 100)
+        mean_val = float(np.mean(samples) * 1.5)
+        DiSTT.silence_threshold = max(mean_val, 100.0)
 
     @staticmethod
     def clean_text(text):
@@ -133,7 +135,8 @@ class DiSTT(Skill):
     @staticmethod
     def transcribe_chunk(audio_bytes):
         audio_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-        result = DiSTT.model.transcribe(audio_np, fp16=False, language='en')
+        # result = DiSTT.model.transcribe(audio_np, fp16=False, language='en')
+        result = DiSTT.model.transcribe(audio_np, fp16=True, language='en')
         return DiSTT.clean_text(result["text"])
 
     @staticmethod
@@ -158,7 +161,7 @@ class DiSTT(Skill):
             print("Skipping listen")
             return
 
-        print("\nSpeak now")
+        # print("\nSpeak now")
         DiSTT.latest_transcription = DiSTT.clean_text(DiSTT.latest_transcription)  # Clean the text before printing
         print(f"> {DiSTT.latest_transcription}")
         self.setSimpleAlg(DiSTT.latest_transcription)

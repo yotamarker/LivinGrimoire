@@ -87,7 +87,7 @@ class DiRailPunk(Skill):
 
 
 class DiOneWorder(Skill):
-    def __init__(self, phrase: str = "chi"):
+    def __init__(self, phrase: str = "cheese"):
         super().__init__()  # Call the superclass constructor
         self.set_skill_type(3)  # continuous skill
         self.cry: str = f'{phrase} '

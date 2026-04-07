@@ -178,13 +178,17 @@ class DiHugAttack(Skill):
         self.tnx = UniqueResponder("Thank you for the hug attack!", "I feel so much better now!", "You're the best hugger!", "Thanks for the warm hug!")
         self.tg.openForPauseMinutes()
 
+    @staticmethod
+    def contains_word_hug(text):
+        return bool(re.search(r'\bhug\b', text, re.IGNORECASE))
+
     def input(self, ear: str, skin: str, eye: str):
         if not self._needs_hug and self.tg.isClosed():
             self.tg.openForPauseMinutes()
             self.setSimpleAlg("hug attack")
             self._needs_hug = True
             return
-        if self.hug_phrases.__contains__(ear):
+        if DiHugAttack.contains_word_hug(ear):
             if self._needs_hug:
                 self._needs_hug = False
                 self.setSimpleAlg(self.tnx.getAResponse())
