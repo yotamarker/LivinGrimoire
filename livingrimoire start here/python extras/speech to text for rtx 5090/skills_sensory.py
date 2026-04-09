@@ -55,10 +55,10 @@ class DiSTT(Skill):
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 16000
-    MIN_ACTIVE_SECONDS = 0.5
+    MIN_ACTIVE_SECONDS = 0.3
     exit_event = threading.Event()
     # model = whisper.load_model("base")
-    model = whisper.load_model("large", device="cpu")
+    model = whisper.load_model("large", device="cuda")
     p = pyaudio.PyAudio()
     stream = p.open(
         format=FORMAT,
@@ -115,7 +115,7 @@ class DiSTT(Skill):
     def record_chunk():
         frames = []
         silent_frames = 0
-        max_silent_frames = int(DiSTT.RATE / DiSTT.CHUNK * 1.0)  # recognition inits after 1 sec of shut up time
+        max_silent_frames = int(DiSTT.RATE / DiSTT.CHUNK * 0.5)  # recognition inits after 1 sec of shut up time
 
         while not DiSTT.exit_event.is_set():
             data = DiSTT.stream.read(DiSTT.CHUNK, exception_on_overflow=False)
@@ -154,7 +154,7 @@ class DiSTT(Skill):
                 text = DiSTT.transcribe_chunk(audio_data)
                 DiSTT.latest_transcription = text  # Store latest transcription
                 if text.strip():
-                    print(f"> {text}")   # LIVE CONSOLE OUTPUT
+                    print(f"> {text}")  # LIVE CONSOLE OUTPUT
 
     def input(self, ear: str, skin: str, eye: str):
         """ Read latest transcription from global var """

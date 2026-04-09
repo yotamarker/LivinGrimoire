@@ -1,0 +1,43 @@
+git ver uses cpu(livingrimoire python easy start, DLC dir), this code version uses cuda for Lenovo legion 9
+see code line:
+model = whisper.load_model("large", device="cuda") 
+cuda not cpu
+
+on lenovo it may show this err
+
+err message:
+Traceback (most recent call last):
+ File "main.py", line 80, in <module>
+   import torch
+ File ".../site-packages/torch/__init__.py", line 2818, in <module>
+   from torch import (...)
+ File ".../site-packages/torch/export/__init__.py", line 42, in <module>
+   from .decomp_utils import CustomDecompTable
+ File ".../site-packages/torch/export/decomp_utils.py", line 5, in <module>
+   from torch._export.utils import (...)
+ File ".../site-packages/torch/_export/__init__.py", line 49, in <module>
+   from .wrappers import _wrap_submodules
+ File ".../site-packages/torch/_export/wrappers.py", line 10, in <module>
+   from torch._higher_order_ops.flat_apply import (...)
+ File ".../site-packages/torch/_higher_order_ops/__init__.py", line 25, in <module>
+   from torch._higher_order_ops.invoke_subgraph import invoke_subgraph
+ File ".../site-packages/torch/_higher_order_ops/invoke_subgraph.py", line 41, in <module>
+   from torch.utils._debug_mode import DebugMode
+ File ".../site-packages/torch/utils/_debug_mode/__init__.py", line 17, in <module>
+   from torch.utils._debug_mode._mode import (...)
+ File ".../site-packages/torch/utils/_debug_mode/_mode.py", line 116, in <module>
+   <error occurs here>
+
+fix:
+
+in terminal:
+[code]pip uninstall torch torchvision torchaudio -y
+
+pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+
+pip install packaging[/code]
+
+test if CUDA is now engaged:
+   import torch
+
+   print(torch.cuda.is_available())  # Should print True now

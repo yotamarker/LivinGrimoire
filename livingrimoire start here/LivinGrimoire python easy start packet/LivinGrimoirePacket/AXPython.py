@@ -3910,8 +3910,7 @@ class DBAntiGlitch:
     # prevents database hacks with livingrimoire naming convensions
     @staticmethod
     def starts_with_trigger(s: str) -> bool:
-        return s.lower().startswith("ah/di")
-
+        return s.lower().startswith(("ah", "di", "da"))
 
 
 class TrgHP:
