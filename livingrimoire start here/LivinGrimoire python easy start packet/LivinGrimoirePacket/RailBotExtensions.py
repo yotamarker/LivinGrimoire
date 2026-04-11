@@ -99,6 +99,7 @@ class RailPunk(RailBot):
         self.populator = RailBotPopulator(self)
         self.populator.add_func(KeysFunnel())
         self.removables: set[str] = Tokenizer.exclusions
+        self.skip = False
 
 
     def add_populator(self, func:PopulatorFunc):
@@ -116,13 +117,14 @@ class RailPunk(RailBot):
 
     @override
     def respond_dialog(self, ear):
-        """Responds to a dialog input."""
+        self.skip = True
         result = self.ec.response(ear)
-        if len(result) > 0:
-            return self.ec.response(ear)
+        if result:
+            return result
         return self.ec.response(Tokenizer.canonical_key(ear, self.removables))
 
     def respond_latest(self, ear):
+        self.skip = True
         """Responds to the latest input."""
         result = self.ec.response_latest(ear)
         if len(result) > 0:
@@ -139,13 +141,24 @@ class RailPunk(RailBot):
             self.context = temp
         return temp
 
+    @override
+    def monolog(self):
+        if self.skip:
+            super().monolog()
+            self.skip = False
+        return super().monolog()
+
     def loadable_monolog(self, kokoro):
+        if self.skip:
+            super().monolog()
+            self.skip = False
         """Returns a loadable monolog based on the current context."""
         if self.eliza_wrapper is None:
-            return self.monolog()
+            return super().monolog()
         return self.loadable_monolog_mechanics(self.context, kokoro)
 
     def loadable_dialog(self, ear, kokoro):
+        self.skip = True
         """Returns a loadable dialog response."""
         if self.eliza_wrapper is None:
             return self.respond_dialog(ear)
