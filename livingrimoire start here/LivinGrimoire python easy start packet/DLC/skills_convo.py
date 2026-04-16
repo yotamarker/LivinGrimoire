@@ -90,7 +90,7 @@ class DiOneWorder(Skill):
     def __init__(self, phrase: str = "cheese"):
         super().__init__()  # Call the superclass constructor
         self.set_skill_type(3)  # continuous skill
-        self.cry: str = f'{phrase} '
+        self.cry: str = "chi "
         self.drip: PercentDripper = PercentDripper()  # Assuming PercentDripper is implemented
         self.mode: bool = False
         self.drip.setLimit(90)
@@ -104,7 +104,7 @@ class DiOneWorder(Skill):
     def input(self, ear, skin, eye):
         if not ear:
             return
-        if CodeParser.extract_code_number(ear) == 8 or ear == "chi":
+        if CodeParser.extract_code_number(ear) == 8 or ear == "cheese":
             self.mode = not self.mode
             self.setSimpleAlg("toggled")
             return
@@ -138,6 +138,114 @@ class DiOneWorder(Skill):
         if param == "triggers":
             return "say code 8 to toggle skill, stop to turn off"
         return "talks like a cute pet"
+
+
+class DiOneWorderV2(Skill):
+    def __init__(self):
+        super().__init__()
+        self.set_skill_type(3)
+
+        # --- Chi core ---
+        self.cry = "chi"   # short syllable
+
+        # --- Learning system ---
+        self.word_counts = {}        # tracks how many times each word was heard
+        self.learned_words = []      # actual vocabulary
+        self.max_words = 5           # Chi can only remember 5 words
+        self.learn_threshold = 7     # how many repeats needed to learn a word
+
+        # --- Behavior control ---
+        self.mode = False
+        self.drip = PercentDripper()
+        self.drip.setLimit(90)
+
+    # ----------------------------------------------------
+    # INPUT HANDLER
+    # ----------------------------------------------------
+    def input(self, ear, skin, eye):
+        if not ear:
+            return
+
+        # Toggle skill
+        if CodeParser.extract_code_number(ear) == 8 or ear == "cheese":
+            self.mode = not self.mode
+            self.setSimpleAlg("toggled")
+            return
+
+        # Stop skill
+        if self.mode and ear == "stop":
+            self.mode = False
+            self.setSimpleAlg("ok")
+            return
+
+        # Learning system
+        self.process_learning(ear)
+
+        # Chi speech mode
+        if self.mode and self.drip.drip():
+            self.setSimpleAlg(self.generate_chi_speech(ear))
+
+    # ----------------------------------------------------
+    # LEARNING LOGIC
+    # ----------------------------------------------------
+    def process_learning(self, text):
+        words = text.split()
+
+        for w in words:
+            w = w.lower()
+
+            # ignore tiny words
+            if len(w) < 3:
+                continue
+
+            # count occurrences
+            self.word_counts[w] = self.word_counts.get(w, 0) + 1
+
+            # learn if threshold reached
+            if self.word_counts[w] == self.learn_threshold:
+                self.learn_word(w)
+
+    def learn_word(self, w):
+        # avoid duplicates
+        if w in self.learned_words:
+            return
+
+        # forget oldest if full
+        if len(self.learned_words) >= self.max_words:
+            self.learned_words.pop(0)
+
+        self.learned_words.append(w)
+
+    # ----------------------------------------------------
+    # CHI SPEECH GENERATOR
+    # ----------------------------------------------------
+    def generate_chi_speech(self, text):
+        words = text.split()
+        output = []
+
+        for w in words:
+
+            # long words → chii
+            if len(w) > 5:
+                syllable = "chii"
+            else:
+                syllable = self.cry
+
+            # 80% chi/chii, 20% learned word
+            if self.learned_words and random.random() < 0.2:
+                output.append(random.choice(self.learned_words))
+            else:
+                output.append(syllable)
+
+        return " ".join(output)
+
+    # ----------------------------------------------------
+    # NOTES
+    # ----------------------------------------------------
+    def skillNotes(self, param: str) -> str:
+        if param == "triggers":
+            return "say code 8 or 'cheese' to toggle, 'stop' to turn off"
+        return "Chi-style speech with vocabulary learning"
 
 
 class DiCusser(Skill):
