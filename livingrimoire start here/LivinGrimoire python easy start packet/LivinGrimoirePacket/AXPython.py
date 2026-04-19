@@ -51,6 +51,7 @@ from random import SystemRandom
 # - RegexUtil
 # - CityMap
 # - CityMapWithPublicTransport
+# - StopWatch
 
 # ┌────────────────────────────┐
 # │ 🎯 TRIGGERS                │
@@ -906,6 +907,75 @@ class CityMapWithPublicTransport:
                                 visited.add((prev_stop, line))
                                 queue.append((prev_stop, path + [prev_stop], line))
         return []  # No path found
+
+
+class StopWatch:
+    """stop watch class with proper encapsulation"""
+
+    def __init__(self):
+        self._start_time = None
+        self._paused_elapsed = 0.0
+        self._is_paused = False
+        self._is_running = False
+
+    def start_timer(self):
+        self._start_time = time.perf_counter()
+        self._paused_elapsed = 0.0
+        self._is_paused = False
+        self._is_running = True
+
+    def pause_timer(self):
+        if self._is_running and not self._is_paused:
+            self._paused_elapsed += time.perf_counter() - self._start_time
+            self._is_paused = True
+
+    def resume_timer(self):
+        if self._is_running and self._is_paused:
+            self._start_time = time.perf_counter()
+            self._is_paused = False
+
+    def reset_timer(self):
+        self._is_running = False
+        self._is_paused = False
+        self._paused_elapsed = 0.0
+        self._start_time = None
+
+    def is_running(self):
+        """Return True if timer is running (not paused and not stopped)."""
+        return self._is_running
+
+    def is_paused(self):
+        """Return True if timer is paused."""
+        return self._is_paused
+
+    def get_current_seconds(self):
+        """Get raw total seconds elapsed."""
+        if not self._is_running:
+            return 0
+
+        if self._is_paused:
+            return self._paused_elapsed
+
+        return self._paused_elapsed + (time.perf_counter() - self._start_time)
+
+    def get_time_elapsed(self):
+        """Get formatted elapsed time as string."""
+        total_seconds = self.get_current_seconds()
+
+        hours = int(total_seconds // 3600)
+        minutes = int((total_seconds % 3600) // 60)
+        seconds = int(total_seconds % 60)
+
+        parts = []
+        if hours > 0:
+            parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+        if minutes > 0:
+            parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+        if seconds > 0 or not parts:
+            parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+
+        return " ".join(parts)
+
 
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                               TRIGGERS                                 ║

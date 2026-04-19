@@ -7,7 +7,7 @@ import string
 from typing_extensions import override
 
 from LivinGrimoirePacket.AXPython import AXCmdBreaker, PercentDripper, TimeUtils, Notes, RegexUtil, Responder, Cron, \
-    DrawRnd, AXContextCmd, OnOffSwitch, EventChat, UniqueResponder, AXStringSplit
+    DrawRnd, AXContextCmd, OnOffSwitch, EventChat, UniqueResponder, AXStringSplit, StopWatch
 from LivinGrimoirePacket.AlgParts import APHappy, APSad
 from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro
 
@@ -178,6 +178,7 @@ class DiAlarmer(Skill):
         self.msg_extra: str = ""
         self.default_alarm: str = "beep beep beep"
         self._alarm_armed: bool = False
+        self.alarm_active: bool = False
 
     @override
     def setKokoro(self, kokoro: Kokoro):
@@ -197,8 +198,16 @@ class DiAlarmer(Skill):
 
     def input(self, ear, skin, eye):
         # Turn off alarm
-        if self._alarm_armed and self.off.responsesContainsStr(ear):
+        if self.alarm_active and self.off.responsesContainsStr(ear):
             self.setSimpleAlg("alarm is now off")
+            self.alarm_active = False
+            self._cron.turnOff()
+            self.msg_extra = ""
+            return
+
+        if ear == "cancel alarm":
+            self._kokoro.grimoireMemento.save("dialarmer", "")
+            self.setSimpleAlg("alarm has been canceled")
             self._alarm_armed = False
             self._cron.turnOff()
             self.msg_extra = ""
@@ -231,6 +240,7 @@ class DiAlarmer(Skill):
                     self._kokoro.grimoireMemento.save("dialarmer",temp)
                     return
         if self._cron.triggerWithoutRenewal():
+            self.alarm_active = True
             if len(self.msg_extra) > 0:
                 self.setSimpleAlg(self.default_alarm,self.msg_extra)
             else:
@@ -242,6 +252,82 @@ class DiAlarmer(Skill):
         elif param == "triggers":
             return "set alarm to 9:40. shut up to stop and cancel snooze"
         return "alarm clock skill"
+
+
+class DiStopWatch(Skill):
+    """
+    Stopwatch skill for voice-controlled timing.
+    Auto-announces at each minute milestone while running.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.timer = StopWatch()
+        self.last_announced_minute = 0
+
+    # Override
+    def input(self, ear: str, skin: str, eye: str):
+        # ear is already lowercased and stripped upstream
+
+        if ear == "start stopwatch":
+            self.timer.start_timer()
+            self.last_announced_minute = 0
+            self.setSimpleAlg("Stopwatch engaged")
+            return
+
+        if ear == "pause" and self.timer.is_running():
+            self.timer.pause_timer()
+            self.setSimpleAlg("Stopwatch paused")
+            return
+
+        if ear == "resume" and self.timer.is_paused():
+            self.timer.resume_timer()
+            self.setSimpleAlg("Stopwatch resumed")
+            return
+
+        if ear == "stop" and (self.timer.is_running() or self.timer.is_paused()):
+            self.timer.reset_timer()
+            self.last_announced_minute = 0
+            self.setSimpleAlg("Stopwatch reset to zero")
+            return
+
+        if ear == "time" and (self.timer.is_running() or self.timer.is_paused()):
+            elapsed = self.timer.get_time_elapsed()
+            self.setSimpleAlg(f"Elapsed time: {elapsed}")
+            return
+
+        if ear == "stopwatch status":
+            if not self.timer.is_running():
+                status = "not running"
+            elif self.timer.is_paused():
+                status = "paused"
+            else:
+                status = "running"
+                self._check_and_announce_minute()
+            self.setSimpleAlg(f"Stopwatch is {status}")
+            return
+
+        # Auto-check minute milestone on any input while running
+        if self.timer.is_running() and not self.timer.is_paused():
+            self._check_and_announce_minute()
+
+    def _check_and_announce_minute(self):
+        """Check if a new minute has elapsed and announce it."""
+        current_seconds = self.timer.get_current_seconds()
+        current_minute = int(current_seconds // 60)
+
+        if current_minute > self.last_announced_minute and current_minute > 0:
+            self.last_announced_minute = current_minute
+            minute_word = "minute" if current_minute == 1 else "minutes"
+            self.setSimpleAlg(f"{current_minute} {minute_word} elapsed")
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "Voice-controlled stopwatch with automatic minute announcements"
+        if param == "triggers":
+            return "start stopwatch, pause stopwatch, resume stopwatch, reset stopwatch, stopwatch time, stopwatch status"
+        return "Note unavailable"
+
 
 # ╔════════════════════════════════════════════════╗
 # ║              UNDERUSED / TEMPLATE SKILLS       ║

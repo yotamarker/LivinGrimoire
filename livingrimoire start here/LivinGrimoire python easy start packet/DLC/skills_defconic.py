@@ -278,7 +278,7 @@ class DiVitals(Skill):
         self.ticker = TrgEveryNMinutes(5)
         self.trigger_phrases = [
             "vitals", "system check", "diagnostics",
-            "how are you running", "status"
+            "how are you running"
         ]
         self.last_user_check = 0
         self.cooldown_seconds = 3
@@ -302,8 +302,7 @@ class DiVitals(Skill):
         )
 
     def user_triggered(self, ear):
-        ear = ear.lower()
-        return any(re.search(rf"\b{t}\b", ear) for t in self.trigger_phrases)
+        return self.trigger_phrases.__contains__(ear)
 
     # -----------------------------
     # MAIN INPUT LOGIC
