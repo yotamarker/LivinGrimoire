@@ -2,6 +2,7 @@
 # ║                OVERUSED SKILLS                 ║
 # ╚════════════════════════════════════════════════╝
 import random
+import re
 import string
 
 from typing_extensions import override
@@ -229,20 +230,64 @@ class DiAlarmer(Skill):
                 self.setSimpleAlg(f"alarm set to 5 minutes from now")
                 self.msg_extra = "your water are boiling"
                 self._alarm_armed = True
+            case "":
+                pass
             case _:
-                temp = RegexUtil.extractRegex(r"(?<=set alarm to\s)([0-9]{1,2}:[0-9]{1,2})", ear)
-                if not len(temp) == 0:
-                    self._cron.setStartTime(temp)
-                    self.setSimpleAlg(f"alarm set to {temp}")
-                    self.msg_extra = ""
-                    self._alarm_armed = True
-                    self._cron.setStartTime(temp)
-                    self._kokoro.grimoireMemento.save("dialarmer",temp)
-                    return
+                ear_lower = ear.lower()
+                if "noon" in ear_lower:
+                    time_str = "12:00"
+                elif "midnight" in ear_lower:
+                    time_str = "00:00"
+                else:
+                    match_time = re.search(r"set alarm to\s+(.+?)$", ear, re.IGNORECASE)
+                    if not match_time:
+                        return
+
+                    time_part = match_time.group(1).strip()
+
+                    if ":" in time_part:
+                        parts = time_part.split(":")
+                        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                            hour = int(parts[0])
+                            minute = int(parts[1])
+                            if 0 <= hour <= 23 and 0 <= minute <= 59:
+                                time_str = f"{hour}:{minute:02d}"
+                            else:
+                                return
+                        else:
+                            return
+                    elif time_part.isdigit() and len(time_part) in (3, 4):
+                        if len(time_part) == 3:
+                            hour = int(time_part[0])
+                            minute = int(time_part[1:])
+                        else:
+                            hour = int(time_part[:2])
+                            minute = int(time_part[2:])
+
+                        if 0 <= hour <= 23 and 0 <= minute <= 59:
+                            time_str = f"{hour}:{minute:02d}"
+                        else:
+                            return
+                    elif time_part.isdigit() and 1 <= len(time_part) <= 2:
+                        hour = int(time_part)
+                        if 0 <= hour <= 23:
+                            time_str = f"{hour}:00"
+                        else:
+                            return
+                    else:
+                        return
+
+                self._cron.setStartTime(time_str)
+                self.setSimpleAlg(f"alarm set to {time_str}")
+                self.msg_extra = ""
+                self._alarm_armed = True
+                self._kokoro.grimoireMemento.save("dialarmer", time_str)
+                return  # <-- THIS RETURN CAUSES THE ISSUE!
+        # Check if cron triggered - THIS SHOULD RUN AFTER preset alarms, but NOT after custom alarm due to return above
         if self._cron.triggerWithoutRenewal():
             self.alarm_active = True
             if len(self.msg_extra) > 0:
-                self.setSimpleAlg(self.default_alarm,self.msg_extra)
+                self.setSimpleAlg(self.default_alarm, self.msg_extra)
             else:
                 self.setSimpleAlg(self.default_alarm)
 
