@@ -14,6 +14,7 @@ from LivinGrimoirePacket.LivinGrimoire import Skill, Chobits, Brain, AlgPart, Di
 
 
 class AHAware(Skill):
+    # extracts meta data for equiped skills
     def __init__(self, chobit: Chobits, name: str, summoner="user"):
         super().__init__()
         self.set_skill_type(2)  # Aware skill
@@ -179,7 +180,9 @@ class DiNothing(Skill):
 
 
 class AHReequip(Skill):
-    """Equips a skill as needed."""
+    """Equips a skill as needed. when user ends sentence with please
+        learnability of request to skill is weighted with: lame/thanks,good/wrong
+    """
 
     def __init__(self, brain: Brain):
         super().__init__()
@@ -292,7 +295,7 @@ class AHReequip(Skill):
 
 
 class AHDebuff(Skill):
-    """Equips a skill as needed."""
+    """unplugs its skills from the AI for a period of time"""
 
     def __init__(self, brain: Brain, debuff_minutes:int = 30):
         super().__init__()
@@ -343,6 +346,7 @@ class AHDebuff(Skill):
 
 
 class ChobitsUnlocked(Chobits):
+    # esposes Chobits skill list attributes
     def __init__(self, base:Chobits):
         super().__init__()
         self.base = base
@@ -503,7 +507,7 @@ class AHHibernate(Skill):
 
 class AHBuff(Skill):
     """
-    when skill set key is spoken its skill set is added to the brain for N m inutes
+    when skill set key is spoken its skill set is added to the brain for N minutes
     example use: fun speech patterns
     """
     def __init__(self, brain:Brain, buff_minutes=10):

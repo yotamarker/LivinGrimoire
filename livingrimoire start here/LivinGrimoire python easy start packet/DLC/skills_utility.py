@@ -237,7 +237,7 @@ class DiAlarmer(Skill):
                 if "noon" in ear_lower:
                     time_str = "12:00"
                 elif "midnight" in ear_lower:
-                    time_str = "00:00"
+                    time_str = "0:00"
                 else:
                     match_time = re.search(r"set alarm to\s+(.+?)$", ear, re.IGNORECASE)
                     if not match_time:
@@ -283,7 +283,7 @@ class DiAlarmer(Skill):
                 self._alarm_armed = True
                 self._kokoro.grimoireMemento.save("dialarmer", time_str)
                 return  # <-- THIS RETURN CAUSES THE ISSUE!
-        # Check if cron triggered - THIS SHOULD RUN AFTER preset alarms, but NOT after custom alarm due to return above
+
         if self._cron.triggerWithoutRenewal():
             self.alarm_active = True
             if len(self.msg_extra) > 0:
