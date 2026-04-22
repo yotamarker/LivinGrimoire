@@ -158,6 +158,8 @@ class DiOneWorderV2(Skill):
         self.mode = False
         self.drip = PercentDripper()
         self.drip.setLimit(90)
+        # excited output trig
+        self.excited_trg: set[str] = {"yeah", "yes", "oh yeah", "yep", "yeap"}
 
     # ----------------------------------------------------
     # INPUT HANDLER
@@ -180,6 +182,10 @@ class DiOneWorderV2(Skill):
 
         # Learning system
         self.process_learning(ear)
+
+        if self.mode and self.excited_trg.__contains__(ear):
+            self.setSimpleAlg("chii_excited")
+            return
 
         # Chi speech mode
         if self.mode and self.drip.drip():
@@ -207,7 +213,7 @@ class DiOneWorderV2(Skill):
 
     def learn_word(self, w):
         # avoid duplicates
-        if w in self.learned_words:
+        if w in self.learned_words or w in self.excited_trg:
             return
 
         # forget oldest if full
