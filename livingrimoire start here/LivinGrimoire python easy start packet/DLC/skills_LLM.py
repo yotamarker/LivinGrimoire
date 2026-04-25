@@ -156,7 +156,7 @@ def start_waifu_conversation(user_input):
 class DiLLMOver(Skill):
     def __init__(self):
         super().__init__()
-        initial_prompt = "directive: nurse and protect."
+        initial_prompt = "talk normaly."
         conversation_history.append(f"System: {initial_prompt}")
 
     # Override
