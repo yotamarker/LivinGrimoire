@@ -1,7 +1,7 @@
 from collections import deque
 
 from LivinGrimoirePacket.AXPython import Responder, TimeGate
-from LivinGrimoirePacket.LivinGrimoire import AlgPart
+from LivinGrimoirePacket.LivinGrimoire import AlgPart, Brain, Skill
 
 
 class APSleep(AlgPart):
@@ -107,3 +107,19 @@ class APSad(AlgPart):
 
     def completed(self) -> bool:
         return not self.sentences
+
+
+class APSkillRemover(AlgPart):
+    def __init__(self, brain:Brain, skill_to_remove:Skill):
+        super().__init__()
+        self.brain = brain
+        self.skill_to_remove = skill_to_remove
+        self.done = False
+
+    def action(self, ear: str, skin: str, eye: str) -> str:
+        self.brain.remove_skill(self.skill_to_remove)
+        self.done = True
+        return ""
+
+    def completed(self) -> bool:
+        return self.done

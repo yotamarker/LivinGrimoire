@@ -8,9 +8,10 @@ import string
 from typing_extensions import override
 
 from LivinGrimoirePacket.AXPython import AXCmdBreaker, PercentDripper, TimeUtils, Notes, RegexUtil, Responder, Cron, \
-    DrawRnd, AXContextCmd, OnOffSwitch, EventChat, UniqueResponder, AXStringSplit, StopWatch
-from LivinGrimoirePacket.AlgParts import APHappy, APSad
-from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro
+    DrawRnd, AXContextCmd, OnOffSwitch, EventChat, UniqueResponder, AXStringSplit, StopWatch, TimeGate, EveningGate
+from LivinGrimoirePacket.AlgParts import APHappy, APSad, APSkillRemover
+from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro, Brain, APVerbatim
+from LivinGrimoirePacket.RailBotExtensions import RailPunk
 
 
 class DiSayer(Skill):
@@ -372,6 +373,68 @@ class DiStopWatch(Skill):
         if param == "triggers":
             return "start stopwatch, pause stopwatch, resume stopwatch, reset stopwatch, stopwatch time, stopwatch status"
         return "Note unavailable"
+
+
+class DiWorkoutMotivation1(Skill):
+    def __init__(self):
+        super().__init__()
+        self.trg = EveningGate(9)  # Triggers at 9 AM — perfect for evening workout
+        self.r1:Responder = Responder(
+            "DROP AND GIVE ME TWENTY! Workout time, now!",
+            "Get on the floor and start moving, PRIVATE!",
+            "Stop making excuses and start your workout NOW!",
+            "Your laziness ends here — hit the floor and give me pushups!",
+            "MOVE IT! Every second you wait is a second of weakness!",
+            "Stop scrolling, start suffering — workout time!",
+            "Your future self is begging you — GET TO WORK!",
+            "No excuses, no delays — workout starts this instant!",
+            "Pain is weakness leaving the body — LET'S GO!",
+            "You call that motivation? PROVE IT! Start exercising NOW!",
+            "Your muscles are waiting — get down and HUSTLE!",
+            "Don't you dare skip this — WORK OUT, SOLDIER!",
+            "Every rep makes you stronger — START PUSHING!",
+            "Your competition is working out right now — are you? MOVE!",
+            "Comfort is a trap — BREAK FREE and exercise NOW!",
+            "That voice saying 'later' is a liar — WORK OUT IMMEDIATELY!",
+            "Your body is a weapon — SHARPEN IT with this workout!",
+            "Stop being soft — get hard with these exercises NOW!",
+            "Discipline or regret — CHOOSE WISELY and start moving!",
+            "Your warmup is already late — HIT THE FLOOR, NOW!"
+        )
+        self.chat:RailPunk = RailPunk()
+        self.chat.learn_key_value("no", "THERE IS NO 'NO' IN MY GYM! Now move!")
+        self.chat.learn_key_value("no", "Did I stutter? NO is not an option — WORK OUT!")
+        self.chat.learn_key_value("no", "Lazy answer! Try again with a pushup position!")
+        self.chat.learn_key_value("ok", "THAT'S WHAT I WANT TO HEAR! Now give me maximum effort!")
+        self.chat.learn_key_value("okay", "THAT'S WHAT I WANT TO HEAR! Now give me maximum effort!")
+        self.chat.learn_key_value("fine", "FINE ISN'T ENOUGH — I want EXCELLENCE! PUSH HARDER!")
+        self.chat.learn_key_value("i will", "PROVE IT with sweat, not words! GO!")
+        self.chat.learn_key_value("i love you", "Love yourself enough to finish this workout! MOVE!")
+        self.chat.learn_key_value("i love you", "Show me love by giving me FIVE MORE REPS!")
+        self.chat.learn_key_value("i love you", "Love is earned — EARN IT with your effort right now!")
+        self.chat.learn_key_value("i love you", "I'll love you more when you're out of breath! KEEP GOING!")
+        self.chat.learn_key_value("i love you", "Your body will love you later — right now, SUFFER AND GROW!")
+        self.tg:TimeGate = TimeGate(5)
+
+    def input(self, ear: str, skin: str, eye: str):
+        if self.trg.trigger():
+            self.setSimpleAlg(self.r1.getAResponse())
+            self.tg.openForPauseMinutes()
+            return
+        if self.tg.isOpen():
+            temp = self.chat.respond_dialog(ear)
+            if len(temp) > 0:
+                self.setSimpleAlg(temp)
+
+
+class DiStartup(Skill):
+    # plays start up sound and removes skill
+    def __init__(self, brain: Brain):
+        super().__init__()
+        self.brain = brain
+
+    def input(self, ear: str, skin: str, eye: str):
+        self.algPartsFusion(3, APVerbatim("chii_start"),APSkillRemover(self.brain, self))
 
 
 # ╔════════════════════════════════════════════════╗
