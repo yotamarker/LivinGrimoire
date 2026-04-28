@@ -1,8 +1,9 @@
 import random
+import re
 
 from LivinGrimoirePacket.AXPython import RailBot, AXContextCmd, QuestionChecker, PhraseInflector, KeyWords, CodeParser, \
     PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ, TrgEveryNMinutes, DBAntiGlitch, TrgHP, \
-    NSilenceCyclesAfterStr, Sarcophagus
+    NSilenceCyclesAfterStr, Sarcophagus, SimilarityScorer
 from LivinGrimoirePacket.AlgParts import APMad
 from LivinGrimoirePacket.LivinGrimoire import Skill
 from LivinGrimoirePacket.RailBotExtensions import RailPunk, PopulatorFunc
@@ -94,6 +95,7 @@ class DiOneWorder(Skill):
         self.drip: PercentDripper = PercentDripper()  # Assuming PercentDripper is implemented
         self.mode: bool = False
         self.drip.setLimit(90)
+        self.phrase = phrase
 
     def set_cry(self, cry):
         self.cry = cry + " "
@@ -104,7 +106,7 @@ class DiOneWorder(Skill):
     def input(self, ear, skin, eye):
         if not ear:
             return
-        if CodeParser.extract_code_number(ear) == 8 or ear == "cheese":
+        if CodeParser.extract_code_number(ear) == 8 or ear == self.phrase:
             self.mode = not self.mode
             self.setSimpleAlg("toggled")
             return
@@ -160,6 +162,7 @@ class DiOneWorderV2(Skill):
         self.drip.setLimit(90)
         # excited output trig
         self.excited_trg: set[str] = {"yeah", "yes", "oh yeah", "yep", "yeap"}
+        self.prev: str = ""
 
     # ----------------------------------------------------
     # INPUT HANDLER
@@ -182,13 +185,32 @@ class DiOneWorderV2(Skill):
 
         # Learning system
         self.process_learning(ear)
+        if not self.mode:
+            return
 
-        if self.mode and self.excited_trg.__contains__(ear):
+        if self.excited_trg.__contains__(ear):
             self.setSimpleAlg("chii_excited")
             return
 
+        if bool(re.search(r'\bsad\b', ear, re.IGNORECASE)):
+            self.setSimpleAlg("chii_sad")
+            return
+
+        temp = SimilarityScorer.similarity(self.prev, ear)
+        self.prev = ear
+        if temp > 80:
+            self.setSimpleAlg("chii_angry")
+            return
+        if temp > 60 and self.drip.drip_below(25):
+            self.setSimpleAlg("chii_angry")
+            return
+
+        if self.drip.drip_below(10):
+            self.setSimpleAlg("chii_curious")
+            return
+
         # Chi speech mode
-        if self.mode and self.drip.drip():
+        if self.drip.drip():
             self.setSimpleAlg(self.generate_chi_speech(ear))
 
     # ----------------------------------------------------

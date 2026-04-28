@@ -12,6 +12,7 @@ import time
 import datetime
 from datetime import timedelta
 from random import SystemRandom
+from difflib import SequenceMatcher
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -84,6 +85,7 @@ from random import SystemRandom
 # - OncePerDayGateV0
 # - EveningGate
 # - NSilenceCyclesAfterStr
+# - SimilarityScorer
 
 # ┌──────────────────────────────────────────────┐
 # │ 🧪 SPECIAL SKILLS DEPENDENCIES               │
@@ -1877,6 +1879,28 @@ class NSilenceCyclesAfterStr:
         return False
 
 
+class SimilarityScorer:
+    """
+    Utility class for intent similarity scoring.
+    """
+
+    @staticmethod
+    def similarity(a: str, b: str) -> int:
+        """
+        Intent similarity scoring.
+        Returns integer between 0 and 100.
+        0 = completely different. 100 = identical.
+        """
+        # Calculate the similarity ratio using SequenceMatcher
+        weak_ratio: float = SequenceMatcher(None, a, b).ratio()
+
+        # Multiply by 100 and convert to integer
+        result: int = int(weak_ratio * 100)
+
+        # Clamp the value to the range 0-100
+        return max(0, min(100, result))
+
+
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                     SPECIAL SKILLS DEPENDENCIES                        ║
 # ╚════════════════════════════════════════════════════════════════════════╝
@@ -2669,6 +2693,9 @@ class PercentDripper:
 
     def dripPlus(self, plus: int) -> bool:
         return self.__dr.getSimpleRNDNum(100) < self.__limis + plus
+
+    def drip_below(self, value:int) -> bool:
+        return self.__dr.getSimpleRNDNum(100) < value
 
 
 class AXTimeContextResponder:
