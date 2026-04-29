@@ -336,17 +336,17 @@ class TimeUtils:
                  6: 'friday',
                  7: 'saturday',
                  }
-    dayOfMonth = {1: "first_of", 2: "second_of", 3: "third_of", 4: "fourth_of", 5: "fifth_of", 6: "sixth_of",
-                  7: "seventh_of",
-                  8: "eighth_of", 9: "nineth_of", 10: "tenth_of", 11: "eleventh_of", 12: "twelveth_of",
-                  13: "thirteenth_of",
-                  14: "fourteenth_of", 15: "fifteenth_of", 16: "sixteenth_of", 17: "seventeenth_of",
-                  18: "eighteenth_of",
-                  19: "nineteenth_of", 20: "twentyth_of", 21: "twentyfirst_of", 22: "twentysecond_of",
-                  23: "twentythird_of",
-                  24: "twentyfourth_of", 25: "twentyfifth_of", 26: "twentysixth_of", 27: "twentyseventh_of",
-                  28: "twentyeighth_of",
-                  29: "twentynineth_of", 30: "thirtyth_of", 31: "thirtyfirst_of"}
+    dayOfMonth = {1: "first of", 2: "second of", 3: "third of", 4: "fourth of", 5: "fifth of", 6: "sixth of",
+                  7: "seventh of",
+                  8: "eighth of", 9: "ninth of", 10: "tenth of", 11: "eleventh of", 12: "twelfth of",
+                  13: "thirteenth of",
+                  14: "fourteenth of", 15: "fifteenth of", 16: "sixteenth of", 17: "seventeenth of",
+                  18: "eighteenth of",
+                  19: "nineteenth of", 20: "twentieth of", 21: "twenty-first of", 22: "twenty-second of",
+                  23: "twenty-third of",
+                  24: "twenty-fourth of", 25: "twenty-fifth of", 26: "twenty-sixth of", 27: "twenty-seventh of",
+                  28: "twenty-eighth of",
+                  29: "twenty-ninth of", 30: "thirtieth of", 31: "thirty-first of"}
 
     @staticmethod
     def getCurrentTimeStamp() -> str:

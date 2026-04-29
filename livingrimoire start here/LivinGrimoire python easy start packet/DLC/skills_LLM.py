@@ -169,7 +169,8 @@ class DiLLMOver(Skill):
         # reply ready? say it and clear params for next usage
         if current_reply:
             user_input, reply = current_reply
-            self.setSimpleAlg(self.sanitize_string(reply))
+            self.setSimpleAlg(reply)
+            # self.setSimpleAlg(self.sanitize_string(reply))
             # Add both user input and bot response to history
             conversation_history.append(f"Human: {user_input}")
             conversation_history.append(f"{reply}")
