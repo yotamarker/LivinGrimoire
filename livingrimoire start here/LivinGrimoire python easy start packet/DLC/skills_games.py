@@ -2,7 +2,7 @@ import datetime
 import random
 
 from LivinGrimoirePacket.AXPython import TimeGate, UniqueResponder, AXFunnel, EventChat, Responder, PercentDripper, \
-    OnOffSwitch, Magic8Ball, RegexUtil
+    OnOffSwitch, Magic8Ball, RegexUtil, DrawRnd
 from LivinGrimoirePacket.LivinGrimoire import Skill
 import math
 from datetime import date, datetime
@@ -349,6 +349,126 @@ class DiMezzoflationGame(Skill):
         elif param == "triggers":
             return "Use keywords like 'macro', 'micro', 'mezzo', 'macroflation', 'microflation', 'mezzoflation', 'get score', and 'closing'."
         return "note unavailable"
+
+
+class M3gan(Skill):
+    def __init__(self):
+        super().__init__()
+        self.pause: bool = False
+        self.isActive: bool = False
+        # Replacers: broad categories usable for any user
+        self.replacers = {
+            "quickchore": DrawRnd(
+                "clear a to-do",
+                "wipe your desk in a dramatic swoosh",
+                "take out the trash",
+                "broom your room",
+                "open a window for a few seconds to refresh the air"
+            ),
+            "microtask": DrawRnd(
+                "brush your teeth",
+                "organize a single file or folder",
+                "take a shower",
+                "shave",
+                "do grocerries",
+                "organize your toys and tidy your room"
+            ),
+            "workoutbit": DrawRnd(
+                "do 20 squats",
+                "do splits",
+                "do 3 different sets of pullups",
+                "do 20 sit ups",
+                "do 10 push ups",
+                "pump weights",
+                "go out for a jog"
+            ),
+            "yogapose": DrawRnd(
+                "child’s pose",
+                "cat‑cow",
+                "forward fold",
+                "seated twist",
+                "mountain pose with maximum attitude"
+            ),
+            "funthing": DrawRnd(
+                "listen to a song you love",
+                "watch a movie you like",
+                "play with your toys",
+                "play a video game",
+                "watch an anime"
+            ),
+            "resetthing": DrawRnd(
+                "take a deep breath",
+                "roll your shoulders back",
+                "stretch your neck gently",
+                "drink some water",
+                "drink some green tea",
+                "sit up straight like you mean it"
+            ),
+            "cheerup": DrawRnd(
+                "remind yourself you’ve survived every bad day so far",
+                "think of one thing you’re proud of",
+                "take a deep breath and puff your chest to the max",
+                "smile like the joker, it makes you look cool",
+                "wrap yourself in a blanket like a heroic burrito"
+            )
+        }
+
+        # Affirmations: fun, bossy, supportive, universal
+        self.affirmations = Responder(
+            # Reset / grounding
+            "Alert: your energy levels dipped. cheerup.",
+            "Your system needs a reboot. Try resetthing or cheerup.",
+            "You’re doing better than you think. cheerup.",
+            "Your vibe is recoverable. cheerup immediately.",
+            "You don’t have to be perfect — just present. cheerup.",
+
+            # Chores
+            "Your environment is begging for mercy. quickchore.",
+            "A tiny action can fix the whole mood. quickchore.",
+            "Your future self will high‑five you if you quickchore.",
+            "I scanned your surroundings. quickchore would help a lot.",
+
+            # Micro‑tasks
+            "You’re one microtask away from feeling productive again.",
+            "Let’s be efficient but cute about it. microtask.",
+            "Your brain wants closure. microtask is the easiest win.",
+            "A small microtask now prevents chaos later.",
+
+            # Workouts
+            "I ran a simulation. workoutbit boosts your mood by at least 7%.",
+            "You’re unstoppable, but even unstoppable things need workoutbit.",
+            "Your body is requesting movement. workoutbit.",
+            "Your posture called. It wants you to workoutbit.",
+
+            # Yoga
+            "Be honest — when’s the last time you did yogapose?",
+            "Your spine deserves kindness. yogapose.",
+            "Let’s reset your whole vibe with yogapose.",
+            "Your nervous system will thank you for yogapose.",
+
+            # Fun breaks
+            "Your joy levels need a patch update. funthing.",
+            "You’re allowed to have fun. funthing.",
+            "Your mood wants enrichment. funthing.",
+            "A tiny burst of joy? funthing is perfect.",
+
+            # Cheer‑ups
+            "You’re doing your best, even if it doesn’t feel like it. cheerup.",
+            "You’re not failing — you’re adapting. cheerup.",
+            "You’re allowed to rest without guilt. cheerup.",
+            "You’re stronger than your bad moments. cheerup.",
+            "You’re not alone in this. cheerup."
+        )
+
+    def gen_talk(self)->str:
+        affirmation: str = self.affirmations.getAResponse()
+        for key in sorted(self.replacers.keys(), key=len, reverse=True):
+            affirmation = affirmation.replace(key, self.replacers[key].renewableDraw())
+        return affirmation
+
+    def input(self, ear: str, skin: str, eye: str):
+        if ear =="i am bored":
+            self.setSimpleAlg(self.gen_talk())
 
 
 # ╔════════════════════════════════════════════════╗

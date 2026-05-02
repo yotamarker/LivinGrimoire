@@ -434,7 +434,7 @@ class DiStartup(Skill):
         self.brain = brain
 
     def input(self, ear: str, skin: str, eye: str):
-        self.algPartsFusion(3, APVerbatim("chii_start"),APSkillRemover(self.brain, self))
+        self.algPartsFusion(3, APSkillRemover(self.brain, self), APVerbatim("i am ready"))
 
 
 # ╔════════════════════════════════════════════════╗
