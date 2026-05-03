@@ -4,7 +4,7 @@
 import random
 
 from LivinGrimoirePacket.AXPython import TrgEveryNMinutes, TimeUtils, TrgParrot, TrgMinute, Responder, DrawRndDigits, \
-    LGFIFO, TrgTime, AXStandBy, AXFunnel, Prompt
+    LGFIFO, TrgTime, AXStandBy, AXFunnel, Prompt, PercentDripper
 from LivinGrimoirePacket.AlgParts import APHappy, APSleep
 from LivinGrimoirePacket.LivinGrimoire import Skill, APVerbatim
 
@@ -161,6 +161,77 @@ class DiStandBy(Skill):
         elif param == "triggers":
             return f"triggered by no input for a while"
         return "Note unavailable"
+
+
+class DiChirper(Skill):
+    # chirps like a bird: autonomously at random or as a reply to other chirps (or predefined sounds)
+    def __init__(self, chirps_per_hour: int = 3):
+        super().__init__()
+        self.dripper: PercentDripper = PercentDripper()
+
+        # default chirps per hour
+        self._chirpsPerHour = 2
+        if 60 > chirps_per_hour > 0:
+            self._chirpsPerHour = chirps_per_hour
+
+        # triggers at minute 0 to refresh chirp schedule
+        self._trgMinute: TrgMinute = TrgMinute()
+        self._trgMinute.setMinute(0)
+
+        # responder for reactive chirps
+        self._responder1: Responder = Responder("hadouken", "hadoken")
+
+        # random minute generator
+        self._draw: DrawRndDigits = DrawRndDigits()
+        self._chirpMinutes: LGFIFO = LGFIFO()
+
+        # fill draw pool with minutes 1–59
+        for i in range(1, 60):
+            self._draw.addElement(i)
+
+        # pick initial chirp minutes
+        for i in range(0, chirps_per_hour):
+            self._chirpMinutes.insert(self._draw.drawAndRemove())
+
+
+    def setChirps(self, chirp_responder: Responder) -> 'DiChirper':
+        # set sounds of chirp events
+        self._responder1 = chirp_responder
+        return self
+
+
+    # Override
+    def input(self, ear: str, skin: str, eye: str):
+        # night? do not chirp
+        if TimeUtils.partOfDay() == "night":
+            return
+
+        # reset chirp schedule every hour
+        if self._trgMinute.trigger():
+            self._chirpMinutes.clear()
+            self._draw.reset()
+            for i in range(0, self._chirpsPerHour):
+                self._chirpMinutes.insert(self._draw.drawAndRemove())
+            return
+
+        # autonomous chirp
+        now_minutes: int = TimeUtils.getMinutesAsInt()
+        if self._chirpMinutes.contains(now_minutes):
+            self._chirpMinutes.removeItem(now_minutes)
+            self.algPartsFusion(4, APHappy(self._responder1.getAResponse()))
+            return
+
+        # reactive chirp (your added logic)
+        if self._responder1.strContainsResponse(ear) and self.dripper.drip_below(50):
+            self.setSimpleAlg(self._responder1.getAResponse())
+
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "Randomly chirps several times an hour during the day. Will not occur during the night."
+        elif param == "triggers":
+            return f'Say {self._responder1.getAResponse()} to manually trigger a chirp.'
+        return "note unavailable"
 
 
 class DiYandere(Skill):
