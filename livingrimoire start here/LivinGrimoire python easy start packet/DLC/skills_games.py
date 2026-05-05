@@ -2,7 +2,7 @@ import datetime
 import random
 
 from LivinGrimoirePacket.AXPython import TimeGate, UniqueResponder, AXFunnel, EventChat, Responder, PercentDripper, \
-    OnOffSwitch, Magic8Ball, RegexUtil, DrawRnd
+    OnOffSwitch, Magic8Ball, RegexUtil, DrawRnd, Cycler
 from LivinGrimoirePacket.LivinGrimoire import Skill
 import math
 from datetime import date, datetime
@@ -469,6 +469,75 @@ class M3gan(Skill):
     def input(self, ear: str, skin: str, eye: str):
         if ear =="i am bored":
             self.setSimpleAlg(self.gen_talk())
+
+
+class DiFitnessBoxing(Skill):
+    def __init__(self):
+        super().__init__()
+        # Valid boxing combos (orthodox stance, 3-4 moves each)
+        self.valid_combos = [
+            # 3-move combos
+            "jab, cross, lead hook",
+            "jab, cross, rear uppercut",
+            "jab, lead hook, cross",
+            "cross, lead hook, cross",
+            "lead hook, cross, rear hook",
+            "jab, rear uppercut, cross",
+            "lead uppercut, cross, lead hook",
+            "jab, lead hook, rear uppercut",
+            # 4-move combos
+            "jab, cross, lead hook, cross",
+            "jab, cross, rear uppercut, lead hook",
+            "jab, lead hook, cross, lead hook",
+            "cross, lead hook, cross, lead hook",
+            "jab, lead uppercut, cross, rear hook",
+            "lead hook, cross, rear hook, lead hook",
+            "jab, cross, lead hook, rear uppercut",
+            "jab, rear hook, cross, lead hook"
+        ]
+        self.respite: Cycler = Cycler(3)
+        self.lim = 40
+        self.togo = self.lim
+        self.is_active = False
+        self.combo_counter = 0  # Track how many combos we've given
+        self.active_combo = ""
+
+    def combo_mid(self):
+        """Pick a random valid boxing combo (3 or 4 moves)"""
+        return random.choice(self.valid_combos)
+
+    def input(self, ear: str, skin: str, eye: str):
+        if ear == "train me":
+            self.is_active = True
+            self.togo = self.lim
+            self.combo_counter = 0
+            self.setSimpleAlg(f"{self.lim} boxing combos to go. Let's start!")
+            self.active_combo = self.combo_mid()
+            return
+
+        if not self.is_active:
+            return
+
+        if ear == "stop":
+            self.is_active = False
+            self.setSimpleAlg(f"Training session ended. You completed {self.combo_counter} combos.")
+            return
+
+        if self.respite.cycleCount() == 0:
+            self.togo -= 1
+            self.combo_counter += 1
+
+            if self.togo == 0:
+                self.is_active = False
+                self.setSimpleAlg(f"Training session completed! Great work on {self.combo_counter} combos!")
+            else:
+                # Output the combo
+                self.setSimpleAlg(self.active_combo)
+
+                # Announce how many to go every 10 combos (40, 30, 20, 10)
+                if self.togo % 10 == 0 and self.togo > 0:
+                    self.setSimpleAlg(f"{self.togo} combos to go! Keep it up!")
+                    self.active_combo = self.combo_mid()
 
 
 # ╔════════════════════════════════════════════════╗
