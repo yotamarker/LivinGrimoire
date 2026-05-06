@@ -476,25 +476,32 @@ class DiFitnessBoxing(Skill):
         super().__init__()
         # Valid boxing combos (orthodox stance, 3-4 moves each)
         self.valid_combos = [
-            # 3-move combos
+            # Classic boxing 3-punch combos
             "jab, cross, lead hook",
-            "jab, cross, rear uppercut",
+            "jab, cross, lead uppercut",
             "jab, lead hook, cross",
+            "jab, lead uppercut, cross",
             "cross, lead hook, cross",
-            "lead hook, cross, rear hook",
-            "jab, rear uppercut, cross",
-            "lead uppercut, cross, lead hook",
-            "jab, lead hook, rear uppercut",
-            # 4-move combos
-            "jab, cross, lead hook, cross",
-            "jab, cross, rear uppercut, lead hook",
-            "jab, lead hook, cross, lead hook",
-            "cross, lead hook, cross, lead hook",
-            "jab, lead uppercut, cross, rear hook",
-            "lead hook, cross, rear hook, lead hook",
-            "jab, cross, lead hook, rear uppercut",
-            "jab, rear hook, cross, lead hook"
+            "lead hook, cross, lead hook",
+            "jab, jab, cross",
+            "jab, lead hook, lead uppercut",
+
+            # Tyson-style inside combos
+            "lead hook, rear uppercut, lead hook",
+            "lead uppercut, lead hook, rear uppercut",
+            "jab, rear uppercut, lead hook",
+            "lead hook, lead uppercut, cross",
+            "rear uppercut, lead hook, cross",
+            "jab, lead hook to body, lead hook to head",
+            "lead uppercut to body, lead hook to head, cross",
+
+            # Peek-a-boo pressure combos
+            "jab, cross, rear uppercut",
+            "jab, lead hook to body, lead uppercut",
+            "lead hook to body, lead hook to head, cross",
+            "rear uppercut, cross, lead hook"
         ]
+
         self.respite: Cycler = Cycler(3)
         self.lim = 40
         self.togo = self.lim
