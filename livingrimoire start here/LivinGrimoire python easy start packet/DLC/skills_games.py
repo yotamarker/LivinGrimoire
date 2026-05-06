@@ -479,21 +479,16 @@ class DiFitnessBoxing(Skill):
             # Classic boxing 3-punch combos
             "jab, cross, hook",
             "jab, cross, uppercut",
-            "jab, hook, cross",
-            "jab, uppercut, cross",
             "cross, hook, cross",
             "hook, cross, hook",
             "jab, jab, cross",
 
-            # Tyson-style inside combos
             "hook, rear uppercut, hook",
             "jab, rear uppercut, hook",
-            "jab, rear uppercut, rear uppercut",
             "rear uppercut, hook, cross",
             "jab, hook to body, hook",
             "uppercut to body, hook, cross",
 
-            # Peek-a-boo pressure combos
             "jab, cross, rear uppercut",
             "jab, hook to body, uppercut",
             "hook to body, hook, cross",
@@ -507,22 +502,11 @@ class DiFitnessBoxing(Skill):
             "jab, uppercut",
             "cross, hook",
             "cross, uppercut",
-            "hook, cross",
-            "uppercut, cross",
-            "jab, jab",
-            "hook, uppercut",
-            "uppercut, hook",
 
-            # Tyson-style 2-move
             "hook to body, hook",
-            "uppercut to body, hook",
-            "hook, uppercut to body",
-            "shovel hook, uppercut",
-            "uppercut, shovel hook",
+            "hook, body uppercuts",
             "hook, rear uppercut",
-            "rear uppercut, hook",
-            "hook to body, cross",
-            "cross, hook to body"
+            "rear uppercut, hook"
         ]
 
         self.respite: Cycler = Cycler(3)
