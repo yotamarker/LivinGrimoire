@@ -477,29 +477,52 @@ class DiFitnessBoxing(Skill):
         # Valid boxing combos (orthodox stance, 3-4 moves each)
         self.valid_combos = [
             # Classic boxing 3-punch combos
-            "jab, cross, lead hook",
-            "jab, cross, lead uppercut",
-            "jab, lead hook, cross",
-            "jab, lead uppercut, cross",
-            "cross, lead hook, cross",
-            "lead hook, cross, lead hook",
+            "jab, cross, hook",
+            "jab, cross, uppercut",
+            "jab, hook, cross",
+            "jab, uppercut, cross",
+            "cross, hook, cross",
+            "hook, cross, hook",
             "jab, jab, cross",
-            "jab, lead hook, lead uppercut",
 
             # Tyson-style inside combos
-            "lead hook, rear uppercut, lead hook",
-            "lead uppercut, lead hook, rear uppercut",
-            "jab, rear uppercut, lead hook",
-            "lead hook, lead uppercut, cross",
-            "rear uppercut, lead hook, cross",
-            "jab, lead hook to body, lead hook to head",
-            "lead uppercut to body, lead hook to head, cross",
+            "hook, rear uppercut, hook",
+            "jab, rear uppercut, hook",
+            "jab, rear uppercut, rear uppercut",
+            "rear uppercut, hook, cross",
+            "jab, hook to body, hook",
+            "uppercut to body, hook, cross",
 
             # Peek-a-boo pressure combos
             "jab, cross, rear uppercut",
-            "jab, lead hook to body, lead uppercut",
-            "lead hook to body, lead hook to head, cross",
-            "rear uppercut, cross, lead hook"
+            "jab, hook to body, uppercut",
+            "hook to body, hook, cross",
+            "jab, jab, cross",
+            "jab", "cross", "jab",
+            "cross", "jab", "cross",
+
+            # --- NEW 2-MOVE COMBOS ---
+            "jab, cross",
+            "jab, hook",
+            "jab, uppercut",
+            "cross, hook",
+            "cross, uppercut",
+            "hook, cross",
+            "uppercut, cross",
+            "jab, jab",
+            "hook, uppercut",
+            "uppercut, hook",
+
+            # Tyson-style 2-move
+            "hook to body, hook",
+            "uppercut to body, hook",
+            "hook, uppercut to body",
+            "shovel hook, uppercut",
+            "uppercut, shovel hook",
+            "hook, rear uppercut",
+            "rear uppercut, hook",
+            "hook to body, cross",
+            "cross, hook to body"
         ]
 
         self.respite: Cycler = Cycler(3)
