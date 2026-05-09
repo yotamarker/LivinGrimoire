@@ -80,6 +80,8 @@ class DiSTT(Skill):
 
         # Launch background STT thread
         threading.Thread(target=self.run_stt, daemon=True).start()
+        self.skip_cycles:int = 0  # skips listen for long outputs
+        self.skip_coeffieciant = 50
 
     @staticmethod
     def cleanup():
@@ -158,14 +160,15 @@ class DiSTT(Skill):
 
     def input(self, ear: str, skin: str, eye: str):
         """ Read latest transcription from global var """
-        if len(self.brain.getLogicChobitOutput()) > 0:
+        temp = len(self.brain.getLogicChobitOutput())
+        if temp > 0:
             print("Skipping listen")
+            self.skip_cycles += temp // self.skip_coeffieciant + 1  # integer division
             return
-
-        # print("\nSpeak now")
-        DiSTT.latest_transcription = DiSTT.clean_text(DiSTT.latest_transcription)  # Clean the text before printing
-        self.setSimpleAlg(DiSTT.latest_transcription)
-        DiSTT.latest_transcription = ""  # Clear after printing
+        if self.skip_cycles > 0:
+            self.skip_cycles -= 1
+            print("Skipping listen cycle")
+            return
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":

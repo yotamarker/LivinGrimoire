@@ -146,6 +146,7 @@ class DiOneWorderV2(Skill):
     def __init__(self):
         super().__init__()
         self.set_skill_type(3)
+        self.togglers: set[str] = {"peace","cheers", "cheese", "hi", "g"}  # STT optimized so cheese instead of chi
 
         # --- Chi core ---
         self.cry = "chi"   # short syllable
@@ -172,7 +173,7 @@ class DiOneWorderV2(Skill):
             return
 
         # Toggle skill
-        if CodeParser.extract_code_number(ear) == 8 or ear == "cheese":
+        if CodeParser.extract_code_number(ear) == 8 or self.togglers.__contains__(ear):
             self.mode = not self.mode
             self.setSimpleAlg("toggled")
             return
@@ -250,8 +251,12 @@ class DiOneWorderV2(Skill):
     def generate_chi_speech(self, text):
         words = text.split()
         output = []
+        MAX_WORDS = 7
 
         for w in words:
+            # Stop if we've reached the cap
+            if len(output) >= MAX_WORDS:
+                break
 
             # long words → chii
             if len(w) > 5:

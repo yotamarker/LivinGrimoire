@@ -97,7 +97,7 @@ def talk_to_waifu(prompt, history):
     global is_working, current_reply
 
     # Build the full prompt with conversation history
-    full_prompt = "You are a caring nanny. Speak warmly and kindly.\n\n"
+    full_prompt = "talk normaly."
 
     # Add previous conversation history
     for message in history[-6:]:  # Keep last 6 messages for context
@@ -156,7 +156,7 @@ def start_waifu_conversation(user_input):
 class DiLLMOver(Skill):
     def __init__(self):
         super().__init__()
-        initial_prompt = "talk normaly."
+        initial_prompt = "be normal."
         conversation_history.append(f"System: {initial_prompt}")
 
     # Override
@@ -169,8 +169,9 @@ class DiLLMOver(Skill):
         # reply ready? say it and clear params for next usage
         if current_reply:
             user_input, reply = current_reply
-            self.setSimpleAlg(reply)
-            # self.setSimpleAlg(self.sanitize_string(reply))
+            # self.setSimpleAlg(reply)
+            str_temp = self.sanitize_string(reply)
+            self.setSimpleAlg(self.snip_llm(str_temp, 300))
             # Add both user input and bot response to history
             conversation_history.append(f"Human: {user_input}")
             conversation_history.append(f"{reply}")
@@ -187,16 +188,29 @@ class DiLLMOver(Skill):
             start_waifu_conversation(ear.rpartition(' ')[0])
 
     @staticmethod
-    def sanitize_string(text: str) -> str:
-        """
-        Cleans a string for TTS use:
-        - Removes special characters (punctuation, symbols, emojis)
-        - Keeps letters, numbers, and spaces
-        - Converts to lowercase
-        """
-        # Remove everything except letters, numbers, and spaces
-        cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', text)
-        return cleaned.lower()
+    def sanitize_string(s: str) -> str:
+        return s.replace('^', '').replace('*', '')
+
+    @staticmethod
+    def snip_llm(text: str, n: int) -> str:
+
+        if len(text) <= n:
+            return text
+
+        cut = text[:n]
+
+        # If next char is a space, it's a clean boundary
+        if n < len(text) and text[n] == " ":
+            return cut.rstrip() + " uwu"
+
+        # Roll back to last space
+        last_space = cut.rfind(" ")
+        if last_space == -1:
+            # First word too long → return truncated
+            return cut.rstrip() + " uwu"
+
+        return cut[:last_space].rstrip() + " uwu"
+
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
