@@ -16,6 +16,8 @@ class AlgPart:
     def __init__(self):
         # set True to stop the entire running active Algorithm
         self.algKillSwitch: bool = False
+        # can be used for animations/robotic commands
+        self._custom_name: str = self.__class__.__name__
 
     def action(self, ear: str, skin: str, eye: str) -> str:
         """Returns action string"""
@@ -25,9 +27,12 @@ class AlgPart:
         """Has finished ?"""
         pass
 
+    def setName(self, name: str):
+        self._custom_name = name
+
     def myName(self) -> str:
         """Returns the class name"""
-        return self.__class__.__name__
+        return self._custom_name
 
 
 class APVerbatim(AlgPart):
