@@ -50,7 +50,7 @@ class Tokenizer:
 class PopulatorFunc:
     # super class of populator functions used by the RailPunk chatbot/ecosystem
     def __init__(self):
-        self.regex = ""
+        self.regex = __class__.__name__
 
     def populate(self, railbot: RailBot, str1: str):
         _ = self
@@ -334,6 +334,39 @@ class EmailPopulator(PopulatorFunc):
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                           PATTERN                            ║
 # ╚══════════════════════════════════════════════════════════════╝
+
+
+class KeyVal(PopulatorFunc):
+    def __init__(self):
+        super().__init__()
+
+    @staticmethod
+    def split_key_value(s: str):
+        """Splits a string like 'str1;str2' into two variables.
+        Returns (v1, v2) if valid, otherwise returns (None, None)."""
+
+        if s.count(';') == 1 and not s.startswith(';') and not s.endswith(';'):
+            v1, v2 = s.split(';')
+            return v1, v2
+        return None, None
+    @staticmethod
+    def matches_pattern(s: str) -> bool:
+        if not s or s[0] == ';' or s[-1] == ';':
+            return False
+
+        found = False
+        for i, ch in enumerate(s):
+            if ch == ';':
+                if found:  # second semicolon
+                    return False
+                found = True
+        return found
+
+    @override
+    def populate(self, railbot: RailBot, str1: str):
+        if self.matches_pattern(str1):
+            k, v = self.split_key_value(str1)
+            railbot.learn_key_value(k, v)
 
 
 # ╔══════════════════════════════════════════════════════════════╗
