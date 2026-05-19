@@ -1861,7 +1861,7 @@ class EveningGate:
 
 
 class NSilenceCyclesAfterStr:
-    # ret true is input is "" N times in a row after input:srt was not empty
+    # ret true if input is "" N times in a row after input:srt was not empty
     # used for detecting pauses.
     def __init__(self, seconds_per_think_cycle:int, idle_minutes:int):
         self.N = idle_minutes * 60 // seconds_per_think_cycle
@@ -3769,7 +3769,7 @@ class PriorityQueueVer0(object):
         self.queue.append(data)
 
     # for popping an element based on Priority
-    def poll(self) -> object:
+    def poll(self):
         if not len(self.queue) == 0:
             result0 = self.queue[0]
             del self.queue[0]
