@@ -1,220 +1,198 @@
 import requests
 import json
-import threading
 import re
+import threading
 
 from LivinGrimoirePacket.LivinGrimoire import Skill
 
+# ─── Ollama Setup Notes ────────────────────────────────────────────────────────
+# Install: https://ollama.com/download
+# Pull a model:  ollama pull gemma3:12b
+# List models:   ollama list
+# Delete model:  ollama rm <model>
+# ──────────────────────────────────────────────────────────────────────────────
 
-'''
-Step 1: Install Ollama (One-Time Setup)
-Ollama lets you run LLMs locally with ease.
+# ─── Tuneable Constants ────────────────────────────────────────────────────────
+OLLAMA_URL       = "http://localhost:11434/api/generate"
+MODEL_NAME       = "gemma3:4b"
+INITIAL_PROMPT   = ("you are a normal girl")
+MAX_HISTORY      = 20        # max messages kept in memory (must be even)
+CONTEXT_WINDOW   = 6         # how many recent messages fed to the model
+MAX_REPLY_CHARS  = 300       # character limit before snipping
+OVERFLOW_SUFFIX  = "..."     # appended when reply is snipped
 
+# Sentence-opening phrases that are pure preamble — strip them
+_PREAMBLE_PATTERNS = [
+    r"^(well,?\s+)",
+    r"^(oh,?\s+)",
+    r"^(so,?\s+)",
+    r"^(okay,?\s+)",
+    r"^(ok,?\s+)",
+    r"^(sure,?\s+)",
+    r"^(alright,?\s+)",
+    r"^(of course[,!]?\s+)",
+    r"^(certainly[,!]?\s+)",
+    r"^(absolutely[,!]?\s+)",
+    r"^(great question[,!]?\s+)",
+    r"^(good question[,!]?\s+)",
+    r"^(interesting question[,!]?\s+)",
+    r"^(that('s| is) (a )?(great|good|interesting|valid)[^.!?]*[.!?]\s*)",
+    r"^(let me [a-z ]+[,.]?\s+)",
+    r"^(i('d| would) (be happy|love) to [a-z ]+[,.]?\s+)",
+]
 
-Go to oLLaMa’s download page: https://ollama.com/download
-Download the installer for your OS (Windows/macOS)
-Install and open the Ollama app
-In the Ollama terminal, pull a model: ollama pull llama3
-'''
-
-'''
-manage Ollama(its a program that runs the LLMs on your machine) models from the cmd:
-*pull a model:*
-ollama pull openhermes
-or:
-ollama pull gemma13b
-*List installed models:*
-ollama list
-*delete a model:*
-ollama rm gemma27b
-'''
-
-'''
-These are the moddable vars:
-
-model: which LLM to use (e.g. "llama3", "mistral", etc.)
-full version Json:
-json={
-    "model": "llama3",
-    "prompt": full_prompt,
-    "options": {
-        "temperature": 0.7,
-        "num_predict": 100,
-        "top_k": 40,
-        "top_p": 0.9,
-        "repeat_penalty": 1.1,
-        "seed": 42
-    }
+LLM_OPTIONS = {
+    "num_predict":    300,
+    "temperature":    0.6,
+    "top_k":          40,
+    "top_p":          0.9,
+    "repeat_penalty": 1.2,
 }
+# ──────────────────────────────────────────────────────────────────────────────
 
-Moddable variables with clearer descriptions:
-
-temperature:
-    Controls how random or creative the model's output is.
-    Lower values (e.g. 0.2) = more predictable and serious.
-    Higher values (e.g. 0.9) = more playful, imaginative replies.
-
-num_predict:
-    Maximum number of tokens (words/parts of words) the model can generate in one reply.
-    Lower = shorter, faster responses. Higher = longer, detailed replies.
-
-top_k:
-    Limits the model to choosing from the top K most likely next tokens.
-    Lower values = more focused and deterministic.
-    Higher values = more variety and surprise.
-
-top_p:
-    Nucleus sampling: chooses from tokens that make up the top P probability mass.
-    Lower values (e.g. 0.5) = tighter control. Higher (e.g. 0.9) = more diverse output.
-
-repeat_penalty:
-    Penalizes repeated phrases or words in the output.
-    Values >1.0 discourage repetition (e.g. 1.2 = less echoing).
-
-seed:
-    Sets a fixed random seed for consistent output across runs.
-    Use for debugging or repeatable results.
-
-initial_prompt:
-    Defines the bot’s personality, role, and behavior style.
-    Example: "You're Pomni, a loving waifubot who protects and comforts."
-
-history[-N:]:
-    Controls how many past messages are included in the prompt.
-    Fewer = faster, less context. More = deeper memory and continuity.
-'''
+_history: list[str] = [f"System: {INITIAL_PROMPT}"]
+_lock            = threading.Lock()
+_is_working      = False
+_pending_reply: tuple[str, str] | None = None   # (user_input, bot_reply)
 
 
-# Initialize conversation history
-conversation_history = []
-
-# Global variables for async operation
-is_working = False
-current_reply = ""
-
-
-def talk_to_waifu(prompt, history):
-    global is_working, current_reply
-
-    # Build the full prompt with conversation history
-    full_prompt = "talk normaly."
-
-    # Add previous conversation history
-    for message in history[-6:]:  # Keep last 6 messages for context
-        full_prompt += f"{message}\n"
-
-    # Add current prompt
-    full_prompt += f"Human: {prompt}\n:"
-
-    # response = requests.post(
-    #     "http://localhost:11434/api/generate",
-    #     json={"model": "llama3", "prompt": full_prompt}
-    # )
-    response = requests.post(
-        "http://localhost:11434/api/generate",
-        json={
-            "model": "gemma3:12b",
-            "prompt": full_prompt,
-            "options": {
-                "num_predict": 300,
-                "temperature": 0.6,
-                "top_k": 40,
-                "top_p": 0.9,
-                "repeat_penalty": 1.2
-            }
-        }
-        # stream=True is removed. Default is False.
-    )
-
-    full_reply = ""
-    for line in response.iter_lines():
-        if line:
-            try:
-                chunk = line.decode("utf-8")
-                data = json.loads(chunk)
-                full_reply += data.get("response", "")
-            except Exception as e:
-                print("Error decoding chunk:", e)
-
-    current_reply = (prompt, full_reply)  # Store both input and reply
-    is_working = False
-    return full_reply
+def _strip_preamble(text: str) -> str:
+    """Repeatedly remove known filler openers until the real reply starts."""
+    t = text.strip()
+    changed = True
+    while changed:
+        changed = False
+        for pattern in _PREAMBLE_PATTERNS:
+            new_t = re.sub(pattern, "", t, flags=re.IGNORECASE).lstrip()
+            if new_t != t:
+                t = new_t
+                changed = True
+    # Capitalise first letter in case stripping lowercased the start
+    return t[:1].upper() + t[1:] if t else text
 
 
-def start_waifu_conversation(user_input):
-    """Start the waifu conversation in a daemon thread"""
-    global is_working
-    is_working = True
-    thread = threading.Thread(
-        target=talk_to_waifu,
-        args=(user_input, conversation_history),
-        daemon=True
-    )
-    thread.start()
+def _build_prompt(user_input: str) -> str:
+    with _lock:
+        recent = _history[-CONTEXT_WINDOW:]
+    return "\n".join(recent) + f"\nHuman: {user_input}\n:"
 
+
+def _worker(user_input: str) -> None:
+    global _is_working, _pending_reply
+    try:
+        prompt = _build_prompt(user_input)
+        response = requests.post(
+            OLLAMA_URL,
+            json={"model": MODEL_NAME, "prompt": prompt, "options": LLM_OPTIONS},
+            timeout=120,
+        )
+        response.raise_for_status()
+
+        full_reply = ""
+        for line in response.iter_lines():
+            if line:
+                try:
+                    data = json.loads(line.decode("utf-8"))
+                    full_reply += data.get("response", "")
+                except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                    print(f"[DiLLMOver] chunk decode error: {e}")
+
+        _pending_reply = (user_input, full_reply)
+    except requests.RequestException as e:
+        print(f"[DiLLMOver] request error: {e}")
+        _pending_reply = (user_input, "Sorry, I couldn't reach the model.")
+    finally:
+        _is_working = False
+
+
+def _start_query(user_input: str) -> None:
+    global _is_working
+    _is_working = True
+    threading.Thread(target=_worker, args=(user_input,), daemon=True).start()
+
+
+def _commit_to_history(user_input: str, reply: str) -> None:
+    global _history
+    with _lock:
+        _history.append(f"Human: {user_input}")
+        _history.append(reply)
+        if len(_history) > MAX_HISTORY:
+            # always keep the system message at index 0
+            _history = [_history[0]] + _history[-(MAX_HISTORY - 1):]
+
+
+# ─── Skill Class ──────────────────────────────────────────────────────────────
 
 class DiLLMOver(Skill):
+    """
+    Local-LLM chat skill powered by Ollama.
+
+    Voice commands
+    ──────────────
+    "lets talk"  → enable the skill
+    "shut up"    → disable the skill
+    anything else (while on) → forwarded to the LLM
+    """
+
     def __init__(self):
         super().__init__()
-        initial_prompt = "be normal."
-        conversation_history.append(f"System: {initial_prompt}")
+        self._on = False
 
-    # Override
-    def input(self, ear: str, skin: str, eye: str):
-        global current_reply
-        global conversation_history
-        #  thinking? return
-        if is_working:
-            return
-        # reply ready? say it and clear params for next usage
-        if current_reply:
-            user_input, reply = current_reply
-            # self.setSimpleAlg(reply)
-            str_temp = self.sanitize_string(reply)
-            self.setSimpleAlg(self.snip_llm(str_temp, 300))
-            # Add both user input and bot response to history
-            conversation_history.append(f"Human: {user_input}")
-            conversation_history.append(f"{reply}")
-
-            # Optional: Limit history size to prevent it from growing too large
-            if len(conversation_history) > 20:  # Keep last 20 messages
-                conversation_history = conversation_history[-20:]
-
-            current_reply = ""
-            return
-
-        # Clean wrapper function call
-        if ear.endswith("over"):
-            start_waifu_conversation(ear.rpartition(' ')[0])
+    # ── helpers ───────────────────────────────────────────────────────────────
 
     @staticmethod
-    def sanitize_string(s: str) -> str:
-        return s.replace('^', '').replace('*', '')
+    def _sanitize(text: str) -> str:
+        return text.replace("^", "").replace("*", "")
 
     @staticmethod
-    def snip_llm(text: str, n: int) -> str:
-
-        if len(text) <= n:
+    def _snip(text: str, limit: int) -> str:
+        """Trim to *limit* chars on a word boundary, append OVERFLOW_SUFFIX."""
+        if len(text) <= limit:
             return text
+        cut = text[:limit]
+        boundary = cut.rfind(" ")
+        trimmed = cut[:boundary] if boundary != -1 else cut
+        return trimmed.rstrip() + OVERFLOW_SUFFIX
 
-        cut = text[:n]
+    # ── Skill interface ───────────────────────────────────────────────────────
 
-        # If next char is a space, it's a clean boundary
-        if n < len(text) and text[n] == " ":
-            return cut.rstrip() + " uwu"
+    def input(self, ear: str, skin: str, eye: str):
+        global _pending_reply
 
-        # Roll back to last space
-        last_space = cut.rfind(" ")
-        if last_space == -1:
-            # First word too long → return truncated
-            return cut.rstrip() + " uwu"
+        # ① Still generating – wait silently
+        if _is_working:
+            return
 
-        return cut[:last_space].rstrip() + " uwu"
+        # ② Reply ready – surface it, then stop (don't chain a new query)
+        if _pending_reply is not None:
+            user_input, raw_reply = _pending_reply
+            _pending_reply = None
 
+            clean = self._sanitize(_strip_preamble(raw_reply))
+            self.setSimpleAlg(self._snip(clean, MAX_REPLY_CHARS))
+            _commit_to_history(user_input, raw_reply)
+            return
+
+        # ③ Activation / deactivation commands
+        if ear == "lets talk":
+            if not self._on:
+                self._on = True
+                self.setSimpleAlg("engaging local LLM")
+            return
+
+        if ear == "shut up":
+            if self._on:
+                self._on = False
+                self.setSimpleAlg("shutting up")
+            return
+
+        # ④ Forward non-empty input to the LLM while active
+        if self._on and ear.strip():
+            _start_query(ear.strip())
 
     def skillNotes(self, param: str) -> str:
-        if param == "notes":
-            return "lacalized large language model skill"
-        elif param == "triggers":
-            return "end your input with the word over"
-        return "note unavalible"
+        notes = {
+            "notes":    "Localised large-language-model chat skill (Ollama backend).",
+            "triggers": 'Say "lets talk" to activate, then speak freely. Say "shut up" to deactivate.',
+        }
+        return notes.get(param, "Note unavailable.")

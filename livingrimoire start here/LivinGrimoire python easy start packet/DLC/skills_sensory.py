@@ -4,7 +4,10 @@ import numpy as np
 import re
 import atexit
 import threading
+import time
 from queue import Queue
+
+import sys
 
 from LivinGrimoirePacket.LivinGrimoire import Brain, Skill
 
@@ -55,10 +58,25 @@ class DiSTT(Skill):
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 16000
-    MIN_ACTIVE_SECONDS = 0.5
+    MIN_ACTIVE_SECONDS = 0.3
+
+    # How long to stay deaf after pygame goes quiet.
+    # Covers the gap between audio ending and mixer fully releasing.
+    COOLDOWN_BUFFER_SECONDS = 1.0
+
     exit_event = threading.Event()
+
+    # --- mute state ---
+    # is_muted: set proactively when LLM output appears (before TTS starts).
+    # Cleared only when BOTH conditions are true:
+    #   1. LLM output is empty again
+    #   2. pygame mixer is no longer busy
+    #   3. COOLDOWN_BUFFER_SECONDS have elapsed since mixer went quiet
+    is_muted = threading.Event()
+    audio_finished_time = 0.0   # when pygame last went quiet (0 = still playing)
+
     # model = whisper.load_model("base")
-    model = whisper.load_model("large", device="cpu")
+    model = whisper.load_model("large", device="cuda")
     p = pyaudio.PyAudio()
     stream = p.open(
         format=FORMAT,
@@ -78,10 +96,7 @@ class DiSTT(Skill):
         atexit.register(DiSTT.cleanup)
         DiSTT.initSTT()
 
-        # Launch background STT thread
         threading.Thread(target=self.run_stt, daemon=True).start()
-        self.skip_cycles:int = 0  # skips listen for long outputs
-        self.skip_coeffieciant = 50
 
     @staticmethod
     def cleanup():
@@ -104,20 +119,16 @@ class DiSTT(Skill):
 
     @staticmethod
     def clean_text(text):
-        # Convert to lowercase
         text = text.lower()
-        # Remove special characters except alphanumeric and spaces
         text = re.sub(r'[^a-z0-9\s]', '', text)
-        # Remove extra spaces
         text = re.sub(r'\s+', ' ', text).strip()
-
         return text
 
     @staticmethod
     def record_chunk():
         frames = []
         silent_frames = 0
-        max_silent_frames = int(DiSTT.RATE / DiSTT.CHUNK * 1.0)  # recognition inits after 1 sec of shut up time
+        max_silent_frames = int(DiSTT.RATE / DiSTT.CHUNK * 0.5)
 
         while not DiSTT.exit_event.is_set():
             data = DiSTT.stream.read(DiSTT.CHUNK, exception_on_overflow=False)
@@ -149,26 +160,56 @@ class DiSTT(Skill):
 
     @staticmethod
     def run_stt():
-        """ Continuous background STT processing """
+        """Continuous background STT processing"""
         while not DiSTT.exit_event.is_set():
             audio_data = DiSTT.record_chunk()
             if audio_data:
                 text = DiSTT.transcribe_chunk(audio_data)
-                DiSTT.latest_transcription = text  # Store latest transcription
-                if text.strip():
-                    print(f"> {text}")   # LIVE CONSOLE OUTPUT
+                if DiSTT.is_muted.is_set():
+                    if text.strip():
+                        print(f"[discarded | muted] {text}")
+                else:
+                    DiSTT.latest_transcription = text
+                    if text.strip():
+                        print(f"> {text}")
 
     def input(self, ear: str, skin: str, eye: str):
-        """ Read latest transcription from global var """
-        temp = len(self.brain.getLogicChobitOutput())
-        if temp > 0:
-            print("Skipping listen")
-            self.skip_cycles += temp // self.skip_coeffieciant + 1  # integer division
+        """Read latest transcription from global var"""
+        llm_has_output = len(self.brain.getLogicChobitOutput()) > 0
+        _pygame = sys.modules.get("pygame")
+        mixer_busy = _pygame.mixer.get_busy() if _pygame else False
+
+        # Mute proactively the moment LLM produces output
+        if llm_has_output or mixer_busy:
+            if not DiSTT.is_muted.is_set():
+                print("Muting mic")
+                DiSTT.is_muted.set()
+            # Reset the countdown — something is still active
+            DiSTT.audio_finished_time = 0.0
+            DiSTT.latest_transcription = ""
             return
-        if self.skip_cycles > 0:
-            self.skip_cycles -= 1
-            print("Skipping listen cycle")
-            return
+
+        # LLM is silent AND mixer is silent
+        if DiSTT.is_muted.is_set():
+            if DiSTT.audio_finished_time == 0.0:
+                # First tick where everything is quiet — start the countdown
+                DiSTT.audio_finished_time = time.time()
+                DiSTT.latest_transcription = ""
+                return
+            elapsed = time.time() - DiSTT.audio_finished_time
+            if elapsed < DiSTT.COOLDOWN_BUFFER_SECONDS:
+                DiSTT.latest_transcription = ""
+                return
+            # Countdown complete — safe to unmute
+            print("Unmuting mic")
+            DiSTT.is_muted.clear()
+            DiSTT.audio_finished_time = 0.0
+            DiSTT.latest_transcription = ""
+            return  # skip this cycle; accept input next cycle
+
+        DiSTT.latest_transcription = DiSTT.clean_text(DiSTT.latest_transcription)
+        self.setSimpleAlg(DiSTT.latest_transcription)
+        DiSTT.latest_transcription = ""
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
