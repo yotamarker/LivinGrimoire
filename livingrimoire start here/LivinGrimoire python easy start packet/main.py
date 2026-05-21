@@ -8,7 +8,8 @@ from pathlib import Path
 
 from LivinGrimoirePacket.LivinGrimoire import Brain, DiHelloWorld, DiSysOut
 
-TICK_INTERVAL = 2  # seconds
+TICK_INTERVAL = 1  # seconds
+tick_config = {"interval": TICK_INTERVAL}  # accessible globally
 
 
 def get_resource_path(relative_path):
@@ -71,14 +72,13 @@ def tick_loop():
     while True:
         now = time.monotonic()
         if now >= next_tick:
-            brain_queue.put("")  # background tick
-            next_tick += TICK_INTERVAL
-        time.sleep(0.01)  # prevent high CPU usage
+            brain_queue.put("")
+            next_tick = now + tick_config["interval"]  # reads live
+        time.sleep(0.01)
 
 
 if __name__ == "__main__":
     b1 = Brain()
-    b1.chained(DiHelloWorld()).chained(DiSysOut())  # del later
     brain_queue = Queue()
 
     call_add_DLC_skills(b1)
