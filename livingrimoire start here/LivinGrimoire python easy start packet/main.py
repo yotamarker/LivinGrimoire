@@ -6,7 +6,7 @@ import sys
 import importlib.util
 from pathlib import Path
 
-from LivinGrimoirePacket.LivinGrimoire import Brain, DiHelloWorld, DiSysOut
+from LivinGrimoirePacket.LivinGrimoire import Brain
 
 TICK_INTERVAL = 1  # seconds
 tick_config = {"interval": TICK_INTERVAL}  # accessible globally
