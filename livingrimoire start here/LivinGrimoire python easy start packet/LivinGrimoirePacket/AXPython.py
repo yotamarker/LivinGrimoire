@@ -4073,3 +4073,46 @@ class Sarcophagus:
     def clear_items(self):
         """Clear all items from the shielded set."""
         self._shielded_items.clear()
+
+
+# new modules 230526
+
+class SimpleHP:
+    # hp trigger to make conversation but not yap nonstop
+    def __init__(self, max_convos=10, convo_lim=10):
+        self.max_convos = max_convos
+        self.total_convos = max_convos
+        self.convo_lim:int =convo_lim
+        self.convo_hp = 0
+        self.reseter: OncePerDayGateV0 = OncePerDayGateV0()
+        self.started_listening = False
+        self.stopped_listening = False
+
+    def triggered(self, ear:str)->bool:
+        if self.reseter.check(len(ear)==0):
+            self.total_convos = self.max_convos
+            return False
+
+        if ear == "hey":
+            if self.total_convos > 0:
+                self.convo_hp = self.convo_lim
+                self.total_convos -= 1
+                self.started_listening = True
+                return False
+        if ear == "shut up" or ear == "stop" or ear == "bye":
+            self.convo_hp = 0
+            self.stopped_listening = True
+            return False
+        if self.convo_hp > 0 and len(ear)>0:
+            self.convo_hp -= 1
+            return True
+        return False
+
+    def started_to_listen(self):
+        result = self.started_listening
+        self.started_listening = False
+        return result
+    def stopped(self):
+        result = self.stopped_listening
+        self.stopped_listening = False
+        return result

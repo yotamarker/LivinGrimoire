@@ -3,10 +3,11 @@ import re
 
 from LivinGrimoirePacket.AXPython import RailBot, AXContextCmd, QuestionChecker, PhraseInflector, KeyWords, CodeParser, \
     PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ, TrgEveryNMinutes, DBAntiGlitch, TrgHP, \
-    NSilenceCyclesAfterStr, Sarcophagus, SimilarityScorer
+    NSilenceCyclesAfterStr, Sarcophagus, SimilarityScorer, SimpleHP, EveningGate
 from LivinGrimoirePacket.AlgParts import APMad
 from LivinGrimoirePacket.LivinGrimoire import Skill
-from LivinGrimoirePacket.RailBotExtensions import RailPunk, PopulatorFunc
+from LivinGrimoirePacket.RailBotExtensions import RailPunk, PopulatorFunc, KeyVal, GoodFor, XYPatternLearner, \
+    Walkthrough, Snippet, Composition, NoNos
 
 
 # ╔════════════════════════════════════════════════╗
@@ -19,10 +20,11 @@ class DiRailPunk(Skill):
     def __init__(self):
         super().__init__()
         self.set_skill_type(3)  # backgroundable skill
-        self.trg: TrgHP = TrgHP()
-        self.lim = 2
-        self.r1: Responder = Responder("wink", "heart", "okie", "uwu", "nyaa", "teehee")
         self.chatbot: RailPunk = RailPunk()
+        self.chatbot.add_populator(KeyVal())  # key;value will be fed in directly with that pattern
+        self.chatbot.add_populator(GoodFor())
+        self.chatbot.add_populator(XYPatternLearner())
+        self.add_populators(Walkthrough(), Snippet(), Composition(), NoNos())
         self.chatbot.enable_db_wrapper()  # enables railpunk to save load
         self.idler: NSilenceCyclesAfterStr = NSilenceCyclesAfterStr(3,5)
         self.chatbot.set_context("stand by")
@@ -33,6 +35,9 @@ class DiRailPunk(Skill):
         # output filter
         self.filter: Sarcophagus = Sarcophagus()
         self.filter_clear:set[str] = {"clear filter", "clear word filter", "clear sarcophagus"}
+        self.HP = SimpleHP()
+
+
 
     def add_output_filter(self, item: str):
         self.filter.add_item(item)
@@ -63,28 +68,35 @@ class DiRailPunk(Skill):
             self.chatbot.set_context("stand by")
             self.focus = False
             return
-        hp_remains = self.trg.trigger(ear)
-        # monolog
-        if hp_remains and ear in self.monolog:
-            temp = self.chatbot.loadable_monolog(self.getKokoro())
-            self.setSimpleAlg(PhraseInflector.inflect_phrase(temp))
-            return
-        # dialog
-        if hp_remains:
-            if not self.focus:
-                reply = self.chatbot.loadable_dialog(ear, self.getKokoro())
-            else:
-                reply = self.chatbot.loadable_latest_dialog(ear, self.getKokoro())
+        str1 = ear.strip()
+        if self.HP.triggered(str1):
+            reply = ""  # noqa
+            if ear in self.monolog:
+                reply = self.chatbot.loadable_monolog(self.getKokoro())
+                reply = PhraseInflector.inflect_phrase(reply)
+                if len(reply) > 0:
+                    self.setSimpleAlg(reply)
+                return
+            else:  # dialog
+                if not self.focus:
+                    reply = self.chatbot.loadable_dialog(ear, self.getKokoro())
+                else:
+                    reply = self.chatbot.loadable_latest_dialog(ear, self.getKokoro())
             # filter output
             if self.filter.shield(reply):
                 self.chatbot.learn(ear)
                 return
-            if len(reply) > 0:
-                if self.trg.get_hp() > self.lim:
-                    self.setSimpleAlg(PhraseInflector.inflect_phrase(reply))
-                else:
-                    self.setSimpleAlg(f"{PhraseInflector.inflect_phrase(reply)} {self.r1.getAResponse()}")
-        self.chatbot.learn(ear)
+            if len(reply)>0:
+                reply = PhraseInflector.inflect_phrase(reply)
+                self.setSimpleAlg(reply)
+        if self.HP.started_to_listen():
+            self.setSimpleAlg("listening")
+            return
+        if self.HP.stopped():
+            self.setSimpleAlg("conversation stopped")
+            return
+        if not ear in self.monolog:
+            self.chatbot.learn(ear)
 
 
 class DiOneWorder(Skill):
@@ -142,46 +154,58 @@ class DiOneWorder(Skill):
         return "talks like a cute pet"
 
 
-class DiOneWorderV2(Skill):
+class DiChobitSpeech(Skill):
     def __init__(self):
         super().__init__()
         self.set_skill_type(3)
-        self.togglers: set[str] = {"peace","cheers", "cheese", "hi", "g"}  # STT optimized so cheese instead of chi
+        self.togglers: set[str] = {"g"}
 
         # --- Chi core ---
-        self.cry = "chi"   # short syllable
+        self.cry = "chi"
 
         # --- Learning system ---
-        self.word_counts = {}        # tracks how many times each word was heard
-        self.learned_words = []      # actual vocabulary
-        self.max_words = 5           # Chi can only remember 5 words
-        self.learn_threshold = 7     # how many repeats needed to learn a word
+        self.word_counts = {}
+        self.learned_words = []
+        self.max_words = 5
+        self.learn_threshold = 7
 
         # --- Behavior control ---
         self.mode = False
         self.drip = PercentDripper()
         self.drip.setLimit(90)
-        # excited output trig
         self.excited_trg: set[str] = {"yeah", "yes", "oh yeah", "yep", "yeap"}
         self.prev: str = ""
+
+        # --- Auto schedule ---
+        self._auto_triggered: bool = False  # tracks if current mode was set by schedule
+        self.evening_trig = EveningGate(20)
+        self.evening_off = EveningGate(21)
+
+    def manifest(self):
+        # if turend on between 20->21
+        self.evening_trig.trigger()
+        self.evening_off.trigger()
 
     # ----------------------------------------------------
     # INPUT HANDLER
     # ----------------------------------------------------
     def input(self, ear, skin, eye):
+
         if not ear:
             return
 
-        # Toggle skill
-        if CodeParser.extract_code_number(ear) == 8 or self.togglers.__contains__(ear):
+        # Toggle skill manually
+        if not self.mode and (CodeParser.extract_code_number(ear) == 8 or ear in self.togglers or self.evening_trig.trigger()):
             self.mode = not self.mode
+            self._auto_triggered = False  # manual override clears auto flag
             self.setSimpleAlg("toggled")
             return
 
         # Stop skill
-        if self.mode and ear == "stop":
+        if self.mode and (ear == "stop" or self.evening_off.trigger()):
             self.mode = False
-            self.setSimpleAlg("ok")
+            self._auto_triggered = False
+            self.setSimpleAlg("cute chobit speech is off")
             return
 
         # Learning system
@@ -189,7 +213,7 @@ class DiOneWorderV2(Skill):
         if not self.mode:
             return
 
-        if self.excited_trg.__contains__(ear):
+        if ear in self.excited_trg:
             self.setSimpleAlg("chii_excited")
             return
 
@@ -210,7 +234,6 @@ class DiOneWorderV2(Skill):
             self.setSimpleAlg("chii_curious")
             return
 
-        # Chi speech mode
         if self.drip.drip():
             self.setSimpleAlg(self.generate_chi_speech(ear))
 
@@ -219,30 +242,19 @@ class DiOneWorderV2(Skill):
     # ----------------------------------------------------
     def process_learning(self, text):
         words = text.split()
-
         for w in words:
             w = w.lower()
-
-            # ignore tiny words
             if len(w) < 3:
                 continue
-
-            # count occurrences
             self.word_counts[w] = self.word_counts.get(w, 0) + 1
-
-            # learn if threshold reached
             if self.word_counts[w] == self.learn_threshold:
                 self.learn_word(w)
 
     def learn_word(self, w):
-        # avoid duplicates
         if w in self.learned_words or w in self.excited_trg:
             return
-
-        # forget oldest if full
         if len(self.learned_words) >= self.max_words:
             self.learned_words.pop(0)
-
         self.learned_words.append(w)
 
     # ----------------------------------------------------
@@ -252,24 +264,14 @@ class DiOneWorderV2(Skill):
         words = text.split()
         output = []
         MAX_WORDS = 7
-
         for w in words:
-            # Stop if we've reached the cap
             if len(output) >= MAX_WORDS:
                 break
-
-            # long words → chii
-            if len(w) > 5:
-                syllable = "chii"
-            else:
-                syllable = self.cry
-
-            # 80% chi/chii, 20% learned word
+            syllable = "chii" if len(w) > 5 else self.cry
             if self.learned_words and random.random() < 0.2:
                 output.append(random.choice(self.learned_words))
             else:
                 output.append(syllable)
-
         return " ".join(output)
 
     # ----------------------------------------------------
@@ -277,7 +279,7 @@ class DiOneWorderV2(Skill):
     # ----------------------------------------------------
     def skillNotes(self, param: str) -> str:
         if param == "triggers":
-            return "say code 8 or 'cheese' to toggle, 'stop' to turn off"
+            return "say code 8 or 'g' to toggle, 'stop' to turn off. auto-on at 8pm, auto-off at 8:30pm."
         return "Chi-style speech with vocabulary learning"
 
 

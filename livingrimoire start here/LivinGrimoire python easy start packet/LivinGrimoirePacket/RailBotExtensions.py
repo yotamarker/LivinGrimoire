@@ -369,6 +369,243 @@ class KeyVal(PopulatorFunc):
             railbot.learn_key_value(k, v)
 
 
+class GoodFor(PopulatorFunc):
+    def __init__(self):
+        super().__init__()
+        self.regex = "good for"
+
+    def populate(self, railbot: RailBot, str1: str):
+        if not str1:
+            return
+        match = re.match(r"^(.+?)\s+is a good\s+(.+)$", str1, re.IGNORECASE)
+        if match:
+            x = match.group(1).strip()
+            y = match.group(2).strip()
+            railbot.learn_key_value(f"recommend a {y}", x)
+
+
+class XYPatternLearner(PopulatorFunc):
+    def __init__(self, max_patterns: int = 3):
+        super().__init__()
+        self.regex = "xy pattern learner"
+        self._patterns: list[dict] = []
+        self._max_patterns = max_patterns
+
+    # -----------------------------
+    # Specificity scoring
+    # -----------------------------
+    @staticmethod
+    def _regex_specificity_score(pattern: re.Pattern) -> int:
+        """Score compiled regex by specificity."""
+        pat = pattern.pattern
+
+        s = len(pat) * 2
+        s -= pat.count('.') * 10
+        s -= pat.count('*') * 8
+        s -= pat.count('+') * 8
+        s -= pat.count('?') * 3
+        s += len(re.findall(r'[a-zA-Z0-9]', pat)) * 3
+
+        if pat.startswith('^'):
+            s += 20
+        if pat.endswith('$'):
+            s += 20
+
+        return s
+
+    def _sort_patterns(self):
+        """Sort patterns from most specific to least specific."""
+        self._patterns.sort(
+            key=lambda p: self._regex_specificity_score(p["trigger_re"]),
+            reverse=True
+        )
+
+    # -----------------------------
+    # Template → regex
+    # -----------------------------
+    @staticmethod
+    def _tmpl_to_regex(tmpl: str) -> re.Pattern | None:
+        if "x" not in tmpl and "y" not in tmpl:
+            return None
+        escaped = re.escape(tmpl)
+        escaped = escaped.replace(r"x", r"(?P<x>.+?)")
+        escaped = escaped.replace(r"y", r"(?P<y>.+?)")
+        return re.compile(f"^{escaped}$", re.IGNORECASE)
+
+    @staticmethod
+    def _fill_tmpl(tmpl: str, x: str, y: str) -> str:
+        return tmpl.replace("x", x).replace("y", y)
+
+    # -----------------------------
+    # Teaching
+    # -----------------------------
+    def _teach_pattern(self, raw: str):
+        parts = raw.split(";")
+        if len(parts) != 3:
+            return
+
+        trigger_raw, key_tmpl, val_tmpl = [p.strip() for p in parts]
+        regex = self._tmpl_to_regex(trigger_raw)
+        if regex is None:
+            return
+
+        entry = {
+            "trigger_re": regex,
+            "key_tmpl": key_tmpl,
+            "val_tmpl": val_tmpl
+        }
+
+        # Add new pattern
+        self._patterns.append(entry)
+
+        # Sort by specificity
+        self._sort_patterns()
+
+        # Enforce max limit
+        if len(self._patterns) > self._max_patterns:
+            self._patterns.pop()  # remove least specific
+
+    # -----------------------------
+    # Matching
+    # -----------------------------
+    def populate(self, railbot: RailBot, str1: str):
+        if not str1:
+            return
+
+        # Teaching mode
+        if str1.count(";") == 2:
+            self._teach_pattern(str1)
+            return
+
+        # Matching mode
+        for p in self._patterns:
+            m = p["trigger_re"].match(str1.strip())
+            if m:
+                x = m.group("x").strip()
+                y = m.group("y").strip()
+                key = self._fill_tmpl(p["key_tmpl"], x, y)
+                val = self._fill_tmpl(p["val_tmpl"], x, y)
+                railbot.learn_key_value(key, val)
+                return
+
+
+class XOnlyPatternLearner(PopulatorFunc):
+    """
+    Alternative learner that supports:
+    - x-only patterns
+    - y-only patterns
+    - x+y patterns
+    """
+
+    def __init__(self, max_patterns: int = 3):
+        super().__init__()
+        self.regex = "x-only pattern learner"
+        self._patterns: list[dict] = []
+        self._max_patterns = max_patterns
+
+    # -----------------------------
+    # Specificity scoring
+    # -----------------------------
+    @staticmethod
+    def _regex_specificity_score(pattern: re.Pattern) -> int:
+        pat = pattern.pattern
+
+        s = len(pat) * 2
+        s -= pat.count('.') * 10
+        s -= pat.count('*') * 8
+        s -= pat.count('+') * 8
+        s -= pat.count('?') * 3
+        s += len(re.findall(r'[a-zA-Z0-9]', pat)) * 3
+
+        if pat.startswith('^'):
+            s += 20
+        if pat.endswith('$'):
+            s += 20
+
+        return s
+
+    def _sort_patterns(self):
+        self._patterns.sort(
+            key=lambda p: self._regex_specificity_score(p["trigger_re"]),
+            reverse=True
+        )
+
+    # -----------------------------
+    # Template → regex
+    # -----------------------------
+    @staticmethod
+    def _tmpl_to_regex(tmpl: str) -> re.Pattern | None:
+        """Allow x-only, y-only, or both."""
+        if "x" not in tmpl and "y" not in tmpl:
+            return None
+
+        escaped = re.escape(tmpl)
+        escaped = escaped.replace(r"x", r"(?P<x>.+?)")
+        escaped = escaped.replace(r"y", r"(?P<y>.+?)")
+
+        return re.compile(f"^{escaped}$", re.IGNORECASE)
+
+    @staticmethod
+    def _fill_tmpl(tmpl: str, x: str | None, y: str | None) -> str:
+        """Missing groups become empty strings."""
+        if x is None:
+            x = ""
+        if y is None:
+            y = ""
+        return tmpl.replace("x", x).replace("y", y)
+
+    # -----------------------------
+    # Teaching
+    # -----------------------------
+    def _teach_pattern(self, raw: str):
+        parts = raw.split(";")
+        if len(parts) != 3:
+            return
+
+        trigger_raw, key_tmpl, val_tmpl = [p.strip() for p in parts]
+        regex = self._tmpl_to_regex(trigger_raw)
+        if regex is None:
+            return
+
+        entry = {
+            "trigger_re": regex,
+            "key_tmpl": key_tmpl,
+            "val_tmpl": val_tmpl
+        }
+
+        self._patterns.append(entry)
+        self._sort_patterns()
+
+        if len(self._patterns) > self._max_patterns:
+            self._patterns.pop()  # remove least specific
+
+    # -----------------------------
+    # Matching
+    # -----------------------------
+    def populate(self, railbot: RailBot, str1: str):
+        if not str1:
+            return
+
+        # Teaching mode
+        if str1.count(";") == 2:
+            self._teach_pattern(str1)
+            return
+
+        # Matching mode
+        for p in self._patterns:
+            m = p["trigger_re"].match(str1.strip())
+            if m:
+                # Safe extraction: missing groups become None
+                x = m.groupdict().get("x")
+                y = m.groupdict().get("y")
+
+                key = self._fill_tmpl(p["key_tmpl"], x, y)
+                val = self._fill_tmpl(p["val_tmpl"], x, y)
+
+                railbot.learn_key_value(key, val)
+                return
+
+
 # ╔══════════════════════════════════════════════════════════════╗
 # ║                           RECIPES                            ║
 # ╚══════════════════════════════════════════════════════════════╝

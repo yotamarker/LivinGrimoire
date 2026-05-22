@@ -15,7 +15,7 @@ from LivinGrimoirePacket.LivinGrimoire import Skill
 # ─── Tuneable Constants ────────────────────────────────────────────────────────
 OLLAMA_URL       = "http://localhost:11434/api/generate"
 MODEL_NAME       = "gemma3:4b"
-INITIAL_PROMPT   = ("you are a normal girl")
+INITIAL_PROMPT   = ("Just talk normally without describing actions. No asterisks, no parentheses, no stage directions. Speak directly like a real person having a conversation.")
 MAX_HISTORY      = 20        # max messages kept in memory (must be even)
 CONTEXT_WINDOW   = 6         # how many recent messages fed to the model
 MAX_REPLY_CHARS  = 300       # character limit before snipping
