@@ -1080,7 +1080,7 @@ class LGFIFO:
         self.queue.append(data)
 
     # for popping an element based on Priority
-    def poll(self) -> object:
+    def poll(self):
         if not len(self.queue) == 0:
             result0 = self.queue[0]
             del self.queue[0]
@@ -4099,7 +4099,7 @@ class SimpleHP:
                 self.total_convos -= 1
                 self.started_listening = True
                 return False
-        if ear == "shut up" or ear == "stop" or ear == "bye":
+        if (ear == "shut up" or ear == "stop" or ear == "bye") and self.started_listening:
             self.convo_hp = 0
             self.stopped_listening = True
             return False

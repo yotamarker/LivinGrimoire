@@ -12,6 +12,7 @@ from LivinGrimoirePacket.AXPython import AXCmdBreaker, PercentDripper, TimeUtils
 from LivinGrimoirePacket.AlgParts import APHappy, APSad, APSkillRemover
 from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro, Brain, APVerbatim
 from LivinGrimoirePacket.RailBotExtensions import RailPunk
+import time
 
 
 class DiSayer(Skill):
@@ -170,6 +171,69 @@ class DiNoteTaker(Skill):
         elif param == "triggers":
             return "'get note', 'clear notes', 'next note', or 'note [your note]' to add a note"
         return "note unavailable"
+
+
+class DiMicroReminder(Skill):
+    # Commands:
+    # "remind me X" - add reminder (max self.max_reminders, oldest drops off)
+    # "my reminders" - list all reminders
+    # "clear reminders" - delete all reminders
+    # "i better get going" - triggers reminder playback
+    def __init__(self):
+        super().__init__()
+        self.reminders: list = []
+        self.max_reminders = 3  # configurable limit
+        self.go_triggers = {"i better get going", "gotta go", "time to go", "heading out", "leaving now"}
+
+    def save_reminders(self):
+        self._kokoro.grimoireMemento.save(self.skill_name, ",".join(self.reminders))
+
+    def manifest(self):
+        load_str = self._kokoro.grimoireMemento.load(self.skill_name)
+        if load_str and load_str != "null":
+            self.reminders = load_str.split(",") if load_str else []
+            # Trim to max_reminders on load
+            if len(self.reminders) > self.max_reminders:
+                self.reminders = self.reminders[:self.max_reminders]
+
+    def input(self, ear: str, skin: str, eye: str):
+        if not ear:
+            return
+
+        ear_lower = ear.lower().strip()
+
+        # Add reminder (FIFO with max limit)
+        if ear_lower.startswith("remind me "):
+            msg = ear_lower[10:]
+            self.reminders.append(msg)
+            if len(self.reminders) > self.max_reminders:
+                self.reminders.pop(0)  # Remove oldest
+            self.save_reminders()
+            self.setSimpleAlg("noted")
+            return
+
+        # Clear all
+        if ear_lower == "clear reminders":
+            self.reminders.clear()
+            self.save_reminders()
+            self.setSimpleAlg("reminders cleared")
+            return
+
+        # List reminders
+        if ear_lower == "my reminders":
+            if not self.reminders:
+                self.setSimpleAlg("no reminders")
+            else:
+                self.setSimpleAlg(", ".join(self.reminders))
+            return
+
+        # Trigger on leaving
+        if ear_lower in self.go_triggers:
+            if not self.reminders:
+                self.setSimpleAlg("have a good day")
+            else:
+                self.setSimpleAlg(f"don't forget: {', '.join(self.reminders)}")
+            return
 
 
 class DiAlarmer(Skill):
@@ -651,3 +715,108 @@ class DiBuyer(Skill):
         elif param == "triggers":
             return "order me a pizza, order me a pineapple pizza"
         return "smoothie skill"
+
+
+class DiOkaeri(Skill):
+    """
+    Itekimase / Okaeri skill — English edition.
+    Says goodbye when the user leaves, and welcomes them back
+    with a greeting that scales to how long they were away.
+
+    Triggers:
+      Leave : ear contains any of BYE_WORDS  (e.g. "bye", "see you", "brb")
+      Return: ear contains any of BACK_WORDS (e.g. "hi", "back", "i'm back")
+    """
+
+    BYE_WORDS = {"bye", "goodbye", "see you", "later", "be right back", "going", "leaving", "cya"}
+    BACK_WORDS = {"i am back", "i'm back", "im back", "returned"}
+
+    # (max_seconds, [reply options])
+    TIERS = [
+        (60, [
+            "That was quick!",
+            "Back already? Missed you for those few seconds.",
+            "Wow, speed run!",
+        ]),
+        (600, [
+            "Welcome back!",
+            "Hey, you're back!",
+            "Good to see you again.",
+        ]),
+        (3600, [
+            "Welcome back — been a little while!",
+            "There you are! Have a good break?",
+            "Back after a bit — hope it was relaxing.",
+        ]),
+        (28800, [
+            "Welcome back! Been a few hours.",
+            "Good to have you back — get some rest?",
+            "You were gone a while. Everything okay?",
+        ]),
+        (86400, [
+            "Welcome back! Missed you today.",
+            "There you are — it's been most of the day!",
+            "Glad you're back. Long day?",
+        ]),
+        (None, [
+            "Okaeri! You were gone for a long time — welcome home.",
+            "Welcome back! It's been over a day, I was starting to wonder.",
+            "You're back! Feels like forever. Good to have you here again.",
+        ]),
+    ]
+
+    GOODBYE_REPLIES = [
+        "See you later!",
+        "Take care — I'll be here when you get back.",
+        "Bye! Come back soon.",
+        "Itterasshai! Safe travels.",
+        "Later! I'll keep the lights on.",
+    ]
+
+    def __init__(self):
+        super().__init__()
+        self._away_since: float | None = None  # timestamp of departure, None = user is present
+
+    def input(self, ear: str, skin: str, eye: str):
+        ear_lower = ear.lower().strip()
+
+        if self._matches(ear_lower, self.BACK_WORDS):
+            if self._away_since is not None:
+                elapsed = time.time() - self._away_since
+                self._away_since = None
+                reply = self._pick_return_reply(elapsed)
+                self.setVerbatimAlg(3, reply)
+            # if they say hi but never said bye, just ignore (don't double-greet)
+
+        elif self._matches(ear_lower, self.BYE_WORDS):
+            self._away_since = time.time()
+            self.setVerbatimAlg(3, random.choice(self.GOODBYE_REPLIES))
+
+    # ------------------------------------------------------------------ helpers
+
+    @staticmethod
+    def _matches(text: str, word_set: set) -> bool:
+        """True if any trigger word/phrase appears in the input."""
+        return any(w in text for w in word_set)
+
+    def _pick_return_reply(self, elapsed_seconds: float) -> str:
+        for max_secs, replies in self.TIERS:
+            if max_secs is None or elapsed_seconds < max_secs:
+                return random.choice(replies)
+        return random.choice(self.TIERS[-1][1])
+
+    # ------------------------------------------------------------------ meta
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return (
+                "Itekimase/Okaeri skill (English). Says goodbye when user leaves "
+                "and welcomes them back with a reply scaled to how long they were away. "
+                "6 tiers: <1min, 1-10min, 10-60min, 1-8hr, 8-24hr, 24hr+."
+            )
+        elif param == "triggers":
+            return (
+                f"Leave : {self.BYE_WORDS}\n"
+                f"Return: {self.BACK_WORDS}"
+            )
+        return "note unavailable"

@@ -1,7 +1,8 @@
 import re
 import time
 
-from LivinGrimoirePacket.AXPython import Catche, SpiderSense, TrgEveryNMinutes, UniqueResponder, Strategy
+from LivinGrimoirePacket.AXPython import Catche, SpiderSense, TrgEveryNMinutes, UniqueResponder, Strategy, RefreshQ, \
+    NSilenceCyclesAfterStr
 from LivinGrimoirePacket.AlgParts import APMad, APSad
 from LivinGrimoirePacket.LivinGrimoire import Skill, APVerbatim
 
@@ -344,6 +345,42 @@ class DiVitals(Skill):
         elif param == "triggers":
             return ", ".join(self.trigger_phrases)
         return "Self-diagnostic reporting skill"
+
+
+class DiLogger(Skill):
+    def __init__(self):
+        super().__init__()
+        self.logs:RefreshQ = RefreshQ(10)
+
+    def input(self, ear: str, skin: str, eye: str):
+        temp = self.getKokoro().toHeart["log"]
+        if len(temp)>0:
+            self.logs.insert(temp)
+            return
+        if ear == "issues":
+            if self.logs.isEmpty():
+                self.setSimpleAlg("nope")
+                return
+            else:
+                self.setSimpleAlg(self.logs.poll())
+
+
+class DiStandBy(Skill):
+    # creates a marker of idling which other skills can use.
+    # serves as an entry point to serve events when the AI idles
+    def __init__(self):
+        super().__init__()
+        # example use
+        # self.responder: AXTimeContextResponder = AXTimeContextResponder()
+        # self.responder.morning = Responder("good morning", "hello")
+        # self.responder.evening = Responder()
+        self.idle_sensor: NSilenceCyclesAfterStr = NSilenceCyclesAfterStr(3,5)
+
+    def input(self, ear: str, skin: str, eye: str):
+        if self.idle_sensor.check(ear):
+            self.getKokoro().toHeart[self.skill_name] = "idling"
+        else:
+            self.getKokoro().toHeart[self.skill_name] = ""
 
 
 # ╔════════════════════════════════════════════════╗
