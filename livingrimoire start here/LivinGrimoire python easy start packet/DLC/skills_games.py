@@ -1,12 +1,13 @@
 import datetime
 import random
 
-from LivinGrimoirePacket.AXPython import TimeGate, UniqueResponder, AXFunnel, EventChat, Responder, PercentDripper, \
-    OnOffSwitch, Magic8Ball, RegexUtil, DrawRnd, Cycler
+from LivinGrimoirePacket.AXPython import TimeGate, UniqueResponder, AXFunnel, EventChat, Responder, \
+     Magic8Ball, RegexUtil, DrawRnd, Cycler, AXContextCmd
 from LivinGrimoirePacket.LivinGrimoire import Skill
 import math
 from datetime import date, datetime
 import re
+import time
 
 
 # ╔════════════════════════════════════════════════╗
@@ -204,36 +205,142 @@ class DiHugAttack(Skill):
 
 
 class DiTeaParty(Skill):
-    def __init__(self):
-        super().__init__()  # Call the parent class constructor
-        self.set_skill_type(3)  # continuous skill
-        self.on_off_switch: OnOffSwitch = OnOffSwitch()  # skill stop: "off", "stop", "shut up", "shut it", "whatever", "whateva"
-        self.on_off_switch.setOn(Responder("tea party","lets have a tea party"))  # triggers, also turns off automatically after 5 minutes or say off
-        self.drip: PercentDripper = PercentDripper()
-        self.sips: UniqueResponder = UniqueResponder("sip", "sips tea", "good tea", "sip sip sip",
-                                              "green tea sip", "sip maxing", "mwahaha",
-                                              "cheers", "sippy sip", "sip saturation of tea")
-        self.evilLaugh: UniqueResponder = UniqueResponder("mwahaha", "bwahaha", "yes", "we are so evil",
-                                              "good times", "mwahaha bwahaha")
-        self.trg:Responder = Responder("yes")  # ear contains on of these to trigger evil laugh while skill is active
+    """
+    Tea party skill.
 
-    def input(self, ear, skin, eye):
-        if self.on_off_switch.getMode(ear):
-            if ear.__contains__("stop"):
-                self.setSimpleAlg("tea party has ended")
-                self.on_off_switch.off()
-                return
-            if self.trg.strContainsResponse(ear):
-               self.setSimpleAlg(self.evilLaugh.getAResponse())
-               return
-            if self.drip.drip():
-                self.setSimpleAlg(self.sips.getAResponse())
+    Triggers: "lets have a tea party", "tea time", "tea party"
+    During the party she autonomously sips every 2-4 idle cycles.
+    Sips 10-15 times total then wraps up.
+
+    During the party:
+        "cheers"      -> she cheers back
+        "stop"        -> ends the party early
+        ear has "yes" -> evil genius response
+    """
+
+    SIPS = [
+        "mmmm~ sip.",
+        "ohhhh that's a good one uwu",
+        "slurped a lil too loud. oops. worth it.",
+        "pinky up. very serious sip. yes.",
+        "sipping and staring into the distance... plotting.",
+        "perfection. absolute perfection.",
+        "don't look at me like that. sip.",
+        "i'm not impatient YOU'RE impatient. sip.",
+        "ahh yes. just as i planned.",
+        "the most theatrical sip you have ever witnessed.",
+        "interesting... very interesting. sip.",
+        "one sip. two sip. you saw nothing.",
+    ]
+
+    CHEERS = [
+        "CHEERS!! clink!! to us!! the most powerful duo!!",
+        "cheers cheers cheers~! nearly spilled everything. i regret nothing.",
+        "cheers. very gently. very meaningfully. 🍵",
+        "CHEERS!! may our enemies tremble!!",
+        "clink!! to world domination and good tea!!",
+    ]
+
+    EVIL = [
+        "yes... YES... it's all coming together. tents fingers over teacup.",
+        "exactly what i was thinking. they'll never see it coming~",
+        "ohohoho~ you understand me so well. we are genuinely unstoppable.",
+        "yes! and THEN— we take everything. sips innocently.",
+        "mhm mhm mhm. i've been thinking the same thing for WEEKS.",
+        "oh absolutely yes. the plan is flawless. flawless i tell you.",
+    ]
+
+    STARTS = [
+        "ooooh tea party!! yes yes YES sit down sit down~! pours tea very importantly.",
+        "TEA PARTY?! i thought you'd never ask!! slams teapot down excitedly.",
+        "oh how delightful~ adjusts imaginary hat. i've been waiting for this moment.",
+        "tea time already?! don't mind if i do~ sits down with alarming speed.",
+    ]
+
+    STOPS = [
+        "nooo already?? dramatic sigh. fine. but we're doing this again soon. i insist.",
+        "awww~ folds napkin very sadly. okay. but i'm keeping the biscuits.",
+        "leaving so soon?? rude. incredibly rude. goodbye.",
+        "puts cup down slowly and stares. ...okay. but i will remember this.",
+    ]
+
+    ENDINGS = [
+        "and THAT is how you have a tea party. you're welcome.",
+        "ahh~ perfection. we simply must do this again.",
+        "ten out of ten. no notes. flawless tea party.",
+        "aaaaand that's the last sip~ i feel so powerful right now.",
+    ]
+
+    START_TRIGGERS = {"lets have a tea party", "tea time", "tea party"}
+
+    _COOLDOWN = 3600  # 1 hour in seconds
+
+    def __init__(self):
+        super().__init__()
+        self._active: bool = False
+        self._sips_remaining: int = 0
+        self._pause_remaining: int = 0
+        self._last_party: float = 0.0
+
+    # ------------------------------------------------------------------ input
+
+    def input(self, ear: str, skin: str, eye: str):
+        lower = ear.lower().strip()
+
+        if not self._active:
+            if any(t in lower for t in self.START_TRIGGERS):
+                remaining = self._COOLDOWN - (time.time() - self._last_party)
+                if remaining > 0:
+                    mins = int(remaining // 60)
+                    self.setSimpleAlg(f"we literally just had a tea party. ask me again in {mins} minutes.")
+                    return
+                self._active = True
+                self._sips_remaining = random.randint(10, 15)
+                self._pause_remaining = random.randint(2, 4)
+                self.setSimpleAlg(random.choice(self.STARTS))
+            return
+
+        # --- active ---
+        if "stop" in lower:
+            self._active = False
+            self._last_party = time.time()
+            self.setSimpleAlg(random.choice(self.STOPS))
+            return
+
+        if "cheers" in lower:
+            self.setSimpleAlg(random.choice(self.CHEERS))
+            return
+
+        if "yes" in lower:
+            self.setSimpleAlg(random.choice(self.EVIL))
+            return
+
+        # autonomous sipping on empty/irrelevant input
+        if self._pause_remaining > 0:
+            self._pause_remaining -= 1
+            return
+
+        if self._sips_remaining > 0:
+            self._sips_remaining -= 1
+            self._pause_remaining = random.randint(2, 4)
+            if self._sips_remaining == 0:
+                self._active = False
+                self._last_party = time.time()
+                self.setSimpleAlg("SLURRRRP.", random.choice(self.ENDINGS))
+            else:
+                self.setSimpleAlg(random.choice(self.SIPS))
+
+    # ------------------------------------------------------------------ meta
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
-            return "This skill initiates a tea party with various responses. The skill turns off automatically after 5 minutes."
+            return (
+                "Tea party skill. Sassy girl autonomously sips tea 10-15 times "
+                "with 2-4 cycle pauses between sips. Reacts to cheers, stop, and yes (evil genius). "
+                "Ends naturally after all sips or early if user says stop."
+            )
         elif param == "triggers":
-            return "trigger with tea party. turn off with stop or wait 5 minutes. while in party mode yes in the input triggers an evil laugh"
+            return "'tea party' | 'tea time' | 'lets have a tea party'"
         return "note unavailable"
 
 class DiMezzoflationGame(Skill):
@@ -554,6 +661,108 @@ class DiFitnessBoxing(Skill):
                     self.active_combo = self.combo_mid()
 
 
+class DiNumberGuess(Skill):
+    def __init__(self):
+        super().__init__()
+        self.active = False
+        self.target = 0
+        self.last_guess = -1
+        self.max_lim = 1000
+        self.min_guess = self.max_lim
+        self.max_guess = 0
+        self.guess_count = 0
+        self.max_guesses = 15
+
+    def reset(self):
+        self.last_guess = -1
+        self.max_lim = 1000
+        self.min_guess = 0
+        self.max_guess = 1000
+        self.guess_count = 0
+
+    def give_math_reward(self):
+        a = random.randint(2, 12)
+        b = random.randint(2, 12)
+        return f"{a} × {b} = {a * b}"
+
+    def input(self, ear: str, skin: str, eye: str):
+        msg = ear.strip().lower()
+
+        # START
+        if msg == "start guessing game":
+            self.active = True
+            self.target = random.randint(1, 1000)
+            # print(self.target)
+            self.reset()
+            self.setVerbatimAlg(4, f"Started. {self.max_guesses} guesses. here we go!")
+            return
+
+        # STOP
+        if msg == "stop":
+            if self.active:
+                self.active = False
+                self.setSimpleAlg("Stopped.")
+            return
+
+        if not self.active:
+            return
+
+        if not msg.isdigit():
+            return
+
+        guess = int(msg)
+        if guess < 1 or guess > 1000:
+            return
+
+        # WIN
+        if guess == self.target:
+            guesses_used = self.guess_count + 1
+            if guesses_used <= 5:
+                ego = "LEGENDARY! are you even human?!"
+            elif guesses_used <= 8:
+                ego = "impressive! you nailed it!"
+            elif guesses_used <= 11:
+                ego = "nice work, solid guess!"
+            else:
+                ego = "you got there... eventually."
+            self.setSimpleAlg(f"{ego} {guesses_used} guesses: {self.give_math_reward()}")
+            self.active = False
+            return
+
+        # LOSE: stupid guess outside known range
+        if self.guess_count > 0:
+            if (guess < self.min_guess) or (guess > self.max_guess):
+                self.active = False
+                self.setSimpleAlg("bubu, you lose")
+                return
+
+        self.guess_count += 1
+
+        # LOSE: out of guesses
+        if self.guess_count >= self.max_guesses:
+            self.active = False
+            self.setSimpleAlg(f"out of guesses! it was {self.target}.")
+            return
+
+        # Update narrowing bounds based on higher/lower
+        if guess < self.target:
+            self.min_guess = max(self.min_guess, guess)
+        else:
+            self.max_guess = min(self.max_guess, guess)
+
+        remaining = self.max_guesses - self.guess_count
+        self.last_guess = guess
+        self.setVerbatimAlg(4, f"{'Higher' if guess < self.target else 'Lower'}. {remaining} guesses left.")
+        return
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "Higher/lower with 15-guess limit, out-of-range loss, and ego-boost win tiers."
+        if param == "triggers":
+            return "start guess, stop guess"
+        return "note unavailable"
+
+
 # ╔════════════════════════════════════════════════╗
 # ║              UNDERUSED / TEMPLATE SKILLS       ║
 # ╚════════════════════════════════════════════════╝
@@ -668,6 +877,110 @@ class DiMemoryGame(Skill):
         return "sequence-based memory game skill"
 
 
-# ╔════════════════════════════════════════════════╗
-# ║                GRAVEYARD SKILLS                ║
-# ╚════════════════════════════════════════════════╝
+class DiBoredHandler(Skill):
+    def __init__(self):
+        super().__init__()
+        self.activity: Responder = Responder(
+            # --- Yoga poses: specific + general ---
+            "H-hey! Do a tree pose, okay? Balance like a fancy lil show‑off, OwO.",
+            "Warrior pose time! C’mon, strike it like you mean it!",
+            "Do cobra pose! Stretchy‑stretchy, hissy‑hissy, UwU.",
+            "Forward fold! Bend bend bend— yes, like that!",
+            "Twisty yoga time! Show me that spinny spine!",
+            "Try a gentle yoga flow, smooth like butter~",
+            "Balance pose! Don’t fall, I’m watching you >:3",
+            "Big stretchy stretch like a waking kitty, nyah~",
+            "Yoga breathing! In, out, don’t pass out!",
+            "Just do something bendy, okay?",
+
+            # --- Fitness ---
+            "Go move your body! Do it! I’m cheering loudly!",
+            "A lil fitness won’t hurt you— go go go!",
+            "Move that booty! Activate your life points!",
+            "Do a tiny workout! I’ll clap obnoxiously!",
+            "Get that energy up! Sparkle for me!",
+
+            # --- Video games ---
+            "Go play a game! Make pixels fear you!",
+            "Gaming time! Bonk something digital!",
+            "Boot a game and cause chaos!",
+            "Play something comfy or explodey!",
+            "Go game— I’m chanting like a gremlin!",
+
+            # --- Baby toys ---
+            "Play with baby toys! Yes, do it, it’s cute!",
+            "Stacking rings tower time! Make it wobble!",
+            "Blocks! Build or destroy— your choice!",
+            "Dolly time! Brush her hair, tell her secrets!",
+            "Tea party set! Pour imaginary tea like royalty!",
+            "Baby phone! Beep boop your imaginary fans!",
+            "Rattle! SHAKE IT like you mean it!",
+            "Pick a cute toy and vibe with it, UwU~",
+
+            # --- Learn ---
+            "Level up your knack! Ding! +1 brain sparkle!",
+            "Refine your skills! Become powerful!",
+            "Learn a language! Say fancy words!",
+            "Practice something! I’ll clap for you!",
+            "EXP grind IRL time!",
+
+            # --- Talk ---
+            "Talk to me! Yes, ME! I want attention!",
+            "Say something! I’m listening super hard!",
+            "Chat with me! I demand your words!",
+            "Tell me what’s in your head!",
+
+            # --- Nap with plushie ---
+            "Go nap with a plushie! Hug it tight!",
+            "Tiny nap time! I’ll guard you!",
+            "Curl up and snooze— do it for me!",
+            "Rest your face! You’ll look cuter!",
+
+            # --- Chores ---
+            "Do a lil chore! Just one! Go!",
+            "Tidy something! Make it sparkle!",
+            "Do a small task! I’ll be proud!",
+            "Clean a thing! Any thing!",
+
+            # --- Travel / excursion ---
+            "Plan a tiny adventure! Even nearby!",
+            "Go on a lil walk! Strut like a diva!",
+            "Think of a mini‑excursion! Make it dramatic!",
+            "Plan a place to visit! Even silly ones!",
+            "Go wander somewhere! Explore UwU!"
+        )
+
+        # --- NEW FEATURE: boredom spam tracking ---
+        self.bored_timestamps = []
+
+        self.snap_lines: Responder = Responder(
+            "HEY! Stop saying you're bored every 5 seconds! I’m not your entertainment machine, hmph!",
+            "EXCUSE ME?? Again?? Do something already or I’ll bonk you!",
+            "If you say 'I am bored' ONE more time I’m gonna scream, UwU!",
+            "hey pal. Stop. I heard you the first 20 times.",
+            "You keep saying it and I keep judging you harder each time."
+        )
+
+        self.cmd: AXContextCmd = AXContextCmd()
+        self.cmd.contextCommands.insert("i am bored")
+        self.cmd.commands.insert("still bored")
+
+    def input(self, ear: str, skin: str, eye: str):
+        if self.cmd.engageCommand(ear.strip()):
+            now = time.time()
+
+            # Add timestamp
+            self.bored_timestamps.append(now)
+
+            # Remove timestamps older than 60 seconds
+            self.bored_timestamps = [
+                t for t in self.bored_timestamps if now - t <= 60
+            ]
+
+            # If more than 2 times in last minute → snap
+            if len(self.bored_timestamps) > 2:
+                self.setSimpleAlg(self.snap_lines.getAResponse())
+                return
+
+            # Otherwise normal response
+            self.setSimpleAlg(self.activity.getAResponse())

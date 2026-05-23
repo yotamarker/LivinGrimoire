@@ -1,7 +1,8 @@
 from LivinGrimoirePacket.AXPython import TimedMessages, SkillHubAlgDispenser, AXLearnability, AlgorithmV2, \
     UniqueResponder, AXSkillBundle, AXGamification, Responder
 from LivinGrimoirePacket.AlgParts import APSad
-from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro, AbsDictionaryDB, Neuron, Chobits
+from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro, AbsDictionaryDB, Neuron, Chobits, Brain
+from pathlib import Path
 
 
 class DiBicameral(Skill):
@@ -237,65 +238,47 @@ class DiGamificationScouter(Skill):
         return "Note unavailable"
 
 
-class DiImprint_PT1(Skill):
+class DiImprint(Skill):
     """
+    Loads kiln.txt and processes each line as a thought,
+    imprinting the bot with pre-written content or training data.
     add skill:
-        brain.logicChobit.addSkills(DiImprint_PT1(app.brain.logicChobit), DiImprint_PT2())
-        OR
-        brain.add_logical_skill(DiImprint_PT1(app.brain.logicChobit))
-        brain.add_logical_skill(DiImprint_PT2())
+        brain.add_skill(DiImprint(brain))
+    ignores comment code lines(lines that start with #)
     """
 
-    def __init__(self, chobit: Chobits):
+    def __init__(self, brain: Brain):
         super().__init__()
-        self.chobit: Chobits = chobit
+        self.chobit: Chobits = brain.logicChobit
+
+    def manifest(self):
+        """Runs once when skill is added to the AI. Creates empty kiln.txt if it doesn't exist."""
+        kiln_path = Path('kiln.txt')
+        if not kiln_path.exists():
+            with open(kiln_path, 'w') as file:
+                pass  # Creates empty file
 
     def input(self, ear: str, skin: str, eye: str):
         if ear == "imprint":
             self.imprint()
+            self.setSimpleAlg("imprinting complete")
 
     def imprint(self):
         with open('kiln.txt', 'r') as file:
-            # Read all lines into a list
             lines = file.readlines()
 
-        # Remove any trailing newline characters from each line
+        # Remove trailing whitespace and skip blank lines and comments
         lines = [line.strip() for line in lines]
 
-        # Print the list of strings
         for line in lines:
+            if not line or line.startswith('#'):
+                continue
             self.chobit.think(line, "", "")
 
     # noinspection PyMethodMayBeStatic
     def skill_notes(self, param: str) -> str:
         if param == "notes":
-            return "imprints kiln file to bot"
-        elif param == "triggers":
-            return "Triggered by the command 'imprint'."
-        return "Note unavailable"
-
-
-class DiImprint_PT2(Skill):
-    # complementary skill to DiImprint_PT1
-    """
-    add skill:
-        brain.logicChobit.addSkills(DiImprint_PT1(app.brain.logicChobit), DiImprint_PT2())
-        OR
-        brain.add_logical_skill(DiImprint_PT1(app.brain.logicChobit))
-        brain.add_logical_skill(DiImprint_PT2())
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    def input(self, ear: str, skin: str, eye: str):
-        if ear == "imprint":
-            self.setSimpleAlg("imprinting")
-
-    # noinspection PyMethodMayBeStatic
-    def skill_notes(self, param: str) -> str:
-        if param == "notes":
-            return "Tells when bot is imprinted with kiln file."
+            return "Loads kiln.txt and processes each line as a thought"
         elif param == "triggers":
             return "Triggered by the command 'imprint'."
         return "Note unavailable"
