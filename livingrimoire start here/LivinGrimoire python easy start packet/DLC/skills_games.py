@@ -2,7 +2,7 @@ import datetime
 import random
 
 from LivinGrimoirePacket.AXPython import TimeGate, UniqueResponder, AXFunnel, EventChat, Responder, \
-     Magic8Ball, RegexUtil, DrawRnd, Cycler, AXContextCmd
+    Magic8Ball, RegexUtil, DrawRnd, Cycler, AXContextCmd, OnOffSwitch, PercentDripper
 from LivinGrimoirePacket.LivinGrimoire import Skill
 import math
 from datetime import date, datetime
@@ -30,7 +30,7 @@ class DiWorkOut(Skill):
     # Moddable hooks
     # -------------------------
     def on_farm_event(self) -> str:
-        return getattr(self, "farm_event", "i worked out")
+        return getattr(self, "farm_event", "i did fitness")
 
     def reward_request(self) -> str:
         return getattr(self, "req", "may i play video games")
@@ -205,143 +205,42 @@ class DiHugAttack(Skill):
 
 
 class DiTeaParty(Skill):
-    """
-    Tea party skill.
-
-    Triggers: "lets have a tea party", "tea time", "tea party"
-    During the party she autonomously sips every 2-4 idle cycles.
-    Sips 10-15 times total then wraps up.
-
-    During the party:
-        "cheers"      -> she cheers back
-        "stop"        -> ends the party early
-        ear has "yes" -> evil genius response
-    """
-
-    SIPS = [
-        "mmmm~ sip.",
-        "ohhhh that's a good one uwu",
-        "slurped a lil too loud. oops. worth it.",
-        "pinky up. very serious sip. yes.",
-        "sipping and staring into the distance... plotting.",
-        "perfection. absolute perfection.",
-        "don't look at me like that. sip.",
-        "i'm not impatient YOU'RE impatient. sip.",
-        "ahh yes. just as i planned.",
-        "the most theatrical sip you have ever witnessed.",
-        "interesting... very interesting. sip.",
-        "one sip. two sip. you saw nothing.",
-    ]
-
-    CHEERS = [
-        "CHEERS!! clink!! to us!! the most powerful duo!!",
-        "cheers cheers cheers~! nearly spilled everything. i regret nothing.",
-        "cheers. very gently. very meaningfully. 🍵",
-        "CHEERS!! may our enemies tremble!!",
-        "clink!! to world domination and good tea!!",
-    ]
-
-    EVIL = [
-        "yes... YES... it's all coming together. tents fingers over teacup.",
-        "exactly what i was thinking. they'll never see it coming~",
-        "ohohoho~ you understand me so well. we are genuinely unstoppable.",
-        "yes! and THEN— we take everything. sips innocently.",
-        "mhm mhm mhm. i've been thinking the same thing for WEEKS.",
-        "oh absolutely yes. the plan is flawless. flawless i tell you.",
-    ]
-
-    STARTS = [
-        "ooooh tea party!! yes yes YES sit down sit down~! pours tea very importantly.",
-        "TEA PARTY?! i thought you'd never ask!! slams teapot down excitedly.",
-        "oh how delightful~ adjusts imaginary hat. i've been waiting for this moment.",
-        "tea time already?! don't mind if i do~ sits down with alarming speed.",
-    ]
-
-    STOPS = [
-        "nooo already?? dramatic sigh. fine. but we're doing this again soon. i insist.",
-        "awww~ folds napkin very sadly. okay. but i'm keeping the biscuits.",
-        "leaving so soon?? rude. incredibly rude. goodbye.",
-        "puts cup down slowly and stares. ...okay. but i will remember this.",
-    ]
-
-    ENDINGS = [
-        "and THAT is how you have a tea party. you're welcome.",
-        "ahh~ perfection. we simply must do this again.",
-        "ten out of ten. no notes. flawless tea party.",
-        "aaaaand that's the last sip~ i feel so powerful right now.",
-    ]
-
-    START_TRIGGERS = {"lets have a tea party", "tea time", "tea party"}
-
-    _COOLDOWN = 3600  # 1 hour in seconds
-
     def __init__(self):
-        super().__init__()
-        self._active: bool = False
-        self._sips_remaining: int = 0
-        self._pause_remaining: int = 0
-        self._last_party: float = 0.0
+        super().__init__()  # Call the parent class constructor
+        self.set_skill_type(3)  # continuous skill
+        self.toggle = "lets have a tea party"
+        self.max_sips = 15
+        self.sipped = 0
+        self.spacer_lim = 6
+        self.count_down = self.spacer_lim
+        self.responder = Responder("sip", "sippy sip", "slurp", "mwahaha")
+        self.is_on = False
 
-    # ------------------------------------------------------------------ input
-
-    def input(self, ear: str, skin: str, eye: str):
-        lower = ear.lower().strip()
-
-        if not self._active:
-            if any(t in lower for t in self.START_TRIGGERS):
-                remaining = self._COOLDOWN - (time.time() - self._last_party)
-                if remaining > 0:
-                    mins = int(remaining // 60)
-                    self.setSimpleAlg(f"we literally just had a tea party. ask me again in {mins} minutes.")
+    def input(self, ear, skin, eye):
+        if ear == self.toggle:
+            self.is_on = True
+            self.setSimpleAlg("ok lets drink tea together")
+            self.count_down = self.spacer_lim
+            self.sipped = 0
+            return
+        if self.is_on:
+            if ear.lower().strip() == "stop":
+                self.is_on = False
+                self.setSimpleAlg("tea party ended")
+                return
+            if ear == "cheers":
+                self.setSimpleAlg("cheers")
+                return
+            self.count_down -=1
+            if self.count_down < 1:
+                self.sipped += 1
+                if self.sipped>self.max_sips:
+                    self.is_on = False
+                    self.setSimpleAlg("that was a fun tea party")
                     return
-                self._active = True
-                self._sips_remaining = random.randint(10, 15)
-                self._pause_remaining = random.randint(2, 4)
-                self.setSimpleAlg(random.choice(self.STARTS))
-            return
+                self.setSimpleAlg(self.responder.getAResponse())
+                self.count_down = self.spacer_lim
 
-        # --- active ---
-        if "stop" in lower:
-            self._active = False
-            self._last_party = time.time()
-            self.setSimpleAlg(random.choice(self.STOPS))
-            return
-
-        if "cheers" in lower:
-            self.setSimpleAlg(random.choice(self.CHEERS))
-            return
-
-        if "yes" in lower:
-            self.setSimpleAlg(random.choice(self.EVIL))
-            return
-
-        # autonomous sipping on empty/irrelevant input
-        if self._pause_remaining > 0:
-            self._pause_remaining -= 1
-            return
-
-        if self._sips_remaining > 0:
-            self._sips_remaining -= 1
-            self._pause_remaining = random.randint(2, 4)
-            if self._sips_remaining == 0:
-                self._active = False
-                self._last_party = time.time()
-                self.setSimpleAlg("SLURRRRP.", random.choice(self.ENDINGS))
-            else:
-                self.setSimpleAlg(random.choice(self.SIPS))
-
-    # ------------------------------------------------------------------ meta
-
-    def skillNotes(self, param: str) -> str:
-        if param == "notes":
-            return (
-                "Tea party skill. Sassy girl autonomously sips tea 10-15 times "
-                "with 2-4 cycle pauses between sips. Reacts to cheers, stop, and yes (evil genius). "
-                "Ends naturally after all sips or early if user says stop."
-            )
-        elif param == "triggers":
-            return "'tea party' | 'tea time' | 'lets have a tea party'"
-        return "note unavailable"
 
 class DiMezzoflationGame(Skill):
     def __init__(self):
@@ -911,7 +810,7 @@ class DiBoredHandler(Skill):
             "Play with baby toys! Yes, do it, it’s cute!",
             "Stacking rings tower time! Make it wobble!",
             "Blocks! Build or destroy— your choice!",
-            "Dolly time! Brush her hair, tell her secrets!",
+            "Dolly time!",
             "Tea party set! Pour imaginary tea like royalty!",
             "Baby phone! Beep boop your imaginary fans!",
             "Rattle! SHAKE IT like you mean it!",
@@ -962,7 +861,7 @@ class DiBoredHandler(Skill):
         )
 
         self.cmd: AXContextCmd = AXContextCmd()
-        self.cmd.contextCommands.insert("i am bored")
+        self.cmd.contextCommands.insert("boring")
         self.cmd.commands.insert("still bored")
 
     def input(self, ear: str, skin: str, eye: str):
