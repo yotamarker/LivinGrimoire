@@ -136,7 +136,7 @@ class DiLLMOver(Skill):
 
     def __init__(self):
         super().__init__()
-        self.set_skill_type(3)
+        self.set_skill_type(2)
         self._on = False
 
     # ── helpers ───────────────────────────────────────────────────────────────

@@ -157,3 +157,37 @@ class APSkillSwapper(AlgPart):
 
     def completed(self) -> bool:
         return self.done
+
+
+class APSkillsAdder(AlgPart):
+    def __init__(self, brain: Brain, *skills_to_add: Skill):
+        super().__init__()
+        self.brain = brain
+        self.skills_to_add: tuple[Skill, ...] = skills_to_add
+        self.done = False
+
+    def action(self, ear: str, skin: str, eye: str) -> str:
+        for skill in self.skills_to_add:
+            self.brain.add_skill(skill)
+        self.done = True
+        return ""
+
+    def completed(self) -> bool:
+        return self.done
+
+
+class APSkillsRemover(AlgPart):
+    def __init__(self, brain: Brain, *skills_to_remove: Skill):
+        super().__init__()
+        self.brain = brain
+        self.skills_to_remove: tuple[Skill, ...] = skills_to_remove
+        self.done = False
+
+    def action(self, ear: str, skin: str, eye: str) -> str:
+        for skill in self.skills_to_remove:
+            self.brain.remove_skill(skill)
+        self.done = True
+        return ""
+
+    def completed(self) -> bool:
+        return self.done

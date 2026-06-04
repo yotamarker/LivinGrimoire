@@ -19,7 +19,7 @@ class DiRailPunk(Skill):
     # this skill swaps between two sets of contradicting skills
     def __init__(self):
         super().__init__()
-        self.set_skill_type(3)  # backgroundable skill
+        self.set_skill_type(2)  # backgroundable skill
         self.chatbot: RailPunk = RailPunk()
         self.chatbot.add_populator(KeyVal())  # key;value will be fed in directly with that pattern
         self.chatbot.add_populator(GoodFor())
@@ -102,7 +102,7 @@ class DiRailPunk(Skill):
 class DiOneWorder(Skill):
     def __init__(self, phrase: str = "cheese"):
         super().__init__()  # Call the superclass constructor
-        self.set_skill_type(3)  # continuous skill
+        self.set_skill_type(2)  # continuous skill
         self.cry: str = "chi "
         self.drip: PercentDripper = PercentDripper()  # Assuming PercentDripper is implemented
         self.mode: bool = False
@@ -157,7 +157,7 @@ class DiOneWorder(Skill):
 class DiChobitSpeech(Skill):
     def __init__(self):
         super().__init__()
-        self.set_skill_type(3)
+        self.set_skill_type(2)
         self.togglers: set[str] = {"g"}
 
         # --- Chi core ---
@@ -205,7 +205,7 @@ class DiChobitSpeech(Skill):
         if self.mode and (ear == "stop" or self.evening_off.trigger()):
             self.mode = False
             self._auto_triggered = False
-            self.setSimpleAlg("cute chobit speech is off")
+            self.setSimpleAlg("cute lobe speech is off")
             return
 
         # Learning system
@@ -288,7 +288,7 @@ class DiCusser(Skill):
         # responder needs be initialized with varargs of cuss words
         # reply_chance < 100 prevents infinite cussing between 2 bots
         super().__init__()
-        self.set_skill_type(3)  # continuous skill
+        self.set_skill_type(2)  # continuous skill
         self.npc: AXNPC2 = AXNPC2(memory_size, reply_chance)
         self.splitter: AXStringSplit = AXStringSplit()
         self._initialized: bool = False
@@ -390,7 +390,7 @@ class DiRail(Skill):
     # DiRail skill for testing purposes
     def __init__(self, lim_reply_options=5, convo_lim = 15):
         super().__init__()
-        self.set_skill_type(3)  # continuous skill
+        self.set_skill_type(2)  # continuous skill
         self.rail_bot = RailBot(lim_reply_options)
         self.monologer = AXContextCmd()
         self.monologer.contextCommands.insert("talk more")

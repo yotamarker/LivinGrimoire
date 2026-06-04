@@ -158,7 +158,7 @@ class DiSTT(Skill):
 
     def input(self, ear: str, skin: str, eye: str):
         """ Read latest transcription from global var """
-        if len(self.brain.getLogicChobitOutput()) > 0:
+        if len(self.brain.getLogicLobeOutput()) > 0:
             print("Skipping listen")
             return
 

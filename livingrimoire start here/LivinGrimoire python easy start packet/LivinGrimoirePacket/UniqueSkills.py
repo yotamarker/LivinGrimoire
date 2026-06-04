@@ -1,7 +1,7 @@
 from LivinGrimoirePacket.AXPython import TimedMessages, SkillHubAlgDispenser, AXLearnability, AlgorithmV2, \
     UniqueResponder, AXSkillBundle, AXGamification, Responder
 from LivinGrimoirePacket.AlgParts import APSad
-from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro, AbsDictionaryDB, Neuron, Chobits, Brain
+from LivinGrimoirePacket.LivinGrimoire import Skill, Kokoro, AbsDictionaryDB, Neuron, Lobe, Brain
 from pathlib import Path
 
 
@@ -249,7 +249,7 @@ class DiImprint(Skill):
 
     def __init__(self, brain: Brain):
         super().__init__()
-        self.chobit: Chobits = brain.logicChobit
+        self.lobe: Lobe = brain.logicLobe
 
     def manifest(self):
         """Runs once when skill is added to the AI. Creates empty kiln.txt if it doesn't exist."""
@@ -273,7 +273,7 @@ class DiImprint(Skill):
         for line in lines:
             if not line or line.startswith('#'):
                 continue
-            self.chobit.think(line, "", "")
+            self.lobe.think(line, "", "")
 
     # noinspection PyMethodMayBeStatic
     def skill_notes(self, param: str) -> str:
@@ -352,8 +352,8 @@ class DiKokoroOut(Skill):
     # example utilization of DiCMD
     def __init__(self):
         super().__init__()
-        self.set_skill_type(3)  # continuous skill
-        self.set_skill_lobe(2)  # hardware chobits
+        self.set_skill_type(2)  # continuous skill
+        self.set_skill_lobe(2)  # hardware lobe
 
     def input(self, ear: str, skin: str, eye: str):
         t = self._kokoro.toHeart["cmd"]
@@ -396,7 +396,7 @@ class Shinka(Skill):
         self.active_upgrade = 0
 
     def add_skill(self, skill: Skill):
-        if skill.get_skill_type() == 2:
+        if skill.get_skill_type() == 2  # skip continuous skills:
             return
         skill.setKokoro(self.getKokoro())
         self.upgrades.append(skill)

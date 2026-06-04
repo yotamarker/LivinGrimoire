@@ -207,7 +207,7 @@ class DiHugAttack(Skill):
 class DiTeaParty(Skill):
     def __init__(self):
         super().__init__()  # Call the parent class constructor
-        self.set_skill_type(3)  # continuous skill
+        self.set_skill_type(2)  # continuous skill
         self.toggle = "lets have a tea party"
         self.max_sips = 15
         self.sipped = 0

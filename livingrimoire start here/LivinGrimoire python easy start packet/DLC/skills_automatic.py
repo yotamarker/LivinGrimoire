@@ -237,11 +237,11 @@ class DiChirper(Skill):
 class DiYandere(Skill):
     """
     bica = DiBicameral()
-    app.brain.logicChobit.addSkill(bica)
+    app.brain.logicLobe.addSkill(bica)
     bica.msgCol.addMSGV2("0:47", "#yandere")
     bica.msgCol.sprinkleMSG("#yandere", 30)
     bica.msgCol.sprinkleMSG("#yandere_cry", 30)
-    app.brain.logicChobit.addSkill(DiYandere("moti"))
+    app.brain.logicLobe.addSkill(DiYandere("moti"))
     """
 
     def __init__(self, ooa):
