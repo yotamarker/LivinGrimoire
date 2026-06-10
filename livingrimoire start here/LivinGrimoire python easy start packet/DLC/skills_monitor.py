@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 
 from LivinGrimoirePacket.AXPython import Responder, AXFunnel, UniqueRandomGenerator, AXPassword, TrgEveryNMinutes, \
-    MonthlyTrigger, AXLearnability, TimeGate, AXStandBy
+    MonthlyTrigger, AXLearnability, TimeGate, AXStandBy, TimeUtils
 from LivinGrimoirePacket.AlgParts import APHappy, APSkillRemover, APSkillAdder
 from LivinGrimoirePacket.LivinGrimoire import Skill, Lobe, Brain, AlgPart, DiSysOut
 
@@ -11,6 +11,68 @@ from LivinGrimoirePacket.LivinGrimoire import Skill, Lobe, Brain, AlgPart, DiSys
 # ╔════════════════════════════════════════════════╗
 # ║                OVERUSED SKILLS                 ║
 # ╚════════════════════════════════════════════════╝
+
+
+class AHNight(Skill):
+    # this skill swaps between two sets of contradicting skills
+    # hidden skills are enabled at night
+    # negation skills(if any) are enabled for daytime
+    def __init__(self, brain: Brain, *hidden_skills:Skill):
+        super().__init__()
+        self.hidden_skills: list[Skill] = []
+        self.negation_skills: list[Skill] = []
+        self.brain = brain
+        self.engaged:bool =False
+
+    def _load_skills(self, skills:list[Skill]):
+        for skill in skills:
+            self.brain.add_skill(skill)
+
+    def _remove_skills(self, skills:list[Skill]):
+        for skill in skills:
+            self.brain.remove_skill(skill)
+
+
+    def add_hidden_skill(self, skill: Skill) -> AHNight:
+        self.hidden_skills.append(skill)
+        return self
+
+    def add_negation_skill(self, skill: Skill) -> AHNight:
+        self.negation_skills.append(skill)
+        return self
+
+    def manifest(self):
+        if TimeUtils.isNight():
+            self._load_skills(self.hidden_skills)
+            self.engaged = True
+        else:
+            self._load_skills(self.negation_skills)
+            self.engaged = False
+
+    def ghost(self):
+        if self.engaged:
+            self._remove_skills(self.hidden_skills)
+        else:
+            self._remove_skills(self.negation_skills)
+
+    def input(self, ear: str, skin: str, eye: str):
+        if TimeUtils.isNight():
+            if not self.engaged:
+                self._remove_skills(self.negation_skills)
+                self._load_skills(self.hidden_skills)
+                self.engaged = True
+        elif self.engaged:
+            self._remove_skills(self.hidden_skills)
+            self._load_skills(self.negation_skills)
+            self.engaged = False
+
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "enables night time behavior"
+        elif param == "triggers":
+            return f"fully automatic"
+        return "note unavailable"
 
 
 class AHAware(Skill):
