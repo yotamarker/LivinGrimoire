@@ -4,7 +4,7 @@ import random
 
 from LivinGrimoirePacket.AXPython import Responder, AXFunnel, UniqueRandomGenerator, AXPassword, TrgEveryNMinutes, \
     MonthlyTrigger, AXLearnability, TimeGate, AXStandBy, TimeUtils
-from LivinGrimoirePacket.AlgParts import APHappy, APSkillRemover, APSkillAdder
+from LivinGrimoirePacket.AlgParts import APHappy, APSkillRemover, APSkillAdder, APSkillsRemover, APSkillsAdder
 from LivinGrimoirePacket.LivinGrimoire import Skill, Lobe, Brain, AlgPart, DiSysOut
 
 
@@ -19,7 +19,7 @@ class AHNight(Skill):
     # negation skills(if any) are enabled for daytime
     def __init__(self, brain: Brain, *hidden_skills:Skill):
         super().__init__()
-        self.hidden_skills: list[Skill] = []
+        self.hidden_skills: list[Skill] = list(hidden_skills)
         self.negation_skills: list[Skill] = []
         self.brain = brain
         self.engaged:bool =False
@@ -58,12 +58,10 @@ class AHNight(Skill):
     def input(self, ear: str, skin: str, eye: str):
         if TimeUtils.isNight():
             if not self.engaged:
-                self._remove_skills(self.negation_skills)
-                self._load_skills(self.hidden_skills)
+                self.algPartsFusion(3,APSkillsRemover(self.brain, *self.negation_skills),APSkillsAdder(self.brain,*self.hidden_skills))
                 self.engaged = True
         elif self.engaged:
-            self._remove_skills(self.hidden_skills)
-            self._load_skills(self.negation_skills)
+            self.algPartsFusion(3, APSkillsRemover(self.brain,*self.hidden_skills), APSkillsAdder(self.brain,*self.negation_skills))
             self.engaged = False
 
 
