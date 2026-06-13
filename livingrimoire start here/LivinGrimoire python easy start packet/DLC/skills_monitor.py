@@ -20,7 +20,6 @@ class AHNight(Skill):
     def __init__(self, brain: Brain, *hidden_skills:Skill):
         super().__init__()
         self.hidden_skills: list[Skill] = list(hidden_skills)
-        self.negation_skills: list[Skill] = []
         self.brain = brain
         self.engaged:bool =False
 
@@ -32,36 +31,24 @@ class AHNight(Skill):
         for skill in skills:
             self.brain.remove_skill(skill)
 
-
-    def add_hidden_skill(self, skill: Skill) -> AHNight:
-        self.hidden_skills.append(skill)
-        return self
-
-    def add_negation_skill(self, skill: Skill) -> AHNight:
-        self.negation_skills.append(skill)
-        return self
-
     def manifest(self):
         if TimeUtils.isNight():
             self._load_skills(self.hidden_skills)
             self.engaged = True
         else:
-            self._load_skills(self.negation_skills)
             self.engaged = False
 
     def ghost(self):
         if self.engaged:
             self._remove_skills(self.hidden_skills)
-        else:
-            self._remove_skills(self.negation_skills)
 
     def input(self, ear: str, skin: str, eye: str):
         if TimeUtils.isNight():
             if not self.engaged:
-                self.algPartsFusion(3,APSkillsRemover(self.brain, *self.negation_skills),APSkillsAdder(self.brain,*self.hidden_skills))
+                self.algPartsFusion(3,APSkillsAdder(self.brain,*self.hidden_skills))
                 self.engaged = True
         elif self.engaged:
-            self.algPartsFusion(3, APSkillsRemover(self.brain,*self.hidden_skills), APSkillsAdder(self.brain,*self.negation_skills))
+            self.algPartsFusion(3, APSkillsRemover(self.brain,*self.hidden_skills))
             self.engaged = False
 
 
@@ -71,6 +58,48 @@ class AHNight(Skill):
         elif param == "triggers":
             return f"fully automatic"
         return "note unavailable"
+
+
+class AHDay(Skill):
+    # this skill enables day skills during daytime
+    # day skills are removed at nighttime
+    def __init__(self, brain: Brain, *day_skills: Skill):
+        super().__init__()
+        self.day_skills: list[Skill] = list(day_skills)
+        self.brain = brain
+        self.engaged: bool = False
+
+    def _load_skills(self, skills: list[Skill]):
+        for skill in skills:
+            self.brain.add_skill(skill)
+
+    def _remove_skills(self, skills: list[Skill]):
+        for skill in skills:
+            self.brain.remove_skill(skill)
+
+    def manifest(self):
+        # load day skills if daytime, mark disengaged if night
+        if not TimeUtils.isNight():
+            self._load_skills(self.day_skills)
+            self.engaged = True
+        else:
+            self.engaged = False
+
+    def ghost(self):
+        # remove day skills if engaged
+        if self.engaged:
+            self._remove_skills(self.day_skills)
+
+    def input(self, ear: str, skin: str, eye: str):
+        if not TimeUtils.isNight():
+            # daytime and not yet engaged: add day skills
+            if not self.engaged:
+                self.algPartsFusion(3, APSkillsAdder(self.brain, *self.day_skills))
+                self.engaged = True
+        elif self.engaged:
+            # nighttime and still engaged: remove day skills
+            self.algPartsFusion(3, APSkillsRemover(self.brain, *self.day_skills))
+            self.engaged = False
 
 
 class AHAware(Skill):
@@ -109,7 +138,9 @@ class AHAware(Skill):
         self.ggReplies: Responder = Responder("meow", "oooweee", "chi", "yes i am", "nuzzles you", "thanks", "prrr")
         self._call: str = f'hey {self.name}'
         self._ggFunnel: AXFunnel = AXFunnel("good girl")
-        self._ggFunnel.addK("you are a good girl").addK("such a good girl").addK("you are my good girl")
+        self._ggFunnel.addK("what can you do").addK("skill triggers").addK("remove skill").addK("restore skills") \
+            .addK("what is your name").addK("name summoner").addK("how do you feel").addK(self.name).addK("test") \
+            .addK("good girl").addK(self._call)
         self.skillDex = None
         self.skill_for_info: int = 0
         self._removedSkills: list[Skill] = []
@@ -198,10 +229,9 @@ class AHPassword(Skill):
             if gate_open:
                 self.pass_gate.closeGate()
                 self.setSimpleAlg("discreet mode engaged")
-                for skill in self.hidden_skills:
-                    self.brain.remove_skill(skill)
-                for skill in self.negation_skills:
-                    self.brain.add_skill(skill)
+                self.algPartsFusion(4,
+                    APSkillsRemover(self.brain, *self.hidden_skills),
+                    APSkillsAdder(self.brain, *self.negation_skills))
             else:
                 self.setSimpleAlg("discreet mode already engaged")
 
@@ -212,10 +242,9 @@ class AHPassword(Skill):
             self.pass_gate.openGate(ear)
             if self.pass_gate.isOpen():
                 self.setSimpleAlg("hidden mode successfully engaged")
-                for skill in self.negation_skills:
-                    self.brain.remove_skill(skill)
-                for skill in self.hidden_skills:
-                    self.brain.add_skill(skill)
+                self.algPartsFusion(4,
+                    APSkillsRemover(self.brain, *self.negation_skills),
+                    APSkillsAdder(self.brain, *self.hidden_skills))
         else:
             if self.pass_gate.codeUpdate(ear):
                 self._kokoro.grimoireMemento.save(f"{self.skill_name}_code", str(self.pass_gate.getCodeEvent()))
@@ -303,21 +332,25 @@ class AHReequip(Skill):
             self.skills[skill_key] = self.get_random_skill()
 
     def _handle_skill_mutation(self):
-        self.brain.remove_skill(self.active_skill)
+        old_skill = self.active_skill
         new_skill = self.get_random_skill()
         self.skills[self.active_key] = new_skill
         memory_key = f"{self.skill_name}_{self.active_key}"
         self._kokoro.grimoireMemento.save(memory_key, new_skill.skill_name)
         self.active_skill = new_skill
-        self.brain.add_skill(self.active_skill)
+        self.algPartsFusion(4,
+            APSkillRemover(self.brain, old_skill),
+            APSkillAdder(self.brain, new_skill))
         self.setSimpleAlg(f"{self.active_skill.skill_name} skill reequipped")
         self.learner.pendAlgWithoutConfirmation()
 
     def _equip_skill(self, skill_key: str):
-        self.brain.remove_skill(self.active_skill)
+        old_skill = self.active_skill
         self.active_skill = self.skills[skill_key]
         self.active_key = skill_key
-        self.brain.add_skill(self.active_skill)
+        self.algPartsFusion(4,
+            APSkillRemover(self.brain, old_skill),
+            APSkillAdder(self.brain, self.active_skill))
 
 
 class AHDebuff(Skill):
@@ -342,28 +375,23 @@ class AHDebuff(Skill):
         for skill in self.skills:
             self.brain.add_skill(skill)
 
-    def buff(self):
-        for skill in self.skills:
-            self.brain.add_skill(skill)
-
     def input(self, ear: str, skin: str, eye: str):
         if self.funnel.funnel(ear) == "debuff" and not self.debuffed:
             self.debuffed = True
-            for skill in self.skills:
-                self.brain.remove_skill(skill)
+            self.algPartsFusion(4, APSkillsRemover(self.brain, *self.skills))
             self.tg.openForPauseMinutes()
             self.setSimpleAlg("debuffing")
             return
         if ear == "buff":
             self.debuffed = False
             self.tg.close()
-            self.buff()
+            self.algPartsFusion(4, APSkillsAdder(self.brain, *self.skills))
             return
         if self.debuffed:
             if self.tg.isClosed():
                 self.debuffed = False
                 self.setSimpleAlg("buffing")
-                self.buff()
+                self.algPartsFusion(4, APSkillsAdder(self.brain, *self.skills))
 
 
 class LobeUnlocked:
@@ -419,7 +447,7 @@ class APImprintEngram(AlgPart):
         self.done = False
 
     def action(self, ear: str, skin: str, eye: str) -> str:
-        self.engram.impring_brain_engram(self.brain)
+        self.engram.imprint_brain_engram(self.brain)
         self.done = True
         return "soul shard reactivated"
 
@@ -458,7 +486,7 @@ class BrainEngram:
         self.skin_engram: Engram = Engram(brain.skin)
         self.eye_engram: Engram = Engram(brain.eye)
 
-    def impring_brain_engram(self, brain: Brain):
+    def imprint_brain_engram(self, brain: Brain):
         self.logic_engram.imprint_engram(brain.logicLobe)
         self.hardware_engram.imprint_engram(brain.hardwareLobe)
         self.ear_engram.imprint_engram(brain.ear)
@@ -542,19 +570,17 @@ class AHBuff(Skill):
             else:
                 self.tg.openForPauseMinutes()
                 self.setSimpleAlg("buffing")
-            for skill in self.buffs[self.active]:
-                self.brain.remove_skill(skill)
-            for skill in self.buffs[ear]:
-                self.brain.add_skill(skill)
+            self.algPartsFusion(4,
+                APSkillsRemover(self.brain, *self.buffs[self.active]),
+                APSkillsAdder(self.brain, *self.buffs[ear]))
             self.active = ear
             return
         if self.buffed and self.tg.isClosed():
             self.buffed = False
             self.setSimpleAlg("chilling")
-            for skill in self.buffs[self.active]:
-                self.brain.remove_skill(skill)
-            for skill in self.buffs["chill"]:
-                self.brain.add_skill(skill)
+            self.algPartsFusion(4,
+                APSkillsRemover(self.brain, *self.buffs[self.active]),
+                APSkillsAdder(self.brain, *self.buffs["chill"]))
             self.active = "chill"
 
 
