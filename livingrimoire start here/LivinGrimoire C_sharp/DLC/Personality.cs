@@ -4,7 +4,7 @@
     {
         brain.AddSkill(new DiHelloWorld());
         brain.AddSkill(new DiTime());
-        brain.AddSkill(new DiPrinter());
+        brain.AddSkill(new DiSysOut());
         // brain.Chained(new DiHelloWorld()).Chained(new DiTime()).Chained(new DiSysOut());
     }
 }

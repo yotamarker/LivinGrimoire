@@ -12,9 +12,9 @@ public class DiBicameral : Skill
     {
         msgCol.Tick();
 
-        if (!kokoro!.toHeart["dibicameral"]!.Equals("null"))
+        if (!_kokoro!.ToHeart["dibicameral"]!.Equals("null"))
         {
-            kokoro.toHeart["dibicameral"] = "null";
+            _kokoro.ToHeart["dibicameral"] = "null";
         }
 
         if (msgCol.GetMsg())
@@ -26,7 +26,7 @@ public class DiBicameral : Skill
             }
             else
             {
-                kokoro.toHeart["dibicameral"] = temp.Replace("#", "");
+                _kokoro.ToHeart["dibicameral"] = temp.Replace("#", "");
             }
         }
     }
@@ -34,7 +34,7 @@ public class DiBicameral : Skill
     public new void SetKokoro(Kokoro kokoro)
     {
         base.SetKokoro(kokoro);
-        kokoro.toHeart["dibicameral"] = "null";
+        kokoro.ToHeart["dibicameral"] = "null";
     }
 }
 public class DiSkillBundle : Skill
@@ -51,8 +51,8 @@ public class DiSkillBundle : Skill
         {
             return;
         }
-        this.outAlg = a1.GetAlgorithm();
-        this.outpAlgPriority = a1.GetPriority();
+        this._outAlg = a1.GetAlgorithm();
+        this._outpAlgPriority = a1.GetPriority();
     }
 
     public new void SetKokoro(Kokoro kokoro)
@@ -130,8 +130,8 @@ public class SkillBranch : Skill
         // alg engage
         AlgorithmV2? a1 = skillHub.DispenseAlgorithm(ear, skin, eye);
         if (a1 == null) { return; }
-        this.outAlg = a1.GetAlgorithm();
-        this.outpAlgPriority = a1.GetPriority();
+        this._outAlg = a1.GetAlgorithm();
+        this._outpAlgPriority = a1.GetPriority();
         ml.PendAlg();
     }
 

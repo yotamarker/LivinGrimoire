@@ -24,7 +24,7 @@ class Program
         while (true)
         {
             string message = Console.ReadLine() ?? "";
-            brain.Think(message);
+            brain.ThinkDefault(message);
             if (message.ToLower() == "exit")
             {
                 Console.WriteLine("Exiting...");
