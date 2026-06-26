@@ -1,14 +1,17 @@
 package LivinGrimoire;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
-/* this class enables:
-communication between skills
-utilization of a database for skills
-this class is a built-in attribute in skill objects.
- * */
+// the Kokoro class enables: using a database, inter skill communication and action log monitoring
 public class Kokoro {
-    private String emot = "";
+    public String emot = "";
+    public AbsDictionaryDB grimoireMemento;
+    public Map<String, String> toHeart = new HashMap<>();
+
+    public Kokoro(AbsDictionaryDB absDictionaryDB) {
+        this.grimoireMemento = absDictionaryDB;
+    }
 
     public String getEmot() {
         return emot;
@@ -16,11 +19,5 @@ public class Kokoro {
 
     public void setEmot(String emot) {
         this.emot = emot;
-    }
-    public AbsDictionaryDB grimoireMemento;
-    public Hashtable<String, String> toHeart = new Hashtable<>();
-    public Kokoro(AbsDictionaryDB absDictionaryDB) {
-        super();
-        this.grimoireMemento = absDictionaryDB;
     }
 }

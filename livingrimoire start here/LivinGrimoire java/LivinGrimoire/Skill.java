@@ -1,86 +1,115 @@
 package LivinGrimoire;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class Skill {
+    // The variables start with an underscore (_) because they are protected
     protected Kokoro kokoro = null; // consciousness, shallow ref class to enable interskill communications
     protected Algorithm outAlg = null; // skills output
     protected int outpAlgPriority = -1; // defcon 1->5
-    protected int skill_type = 1; // 1:regular, 2:aware_skill, 3:continuous_skill
-    protected int skill_lobe = 1; // 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
+    private int skillType = 1;  // 1:regular, 2:continuous_skill
+    private int skillLobe = 1;  // 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Lobe
 
-    public Skill() {
-        super();
+    public void setOutalg(Algorithm alg) {
+        this.outAlg = alg;
     }
+
+    public Algorithm getOutAlg() {
+        return outAlg;
+    }
+
+    public void setOutAlgPriority(int priority) {
+        this.outpAlgPriority = priority;
+    }
+
     // skill triggers and algorithmic logic
-    public void input(String ear, String skin, String eye) {
-    }
+    public void input(String ear, String skin, String eye) {}
+
     // extraction of skill algorithm to run (if there is one)
     public void output(Neuron neuron) {
         if (outAlg != null) {
-            neuron.insertAlg(this.outpAlgPriority,outAlg);
+            neuron.insertAlg(outpAlgPriority, outAlg);
             outpAlgPriority = -1;
             outAlg = null;
         }
     }
+
     public void setKokoro(Kokoro kokoro) {
-        // use this for telepathic communication between different chobits objects
+        // use this for telepathic communication between different lobe objects
         this.kokoro = kokoro;
     }
+
+    public Kokoro getKokoro() {
+        return kokoro;
+    }
+
     // in skill algorithm building shortcut methods:
-    protected void setVerbatimAlg(int priority, String... sayThis){
+    public void setVerbatimAlg(int priority, String... sayThis) {
         // build a simple output algorithm to speak string by string per think cycle
-        // uses varargs param
-        this.outAlg = new Algorithm(new APVerbatim(sayThis));
+        this.outAlg = Algorithm.fromVarargs(new APVerbatim(sayThis));
         this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
-    protected void setSimpleAlg(String... sayThis){
-        // based on the setVerbatimAlg method
-        // build a simple output algorithm to speak string by string per think cycle
-        // uses varargs param
-        this.outAlg = new Algorithm(new APVerbatim(sayThis));
+
+    public void setSimpleAlg(String... sayThis) {
+        // Shortcut to build a simple algorithm
+        this.outAlg = Algorithm.fromVarargs(new APVerbatim(sayThis));
         this.outpAlgPriority = 4; // 1->5 1 is the highest algorithm priority
     }
-    protected void setVerbatimAlgFromList(int priority, ArrayList<String> sayThis){
+
+    public void setVerbatimAlgFromList(int priority, List<String> sayThis) {
         // build a simple output algorithm to speak string by string per think cycle
         // uses list param
-        this.outAlg = new Algorithm(new APVerbatim(sayThis));
+        this.outAlg = Algorithm.fromVarargs(new APVerbatim(sayThis));
         this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
+
     public void algPartsFusion(int priority, AlgPart... algParts) {
-        this.outAlg = new Algorithm(algParts);
-        this.outpAlgPriority = priority; // 1->5, 1 is the highest algorithm priority
+        this.outAlg = Algorithm.fromVarargs(algParts);
+        this.outpAlgPriority = priority; // 1->5 1 is the highest algorithm priority
     }
 
-    public Boolean pendingAlgorithm(){
+    public boolean pendingAlgorithm() {
         // is an algorithm pending?
-        return this.outAlg != null;
+        return outAlg != null;
     }
 
-    // Getter and Setter for skill_type
+    // Getter and Setter for skillType
     public int getSkillType() {
-        return skill_type;
+        return skillType;
     }
 
-    public void setSkillType(int skill_type) {
-        // 1:regular, 2:aware_skill, 3:continuous_skill
-        if (skill_type >= 1 && skill_type <= 3) {
-            this.skill_type = skill_type;
+    public void setSkillType(int skillType) {
+        // 1:regular, 2:continuous_skill
+        if (skillType == 1 || skillType == 2) {
+            this.skillType = skillType;
         }
     }
 
-    // Getter and Setter for skill_lobe
+    // Getter and Setter for skillLobe
     public int getSkillLobe() {
-        return skill_lobe;
+        return skillLobe;
     }
 
-    public void setSkillLobe(int skill_lobe) {
-        // 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Chobits
-        if (skill_lobe >= 1 && skill_lobe <= 5) {
-            this.skill_lobe = skill_lobe;
+    public void setSkillLobe(int skillLobe) {
+        // 1:logical, 2:hardware, 3:ear, 4:skin, 5:eye Lobe
+        if (skillLobe >= 1 && skillLobe <= 5) {
+            this.skillLobe = skillLobe;
         }
     }
+
+    public void manifest() {
+        // runs when the skill is added, used for life cycle processes(if needed)
+    }
+
+    public void ghost() {
+        // runs when the skill is removed, used for life cycle processes(if needed)
+    }
+
     public String skillNotes(String param) {
         return "notes unknown";
+    }
+
+    public String skillName() {
+        return this.getClass().getSimpleName();
     }
 }

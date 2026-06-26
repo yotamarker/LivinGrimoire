@@ -1,56 +1,55 @@
-import Auxiliary_Modules.DrawRnd;
-import LivinGrimoire.DiSysOut;
-import Auxiliary_Modules.RussianWordGems;
 import LivinGrimoire.Brain;
-import LivinGrimoire.DiHelloWorld;
-import Skills.logical.*;
-import Skills.special_skills.DiBicameral;
-import Skills.special_skills.DiGamificationSkillBundle;
-import Skills.special_skills.DiSkillBundle;
-import Skills.special_skills.SkillBranch;
-
 import java.util.Scanner;
+import java.util.concurrent.*;
 
-public class Main {
-    public static void main(String[] args) {
-        Brain b1 = new Brain();
-        b1.addHardwareSkill(new DiSysOut());
-        DiGamificationSkillBundle dsb = new DiGamificationSkillBundle();
-        dsb.addGrindSkill(new DiHelloWorld());
-        dsb.addCostlySkill(new DiTime());
-        b1.addLogicalSkill(dsb);
-        b1.addLogicalSkill(new DiGamificationScouter(dsb.getAxGamification()));
-        b1.addLogicalSkill(new DiSayer());
-        b1.addLogicalSkill(new DiEliza());
-        b1.addLogicalSkill(new DiJumbler());
-        b1.addLogicalSkill(new DiRailChatBot());
-        b1.addLogicalSkill(new DiBlabberV5());
-        SkillBranch sb = new SkillBranch(3);
-        sb.addDefcon("lame");
-        sb.addGoal("thanks");
-        sb.addSkill(new DiSmoothie0());
-        sb.addSkill(new DiSmoothie1());
-        b1.addLogicalSkill(sb);
-        b1.doIt("say roar","","");
-        b1.doIt("","","");
-        b1.addLogicalSkill(new RussianWordGems().retSkill());
-//        b1.logicChobit.addSkill(new DiHoneyBunny());
-        b1.addLogicalSkill(new DiAlarmer());
-        b1.addLogicalSkill(new DiMemoryGame());
-        b1.addLogicalSkill(new DiOneWorder());
-        b1.addLogicalSkill(new DiAware(b1.logicChobit,"sarval","owly"));
-        b1.addLogicalSkill(new DiBurstEliza());
-        DiBicameral bicameral = new DiBicameral();
-        bicameral.msgCol.addMSGV2("03:13","test run ok");
-        b1.addLogicalSkill(bicameral);
-        bicameral.msgCol.addMSGV2("13:05","#yandere");
-        b1.addLogicalSkill(new DiYandere("fuki"));
+static Brain b1 = new Brain();
+static BlockingQueue<String> brainQueue = new LinkedBlockingQueue<>();
+static int TICK_INTERVAL_MS = 2000;
+
+void main() {
+    Personality p1 = new Personality();
+    p1.skillsPush(b1);
+
+    Thread brainThread = new Thread(() -> {
+        while (true) {
+            try {
+                String message = brainQueue.take();
+                b1.doIt(message, "", "");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    });
+    brainThread.setDaemon(true);
+    brainThread.start();
+
+    try (ScheduledExecutorService ticker = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r);
+        t.setDaemon(true);
+        return t;
+    })) {
+        ticker.scheduleAtFixedRate(() -> {
+            try {
+                brainQueue.put("");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, TICK_INTERVAL_MS, TICK_INTERVAL_MS, TimeUnit.MILLISECONDS);
+
         Scanner scanner = new Scanner(System.in);
-        System.out.println("enter input");
-        String str1 = scanner.nextLine();
-        while (!str1.equals("exit")){
-            b1.doIt(str1,"","");
-            str1 = scanner.nextLine();
+        while (true) {
+            String input = scanner.nextLine();
+            if (input.trim().equalsIgnoreCase("exit")) {
+                IO.println("Exiting...");
+                System.exit(0);
+            }
+            try {
+                brainQueue.put(input);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
     }
 }

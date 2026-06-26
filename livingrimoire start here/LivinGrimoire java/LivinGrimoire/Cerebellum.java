@@ -2,15 +2,18 @@ package LivinGrimoire;
 
 public class Cerebellum {
     // runs an algorithm
-    private int fin;
-    private int at;
-    private Boolean incrementAt = false;
+    public Integer fin = null;
+    public Integer at = null;
+    public boolean incrementAt = false;
+    public Algorithm alg = null;
+    public boolean isActive = false;
+    public String emot = "";
 
     public void advanceInAlg() {
         if (incrementAt) {
             incrementAt = false;
-            at++;
-            if (at == fin) {
+            at += 1;
+            if (at.equals(fin)) {
                 isActive = false;
             }
         }
@@ -20,24 +23,21 @@ public class Cerebellum {
         return at;
     }
 
-    public Algorithm alg;
-    private boolean isActive = false;
-    private String emot = "";
-
     public String getEmot() {
         return emot;
     }
+
     public void setAlgorithm(Algorithm algorithm) {
-        if (!isActive && (!algorithm.getAlgParts().isEmpty())) {
-            this.alg = algorithm;
-            this.at = 0;
-            this.fin = algorithm.getSize();
-            this.isActive = true;
-            this.emot = alg.getAlgParts().get(at).myName(); // updated line
+        if (!isActive && (algorithm.getAlgParts() != null)) {
+            alg = algorithm;
+            at = 0;
+            fin = algorithm.getSize();
+            isActive = true;
+            emot = alg.getAlgParts().get(at).myName();
         }
     }
 
-    public boolean isActive() {
+    public boolean isActiveMethod() {
         return isActive;
     }
 
@@ -48,14 +48,16 @@ public class Cerebellum {
         }
         if (at < fin) {
             axnStr = alg.getAlgParts().get(at).action(ear, skin, eye);
-            this.emot = alg.getAlgParts().get(at).myName();
+            emot = alg.getAlgParts().get(at).myName();
             if (alg.getAlgParts().get(at).completed()) {
                 incrementAt = true;
             }
         }
         return axnStr;
     }
-    public void deactivate(){
-        this.isActive = this.isActive && !alg.getAlgParts().get(at).algKillSwitch;
+
+    public void deActivateAlg() {
+        // stop the entire running active Algorithm
+        isActive = isActive && !alg.getAlgParts().get(at).algKillSwitch;
     }
 }

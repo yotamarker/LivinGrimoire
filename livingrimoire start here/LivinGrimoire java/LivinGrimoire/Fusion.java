@@ -1,39 +1,44 @@
 package LivinGrimoire;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Fusion {
     private String emot = "";
+    public List<Cerebellum> ceraArr = new ArrayList<>();
     private String result = "";
-    private Cerebellum[] ceraArr = new Cerebellum[5];
 
     public Fusion() {
         for (int i = 0; i < 5; i++) {
-            ceraArr[i] = new Cerebellum();
+            ceraArr.add(new Cerebellum());
         }
     }
 
     public String getEmot() {
         return emot;
     }
-    public void loadAlgs(Neuron neuron){
-        for (int i = 1; i < 6; i++) {
-            if (!ceraArr[i-1].isActive()){
+
+    public void loadAlgs(Neuron neuron) {
+        for (int i = 1; i <= 5; i++) {
+            if (!ceraArr.get(i - 1).isActive) {
                 Algorithm temp = neuron.getAlg(i);
-                if (temp != null){
-                    ceraArr[i-1].setAlgorithm(temp);
+                if (temp != null) {
+                    ceraArr.get(i - 1).setAlgorithm(temp);
                 }
             }
         }
     }
-    public String runAlgs(String ear, String skin, String eye){
+
+    public String runAlgs(String ear, String skin, String eye) {
         result = "";
         for (int i = 0; i < 5; i++) {
-            if (!ceraArr[i].isActive()){
+            if (!ceraArr.get(i).isActive) {
                 continue;
             }
-            result = ceraArr[i].act(ear,skin,eye);
-            ceraArr[i].advanceInAlg();
-            emot = ceraArr[i].getEmot();
-            ceraArr[i].deactivate(); // deactivation if Mutatable.algkillswitch = true
+            result = ceraArr.get(i).act(ear, skin, eye);
+            ceraArr.get(i).advanceInAlg();
+            emot = ceraArr.get(i).getEmot();
+            ceraArr.get(i).deActivateAlg(); // deactivation if AlgPart.algKillSwitch = true
             return result;
         }
         emot = "";

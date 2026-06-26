@@ -2,19 +2,21 @@ package LivinGrimoire;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
-// a step-by-step plan to achieve a goal
+// A step-by-step plan to achieve a goal
 public class Algorithm {
-    private ArrayList<AlgPart> algParts = new ArrayList<>();
+    public List<AlgPart> algParts;
 
-    public Algorithm(ArrayList<AlgPart> algParts) {
+    public Algorithm(List<AlgPart> algParts) {
         this.algParts = algParts;
     }
-    public Algorithm(AlgPart... algParts) {
-        this.algParts = new ArrayList<>(Arrays.asList(algParts));
+
+    public static Algorithm fromVarargs(AlgPart... algParts) {
+        return new Algorithm(new ArrayList<>(Arrays.asList(algParts)));
     }
 
-    public ArrayList<AlgPart> getAlgParts() {
+    public List<AlgPart> getAlgParts() {
         return algParts;
     }
 
@@ -22,4 +24,3 @@ public class Algorithm {
         return algParts.size();
     }
 }
-

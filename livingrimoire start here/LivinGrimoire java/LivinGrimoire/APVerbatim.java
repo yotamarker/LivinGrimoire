@@ -1,31 +1,29 @@
 package LivinGrimoire;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Queue;
+import java.util.List;
 
 public class APVerbatim extends AlgPart {
-    private Queue<String> sentences = new ArrayDeque<>();
+    public ArrayDeque<String> sentences;
 
     public APVerbatim(String... sentences) {
-        this.sentences.addAll(Arrays.asList(sentences));
+        super();
+        this.sentences = new ArrayDeque<>(Arrays.asList(sentences));
     }
 
-    public APVerbatim(ArrayList<String> list1) {
-        this.sentences = new ArrayDeque<>(list1);
+    public APVerbatim(List<String> sentences) {
+        super();
+        this.sentences = new ArrayDeque<>(sentences);
     }
 
     @Override
     public String action(String ear, String skin, String eye) {
-        // Poll returns null if empty, so we return "" instead
-        String sentence = this.sentences.poll();
-        return sentence != null ? sentence : "";
+        return sentences.isEmpty() ? "" : sentences.pollFirst();
     }
 
     @Override
-    public Boolean completed() {
-        return this.sentences.isEmpty();
+    public boolean completed() {
+        return sentences.isEmpty();
     }
 }
-

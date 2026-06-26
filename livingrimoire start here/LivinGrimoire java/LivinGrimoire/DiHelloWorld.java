@@ -1,26 +1,24 @@
 package LivinGrimoire;
 
 public class DiHelloWorld extends Skill {
-    // hello world skill for testing purposes
     public DiHelloWorld() {
         super();
     }
 
     @Override
     public void input(String ear, String skin, String eye) {
-        switch (ear){
-            case "hello":
-                super.setSimpleAlg("hello world"); // 1->5 1 is the highest algorithm priority
-                break;
+        if (ear.equals("hello")) {
+            setVerbatimAlg(4, "hello world"); // 1->5 1 is the highest algorithm priority
         }
     }
+
     @Override
     public String skillNotes(String param) {
-        if ("notes".equals(param)) {
+        if (param.equals("notes")) {
             return "plain hello world skill";
-        } else if ("triggers".equals(param)) {
+        } else if (param.equals("triggers")) {
             return "say hello";
         }
-        return "note unavailable";
+        return "note unavalible";
     }
 }

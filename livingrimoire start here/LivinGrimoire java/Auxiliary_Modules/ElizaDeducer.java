@@ -18,8 +18,8 @@ public class ElizaDeducer {
 
     public ElizaDeducer(int lim) {
         babble2 = new ArrayList<>();
-        patternIndex = new java.util.HashMap<>();
-        responseCache = new java.util.HashMap<>();
+        patternIndex = new HashMap<>();
+        responseCache = new HashMap<>();
         ec2 = new EventChatV2(lim);
     }
 
