@@ -1,6 +1,7 @@
 import LivinGrimoire.Brain;
 import LivinGrimoire.DiHelloWorld;
 import LivinGrimoire.DiSysOut;
+import Skills.logical.DiStartUp;
 import Skills.logical.DiTime;
 
 public class Personality {
@@ -8,5 +9,6 @@ public class Personality {
         brain.addSkill(new DiSysOut());
         brain.addSkill(new DiHelloWorld());
         brain.addSkill(new DiTime());
+        brain.addSkill(new DiStartUp(brain));
     }
 }
