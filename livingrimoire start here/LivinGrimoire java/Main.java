@@ -1,4 +1,4 @@
-import LivinGrimoire.Brain;
+import LivinGrimoirePacket.LivinGrimoire.Brain;
 import java.util.Scanner;
 import java.util.concurrent.*;
 

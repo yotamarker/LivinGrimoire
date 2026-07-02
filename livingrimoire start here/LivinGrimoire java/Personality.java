@@ -1,8 +1,8 @@
-import LivinGrimoire.Brain;
-import LivinGrimoire.DiHelloWorld;
-import LivinGrimoire.DiSysOut;
-import Skills.logical.DiStartUp;
-import Skills.logical.DiTime;
+import LivinGrimoirePacket.LivinGrimoire.Brain;
+import LivinGrimoirePacket.LivinGrimoire.DiHelloWorld;
+import LivinGrimoirePacket.LivinGrimoire.DiSysOut;
+import DLC.logical.DiStartUp;
+import DLC.logical.DiTime;
 
 public class Personality {
     public void skillsPush(Brain brain){
