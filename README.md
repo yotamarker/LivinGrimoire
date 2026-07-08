@@ -81,4 +81,4 @@ def add_DLC_skills(brain: Brain):
 
 ### 💬 Official Forum
 
-https://yotamarker.com
+https://livingrimoire.com
