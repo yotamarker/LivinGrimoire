@@ -2,7 +2,7 @@ import random
 import re
 
 from LivinGrimoirePacket.AXPython import RailBot, AXContextCmd, QuestionChecker, PhraseInflector, KeyWords, CodeParser, \
-    PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ, TrgEveryNMinutes, DBAntiGlitch, TrgHP, \
+    PercentDripper, Responder, AXNPC2, AXStringSplit, AnnoyedQ, TrgEveryNMinutes, DBAntiGlitch, \
     NSilenceCyclesAfterStr, Sarcophagus, SimilarityScorer, SimpleHP, EveningGate
 from LivinGrimoirePacket.AlgParts import APMad
 from LivinGrimoirePacket.LivinGrimoire import Skill
@@ -16,55 +16,45 @@ from LivinGrimoirePacket.RailBotExtensions import RailPunk, PopulatorFunc, KeyVa
 
 
 class DiRailPunk(Skill):
-    # this skill swaps between two sets of contradicting skills
     def __init__(self):
         super().__init__()
-        self.set_skill_type(2)  # backgroundable skill
+        self.set_skill_type(2)
         self.chatbot: RailPunk = RailPunk()
-        self.chatbot.add_populator(KeyVal())  # key;value will be fed in directly with that pattern
+        self.chatbot.add_populator(KeyVal())
         self.chatbot.add_populator(GoodFor())
         self.chatbot.add_populator(XYPatternLearner())
         self.add_populators(Walkthrough(), Snippet(), Composition(), NoNos())
-        self.chatbot.enable_db_wrapper()  # enables railpunk to save load
-        self.idler: NSilenceCyclesAfterStr = NSilenceCyclesAfterStr(3,5)
+        self.chatbot.enable_db_wrapper()
+        self.idler: NSilenceCyclesAfterStr = NSilenceCyclesAfterStr(3, 5)
         self.chatbot.set_context("stand by")
-        # monolog
         self.monolog: set[str] = {"yeah", "elaborate", "elab"}
-        # focus mode
         self.focus = False
-        # output filter
         self.filter: Sarcophagus = Sarcophagus()
-        self.filter_clear:set[str] = {"clear filter", "clear word filter", "clear sarcophagus"}
+        self.filter_clear: set[str] = {"clear filter", "clear word filter", "clear sarcophagus"}
         self.HP = SimpleHP()
-
-
 
     def add_output_filter(self, item: str):
         self.filter.add_item(item)
 
     def add_populators(self, *pops: PopulatorFunc):
-        # add railbot populators (plug and play deductions)
         for pop in pops:
             self.chatbot.add_populator(pop)
 
     def input(self, ear: str, skin: str, eye: str):
-        # prevent database hacks
         if DBAntiGlitch.starts_with_trigger(ear):
             return
-        # filter add
         if self.filter.add_item_via_regex(ear):
             self.setSimpleAlg("ok i will not use that nono word")
             return
         if ear in self.filter_clear:
             self.setSimpleAlg("i am now ungovernable")
             return
-        # enter focus mode
         if ear == "focus":
             self.focus = True
             self.setSimpleAlg("focusing")
             return
         if self.idler.check(ear):
-            self.chatbot.save_learned_data(self.getKokoro())
+            self.chatbot.save_learned_data(self.getKokoro().grimoireMemento)
             self.chatbot.set_context("stand by")
             self.focus = False
             return
@@ -72,21 +62,20 @@ class DiRailPunk(Skill):
         if self.HP.triggered(str1):
             reply = ""  # noqa
             if ear in self.monolog:
-                reply = self.chatbot.loadable_monolog(self.getKokoro())
+                reply = self.chatbot.loadable_monolog(self.getKokoro().grimoireMemento)
                 reply = PhraseInflector.inflect_phrase(reply)
                 if len(reply) > 0:
                     self.setSimpleAlg(reply)
                 return
-            else:  # dialog
+            else:
                 if not self.focus:
-                    reply = self.chatbot.loadable_dialog(ear, self.getKokoro())
+                    reply = self.chatbot.loadable_dialog(ear, self.getKokoro().grimoireMemento)
                 else:
-                    reply = self.chatbot.loadable_latest_dialog(ear, self.getKokoro())
-            # filter output
+                    reply = self.chatbot.loadable_latest_dialog(ear, self.getKokoro().grimoireMemento)
             if self.filter.shield(reply):
                 self.chatbot.learn(ear)
                 return
-            if len(reply)>0:
+            if len(reply) > 0:
                 reply = PhraseInflector.inflect_phrase(reply)
                 self.setSimpleAlg(reply)
         if self.HP.started_to_listen():
@@ -95,8 +84,15 @@ class DiRailPunk(Skill):
         if self.HP.stopped():
             self.setSimpleAlg("conversation stopped")
             return
-        if not ear in self.monolog:
+        if ear not in self.monolog:
             self.chatbot.learn(ear)
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "railpunk chatbot skill with populator-based learning"
+        elif param == "triggers":
+            return "say 'hey' to start, 'bye/stop/shut up' to end, 'yeah/elaborate/elab' for monolog, 'focus' for focus mode"
+        return "note unavailable"
 
 
 class DiOneWorder(Skill):

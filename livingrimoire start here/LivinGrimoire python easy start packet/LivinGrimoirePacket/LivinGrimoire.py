@@ -108,7 +108,7 @@ class Skill:
     def __init__(self):
         # The variables start with an underscore (_) because they are protected
         self._kokoro: Kokoro|None = None  # consciousness, shallow ref class to enable interskill communications
-        self._outAlg: Algorithm  # skills output
+        self._outAlg: Algorithm|None  # skills output
         self._outAlg = None
         self._outpAlgPriority: int = -1  # defcon 1->5
         self._skill_type: int = 1  # 1:regular, 2:continuous_skill
