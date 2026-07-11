@@ -433,6 +433,7 @@ class Lobe:
 class Brain:
     # c'tor
     def __init__(self):
+        self._tick_interval: float = 1.0  # seconds, default tick cadence
         self._emotion: str = ""
         self._logicLobeOutput: str = ""
         self.logicLobe: Lobe = Lobe()
@@ -441,6 +442,13 @@ class Brain:
         self.skin: Lobe = Lobe()
         self.eye: Lobe = Lobe()
         Brain.imprintSoul(self.logicLobe.getKokoro(), self.hardwareLobe, self.ear, self.skin, self.eye)
+
+    def get_tick_interval(self) -> float:
+        return self._tick_interval
+
+    def set_tick_interval(self, tick_interval: float):
+        if tick_interval > 0:
+            self._tick_interval = tick_interval
 
     @staticmethod
     def imprintSoul(kokoro: Kokoro, *args: Lobe):

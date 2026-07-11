@@ -1,14 +1,15 @@
 import time
+
 from LivinGrimoirePacket.LivinGrimoire import Brain, Skill
+
 
 class PillAccelo(Skill):
     NORMAL_INTERVAL = 1.0
     ACCELO_INTERVAL = 0.3
 
-    def __init__(self, brain: Brain, tick_config: dict):
+    def __init__(self, brain: Brain):
         super().__init__()
         self.brain = brain
-        self.tick_config = tick_config
         self._acceled = False
         self._accelo_until = 0.0
 
@@ -19,13 +20,13 @@ class PillAccelo(Skill):
             return
         if self._acceled and time.time() >= self._accelo_until:
             self._acceled = False
-            self.tick_config["interval"] = PillAccelo.NORMAL_INTERVAL
+            self.brain.set_tick_interval(PillAccelo.NORMAL_INTERVAL)
             print("[Accelo] wearing off — back to normal clock")
 
     def _engage(self):
         self._acceled = True
         self._accelo_until = time.time() + 120
-        self.tick_config["interval"] = PillAccelo.ACCELO_INTERVAL
+        self.brain.set_tick_interval(PillAccelo.ACCELO_INTERVAL)
         print("[Accelo] pill taken — clock accelerated")
         self.setSimpleAlg("overdrive protocol initiate")
 

@@ -8,9 +8,6 @@ from pathlib import Path
 
 from LivinGrimoirePacket.LivinGrimoire import Brain
 
-TICK_INTERVAL = 1  # seconds
-tick_config = {"interval": TICK_INTERVAL}  # accessible globally
-
 
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and PyInstaller."""
@@ -73,7 +70,7 @@ def tick_loop():
         now = time.monotonic()
         if now >= next_tick:
             brain_queue.put("")
-            next_tick = now + tick_config["interval"]  # reads live
+            next_tick = now + b1.get_tick_interval()  # reads live from Brain
         time.sleep(0.01)
 
 
