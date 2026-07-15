@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 class Program
 {
     static Brain brain = new Brain();
-    static int tickInterval = 2000; // milliseconds
 
     static void Main(string[] args)
     {
@@ -41,7 +40,7 @@ class Program
             if (DateTime.Now >= nextTick)
             {
                 Task.Run(() => brain.Think());
-                nextTick = nextTick.AddMilliseconds(tickInterval);
+                nextTick = nextTick.AddSeconds(brain.getTickInterval());
             }
             Thread.Sleep(10);
         }

@@ -435,6 +435,7 @@ public class Lobe
 
 public class Brain
 {
+    private double _tickInterval = 1.0; // seconds, default tick cadence
     private string _emotion = "";
     private string _logicLobeOutput = "";
     public Lobe LogicLobe { get; } = new();
@@ -452,6 +453,19 @@ public class Brain
     {
         foreach (var lobe in lobes)
             lobe.SetKokoro(kokoro);
+    }
+
+    public double getTickInterval()
+    {
+        return _tickInterval;
+    }
+
+    public void setTickInterval(double tickInterval)
+    {
+        if (tickInterval > 0)
+        {
+            _tickInterval = tickInterval;
+        }
     }
 
     public string GetEmotion() => _emotion;
