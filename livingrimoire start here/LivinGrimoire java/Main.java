@@ -4,7 +4,6 @@ import java.util.concurrent.*;
 
 static Brain b1 = new Brain();
 static BlockingQueue<String> brainQueue = new LinkedBlockingQueue<>();
-static int TICK_INTERVAL_MS = 2000;
 
 void main() {
     Personality p1 = new Personality();
@@ -29,13 +28,7 @@ void main() {
         t.setDaemon(true);
         return t;
     })) {
-        ticker.scheduleAtFixedRate(() -> {
-            try {
-                brainQueue.put("");
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }, TICK_INTERVAL_MS, TICK_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        scheduleTick(ticker);
 
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -52,4 +45,16 @@ void main() {
             }
         }
     }
+}
+
+static void scheduleTick(ScheduledExecutorService ticker) {
+    ticker.schedule(() -> {
+        try {
+            brainQueue.put("");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        scheduleTick(ticker);
+    }, (long) (b1.getTickInterval() * 1000), TimeUnit.MILLISECONDS);
 }

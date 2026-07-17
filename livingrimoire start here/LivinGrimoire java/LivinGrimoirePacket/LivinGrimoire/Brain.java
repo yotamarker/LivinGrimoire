@@ -2,6 +2,7 @@ package LivinGrimoirePacket.LivinGrimoire;
 
 public class Brain {
     // c'tor
+    private double tickInterval = 1.0; // seconds, default tick cadence
     private String emotion = "";
     private String logicLobeOutput = "";
     public Lobe logicLobe = new Lobe();
@@ -16,6 +17,16 @@ public class Brain {
 
     public static void imprintSoul(Kokoro kokoro, Lobe... args) {
         for (Lobe arg : args) { arg.setKokoro(kokoro); }
+    }
+
+    public double getTickInterval() {
+        return tickInterval;
+    }
+
+    public void setTickInterval(double tickInterval) {
+        if (tickInterval > 0) {
+            this.tickInterval = tickInterval;
+        }
     }
 
     // ret active alg part representing emotion
