@@ -176,20 +176,6 @@ class PopulatorFunc:
         pass
 
 
-class RailPunkPopulator:
-    def __init__(self, railbot: RailPunk):
-        self.railbot = railbot
-        self.funcs: dict[str, PopulatorFunc] = {}
-
-    def add_func(self, func: PopulatorFunc):
-        if len(func.regex) > 0:
-            self.funcs[func.regex] = func
-
-    def populate(self, str1: str):
-        for regex, func in self.funcs.items():
-            self.funcs[regex].populate(self.railbot, str1)
-
-
 class StringCache:
     def __init__(self):
         self._cache: set[str] = set()
@@ -214,13 +200,18 @@ class RailPunk:
         self.ec = EventChatV2(limit)
         self.context = "stand by"
         self.eliza_wrapper = None
-        self.populator = RailPunkPopulator(self)
-        self.populator.add_func(KeysFunnel())
+        self.funcs: dict[str, PopulatorFunc] = {}
+        self.add_populator(KeysFunnel())
         self.removables: set[str] = Tokenizer.exclusions
         self.skip = False
 
     def add_populator(self, func: PopulatorFunc):
-        self.populator.add_func(func)
+        if len(func.regex) > 0:
+            self.funcs[func.regex] = func
+
+    def _populate(self, str1: str):
+        for regex, func in self.funcs.items():
+            self.funcs[regex].populate(self, str1)
 
     def enable_db_wrapper(self):
         if self.eliza_wrapper is None:
@@ -245,7 +236,7 @@ class RailPunk:
     def learn(self, ear):
         if not ear or ear == self.context:
             return
-        self.populator.populate(ear)
+        self._populate(ear)
         self.ec.add_key_value(self.context, ear)
         self.context = ear
 
