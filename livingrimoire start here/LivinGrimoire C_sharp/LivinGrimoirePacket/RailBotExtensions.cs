@@ -233,28 +233,6 @@ namespace LivinGrimoire
         }
     }
 
-    public class RailPunkPopulator
-    {
-        private readonly RailPunk _railbot;
-        private readonly Dictionary<string, PopulatorFunc> _funcs = new Dictionary<string, PopulatorFunc>();
-
-        public RailPunkPopulator(RailPunk railbot)
-        {
-            _railbot = railbot;
-        }
-
-        public void AddFunc(PopulatorFunc func)
-        {
-            if (func.Key.Length > 0)
-                _funcs[func.Key] = func;
-        }
-
-        public void Populate(string str1)
-        {
-            foreach (var kvp in _funcs)
-                kvp.Value.Populate(_railbot, str1);
-        }
-    }
 
     public class StringCache
     {
@@ -278,29 +256,37 @@ namespace LivinGrimoire
     // ║                              RAILPUNK                                  ║
     // ╚════════════════════════════════════════════════════════════════════════╝
 
+
     public class RailPunk
     {
         public EventChatV2 Ec { get; }
         public string Context { get; set; }
         public ElizaDBWrapper? ElizaWrapper { get; set; }
-        public RailPunkPopulator Populator { get; }
         public HashSet<string> Removables { get; set; }
         public bool Skip { get; set; }
+
+        private readonly Dictionary<string, PopulatorFunc> _funcs = new Dictionary<string, PopulatorFunc>();
 
         public RailPunk(int limit = 5)
         {
             Ec = new EventChatV2(limit);
             Context = "stand by";
             ElizaWrapper = null;
-            Populator = new RailPunkPopulator(this);
-            Populator.AddFunc(new KeysFunnel());
+            AddPopulator(new KeysFunnel());
             Removables = Tokenizer.Exclusions;
             Skip = false;
         }
 
         public void AddPopulator(PopulatorFunc func)
         {
-            Populator.AddFunc(func);
+            if (func.Key.Length > 0)
+                _funcs[func.Key] = func;
+        }
+
+        private void Populate(string str1)
+        {
+            foreach (var kvp in _funcs)
+                kvp.Value.Populate(this, str1);
         }
 
         public void EnableDbWrapper()
@@ -335,7 +321,7 @@ namespace LivinGrimoire
         {
             if (string.IsNullOrEmpty(ear) || ear == Context)
                 return;
-            Populator.Populate(ear);
+            Populate(ear);
             Ec.AddKeyValue(Context, ear);
             Context = ear;
         }
@@ -428,6 +414,7 @@ namespace LivinGrimoire
             return ElizaWrapper.RespondLatest(ear, Ec, db);
         }
     }
+
 
     // ╔════════════════════════════════════════════════════════════════════════╗
     // ║                         POPULATOR FUNCTIONS                            ║
