@@ -199,7 +199,7 @@ class RailPunk:
     def __init__(self, limit=5):
         self.ec = EventChatV2(limit)
         self.context = "stand by"
-        self.eliza_wrapper = None
+        self.eliza_wrapper: ElizaDBWrapper | None = None
         self.funcs: dict[str, PopulatorFunc] = {}
         self.add_populator(KeysFunnel())
         self.removables: set[str] = Tokenizer.exclusions
