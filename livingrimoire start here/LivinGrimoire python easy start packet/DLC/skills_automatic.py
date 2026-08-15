@@ -104,10 +104,12 @@ class DiSleep(Skill):
         return self
 
     def input(self, ear, skin, eye):
+        self._kokoro.toHeart[self.skill_name] = ""
         if self.trgTime.alarm():
             announce: APVerbatim = APVerbatim("initializing sleep")
             ap_sleep: APSleep = APSleep(self.wakeners, self.sleep_duration_minutes)
             self.algPartsFusion(2, announce, ap_sleep)
+            self._kokoro.toHeart[self.skill_name] = "sleep"
 
     def skillNotes(self, param: str) -> str:
         if param == "notes":
