@@ -77,7 +77,6 @@ public class Algorithm
 // Kokoro: database, inter-skill communication, action log monitoring
 public class Kokoro
 {
-    public string Emot { get; set; } = "";
     public AbsDictionaryDB GrimoireMemento { get; set; }
     public Dictionary<string, string> ToHeart { get; } = new();
 

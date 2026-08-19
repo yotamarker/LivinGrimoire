@@ -74,15 +74,8 @@ class Algorithm:
 # the Kokoro class enables: using a database, inter skill communication and action log monitoring
 class Kokoro:
     def __init__(self, absDictionaryDB: AbsDictionaryDB):
-        self.emot = ""
         self.grimoireMemento = absDictionaryDB
         self.toHeart: dict[str, str] = {}
-
-    def getEmot(self) -> str:
-        return self.emot
-
-    def setEmot(self, emot: str):
-        self.emot = emot
 
 
 # used to transport algorithms to other classes
