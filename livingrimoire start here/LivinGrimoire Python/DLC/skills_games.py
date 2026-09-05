@@ -1,5 +1,6 @@
 import datetime
 import random
+from typing import Optional
 
 from LivinGrimoirePacket.AXPython import TimeGate, UniqueResponder, AXFunnel, EventChat, Responder, \
     Magic8Ball, RegexUtil, DrawRnd, Cycler, AXContextCmd, OnOffSwitch, PercentDripper
@@ -206,40 +207,67 @@ class DiHugAttack(Skill):
 
 class DiTeaParty(Skill):
     def __init__(self):
-        super().__init__()  # Call the parent class constructor
+        super().__init__()
         self.set_skill_type(2)  # continuous skill
-        self.toggle = "lets have a tea party"
-        self.max_sips = 15
-        self.sipped = 0
-        self.spacer_lim = 6
-        self.count_down = self.spacer_lim
+        self.toggle: str = "lets have a tea party"
+        self.party_duration: int = 300  # 5 minutes total
         self.responder = Responder("sip", "sippy sip", "slurp", "mwahaha")
-        self.is_on = False
+        self.is_on: bool = False
+        self.start_time: Optional[float] = None
+        self.end_time: Optional[float] = None
+        self.next_sip_time: Optional[float] = None
+
+    @staticmethod
+    def rand_between(a, b):
+        return random.randint(a, b)
+
+    def next_gap(self, elapsed):
+        """Sip spacing that mimics how people actually drink tea:
+        - first sip: hesitant, it's hot, longer gap
+        - middle: steady rhythm, shorter gaps
+        - final stretch: slowing down, savoring/finishing
+        """
+        remaining = self.party_duration - elapsed
+        if elapsed < 30:
+            return self.rand_between(35, 55)      # blowing on it, first sip is cautious
+        elif remaining < 60:
+            return self.rand_between(40, 70)       # winding down, fewer sips left
+        else:
+            return self.rand_between(18, 38)       # steady mid-party rhythm
 
     def input(self, ear, skin, eye):
         if ear == self.toggle:
             self.is_on = True
+            now = time.time()
+            self.start_time = now
+            self.end_time = now + self.party_duration
+            self.next_sip_time = now + self.next_gap(0)
             self.setSimpleAlg("ok lets drink tea together")
-            self.count_down = self.spacer_lim
-            self.sipped = 0
             return
-        if self.is_on:
-            if ear.lower().strip() == "stop":
-                self.is_on = False
-                self.setSimpleAlg("tea party ended")
-                return
-            if ear == "cheers":
-                self.setSimpleAlg("cheers")
-                return
-            self.count_down -=1
-            if self.count_down < 1:
-                self.sipped += 1
-                if self.sipped>self.max_sips:
-                    self.is_on = False
-                    self.setSimpleAlg("that was a fun tea party")
-                    return
-                self.setSimpleAlg(self.responder.getAResponse())
-                self.count_down = self.spacer_lim
+
+        if not self.is_on:
+            return
+
+        if ear and ear.lower().strip() == "stop":
+            self.is_on = False
+            self.setSimpleAlg("tea party ended")
+            return
+
+        if ear == "cheers":
+            self.setSimpleAlg("cheers")
+            return
+
+        now = time.time()
+
+        if now >= self.end_time:
+            self.is_on = False
+            self.setSimpleAlg("that was a fun tea party")
+            return
+
+        if now >= self.next_sip_time:
+            self.setSimpleAlg(self.responder.getAResponse())
+            elapsed = now - self.start_time
+            self.next_sip_time = now + self.next_gap(elapsed)
 
 
 class DiMezzoflationGame(Skill):
