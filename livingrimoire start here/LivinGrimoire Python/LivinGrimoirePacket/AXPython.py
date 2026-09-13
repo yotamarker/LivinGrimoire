@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from datetime import datetime
 from typing import Optional
 
 from LivinGrimoirePacket.LivinGrimoire import *
@@ -1015,45 +1015,41 @@ class CodeParser:
 class TimeGate:
     # a gate that only opens x minutes after it has been set
 
-    def __init__(self, minutes) -> None:
+    def __init__(self, minutes: int) -> None:
         self.pause = max(1, minutes)
-        self.openedGate: datetime.date = datetime.datetime.now()
-        self.checkPoint: datetime.date = datetime.datetime.now()
-        time.sleep(0.1)
+        epsilon = datetime.timedelta(microseconds=100)
+        now = datetime.datetime.now()
+        self.openedGate: datetime.datetime = now - epsilon
+        self.checkPoint: datetime.datetime = now
 
     def isClosed(self) -> bool:
         return self.openedGate < datetime.datetime.now()
 
     def isOpen(self) -> bool:
-        return not (self.openedGate < datetime.datetime.now())
+        return not self.isClosed()
 
     def open(self, minutes: int):
-        now: datetime.date = datetime.datetime.now()
-        self.openedGate = now + timedelta(minutes=minutes)
+        self.openedGate = datetime.datetime.now() + datetime.timedelta(minutes=minutes)
 
     def open_for_n_seconds(self, seconds: int):
-        now: datetime.date = datetime.datetime.now()
-        self.openedGate = now + timedelta(seconds=seconds)
+        self.openedGate = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
 
     def openForPauseMinutes(self):
-        now: datetime.date = datetime.datetime.now()
-        self.openedGate = now + timedelta(minutes=self.pause)
+        self.openedGate = datetime.datetime.now() + datetime.timedelta(minutes=self.pause)
 
     def setPause(self, pause: int):
-        if 60 > pause > 0:
+        if 0 < pause < 60:
             self.pause = pause
 
     def resetCheckPoint(self):
         self.checkPoint = datetime.datetime.now()
 
     def getRunTimeTimeDifInSecondes(self) -> int:
-        # used to measure code snippets run time
-        now: datetime.date = datetime.datetime.now()
-        diff: datetime.timedelta = self.checkPoint - now
+        diff: datetime.timedelta = self.checkPoint - datetime.datetime.now()
         return int(diff.total_seconds())
 
     def close(self):
-        self.openedGate: datetime.date = datetime.datetime.now()
+        self.openedGate = datetime.datetime.now()
 
 
 # A simple implementation of Priority Queue
