@@ -10,6 +10,10 @@ class AbsDictionaryDB:
         _ = key
         return "null"
 
+    def clear(self):
+        # "complete data deletion"
+        pass
+
 
 class AlgPart:
     # one part of an algorithm, it is a basic simple action or sub goal

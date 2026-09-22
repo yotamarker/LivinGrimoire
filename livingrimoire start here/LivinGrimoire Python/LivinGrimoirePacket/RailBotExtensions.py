@@ -114,6 +114,10 @@ class EventChatV2:
     def get_save_str(self, key: str) -> str:
         return self.dic[key].get_savable_str() if key in self.dic else ""
 
+    def clear(self) -> None:
+        self.dic.clear()
+        self.modified_keys.clear()
+
 
 class ElizaDBWrapper:
     def __init__(self):
@@ -137,6 +141,9 @@ class ElizaDBWrapper:
     def sleep_n_save(ec: EventChatV2, db: AbsDictionaryDB):
         for element in ec.get_modified_keys():
             db.save(element, ec.get_save_str(element))
+
+    def clear(self) -> None:
+        self.modified_keys.clear()
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -303,6 +310,16 @@ class RailPunk:
         if self.eliza_wrapper is None:
             return self.respond_latest(ear)
         return self.eliza_wrapper.respond_latest(ear, self.ec, db)
+
+    def clear(self, db: AbsDictionaryDB | None = None):
+        """Wipe in-memory dictionary state, and DB-backed state if a db is given."""
+        self.ec.clear()
+        self.context = "stand by"
+        self.skip = False
+        if self.eliza_wrapper is not None:
+            self.eliza_wrapper.clear()
+        if db is not None:
+            db.clear()
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗

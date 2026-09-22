@@ -52,3 +52,12 @@ class SQLiteDictionaryDB(AbsDictionaryDB):
         exists = cur.fetchone() is not None
         conn.close()
         return exists
+
+    def clear(self):
+        """Delete all key/value pairs from the DB."""
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        cur.execute("DELETE FROM kv_store")
+        conn.commit()
+        conn.close()
+        return "cleared"
