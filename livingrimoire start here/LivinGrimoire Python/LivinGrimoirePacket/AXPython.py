@@ -86,6 +86,7 @@ from difflib import SequenceMatcher
 # - EveningGate
 # - NSilenceCyclesAfterStr
 # - SimilarityScorer
+# - TrueSprinkler
 
 # ┌──────────────────────────────────────────────┐
 # │ 🧪 SPECIAL SKILLS DEPENDENCIES               │
@@ -1895,6 +1896,61 @@ class SimilarityScorer:
 
         # Clamp the value to the range 0-100
         return max(0, min(100, result))
+
+
+class TrueSprinkler:
+    """
+    Fires `count` times per day, at random minutes within [hour1:00, hour2:59].
+
+    Each day's minutes are pre-rolled (self._slots) and consumed one by one
+    as check() is called — so a given minute only triggers once, even if
+    check() is called multiple times within that minute's window on a fast loop.
+    """
+
+    def __init__(self, count: int, hour1: int, hour2: int):
+        self.count = max(0, count)                       # never negative
+        self.hour1 = max(0, min(23, hour1))               # clamp to valid hour range
+        self.hour2 = max(self.hour1, min(23, hour2))      # clamp + ensure hour2 >= hour1
+
+        self._day = None                                 # date the current _slots belong to
+        self._slots = set()                               # remaining trigger minutes (minute-of-day) for today
+
+    def roll(self, from_min: int = 0):
+        """
+        Pick `count` random minutes (minute-of-day) inside [hour1:00, hour2:59],
+        excluding anything before `from_min`.
+
+        `from_min` matters on startup mid-window: if the program starts at,
+        say, 14:30, we don't want to roll minutes at 14:00-14:29 that already
+        passed and will never fire. On a normal day rollover we pass 0,
+        since the whole window is still ahead.
+        """
+        start = max(self.hour1 * 60, from_min)            # window start, pulled forward if we're starting late
+        end = (self.hour2 + 1) * 60                       # window end, exclusive (end of hour2)
+
+        n = max(0, min(self.count, end - start))          # can't sample more slots than exist in the window
+        self._slots = set(random.sample(range(start, end), n))
+
+    def check(self, now: datetime = None) -> bool:
+        """
+        Call this periodically (e.g. once a minute). Returns True exactly once
+        per rolled minute, if `now` falls on one.
+        """
+        now = now or datetime.now()
+        m = now.hour * 60 + now.minute                    # current minute-of-day
+        today = now.date()
+
+        if today != self._day:                            # crossed into a new day (or first-ever call)
+            first_run = self._day is None
+            self._day = today
+            # First run: skip minutes already passed today (avoid firing for the past).
+            # Normal day rollover: reroll the full window, nothing's passed yet.
+            self.roll(m if first_run else 0)
+
+        if m in self._slots:
+            self._slots.remove(m)                         # consume so it only fires once
+            return True
+        return False
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
