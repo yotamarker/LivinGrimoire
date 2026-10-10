@@ -504,6 +504,24 @@ class Brain:
             case 5:  # Eye skill
                 self.eye.remove_skill(skill)
 
+    def contains_skill(self, skill: Skill) -> bool:
+        """
+        Checks the lobe the skill belongs to (by its skill_lobe attribute),
+        in both the regular and continuous lists.
+        """
+        match skill.get_skill_lobe():
+            case 1:
+                return self.logicLobe.containsSkill(skill)
+            case 2:
+                return self.hardwareLobe.containsSkill(skill)
+            case 3:
+                return self.ear.containsSkill(skill)
+            case 4:
+                return self.skin.containsSkill(skill)
+            case 5:
+                return self.eye.containsSkill(skill)
+        return False
+
     def chained(self, skill: Skill) -> 'Brain':
         # chained add skill
         self.add_skill(skill)

@@ -4,8 +4,9 @@ import random
 
 from LivinGrimoirePacket.AXPython import Responder, AXFunnel, UniqueRandomGenerator, AXPassword, TrgEveryNMinutes, \
     MonthlyTrigger, AXLearnability, TimeGate, AXStandBy, TimeUtils
-from LivinGrimoirePacket.AlgParts import APHappy, APSkillRemover, APSkillAdder, APSkillsRemover, APSkillsAdder
-from LivinGrimoirePacket.LivinGrimoire import Skill, Lobe, Brain, AlgPart, DiSysOut
+from LivinGrimoirePacket.AlgParts import APHappy, APSkillRemover, APSkillAdder, APSkillsRemover, APSkillsAdder, \
+    APAddUniqueSkills
+from LivinGrimoirePacket.LivinGrimoire import Skill, Lobe, Brain, AlgPart, DiSysOut, APVerbatim
 
 
 # ╔════════════════════════════════════════════════╗
@@ -500,31 +501,61 @@ class BrainEngram:
 
 
 class AHHibernate(Skill):
-    """this skill removes all skills but itself, or it restores all removed skills
-    the same principle of work as soulkiller from cyberpunk
-    the use of this skill is to lower the cost of computing resources when the AI
-    ecosystem is not in use
+    """a container skill: it adds its skills to the brain on manifest. on "hibernate"
+    (or after standby idle time) it removes its skills for a hibernation period, then
+    brings them back (edo tensei) on "wake up" or when the timer ends.
+    skills that are not its own are never touched
     """
-    def __init__(self, brain: Brain, hibernation_minutes=30, standby_minutes=2):
+    """
+    hib = AHHibernate(brain).add_skill(DiHelloWorld(), SomeOtherSkill())
+    brain.add_skill(hib)
+    """
+    def __init__(self, brain: Brain, hibernation_minutes=30, standby_minutes=40):
         super().__init__()
         self.brain = brain
+        self.skills: list[Skill] = []
         self.hibernating = False
-        self.engram: BrainEngram = BrainEngram(brain)
         self.tg: TimeGate = TimeGate(hibernation_minutes)
         self.standby: AXStandBy = AXStandBy(standby_minutes)
+
+    def add_skill(self, *skills: Skill) -> "AHHibernate":
+        for skill in skills:
+            if skill is not self and skill not in self.skills:
+                self.skills.append(skill)
+        return self
+
+    def manifest(self):
+        # add my skills to the brain
+        for skill in self.skills:
+            if not self.brain.contains_skill(skill):
+                self.brain.add_skill(skill)
+
+    def ghost(self):
+        # I am being removed, my skills go with me
+        for skill in self.skills:
+            self.brain.remove_skill(skill)
 
     def input(self, ear: str, skin: str, eye: str):
         if not self.hibernating:
             if ear == "hibernate" or self.standby.standBy(ear):
-                self.engram = BrainEngram(self.brain)
-                self.engram.remove_skill(self)
+                # ===================== HIBERNATION STARTS HERE =====================
                 self.hibernating = True
                 self.tg.openForPauseMinutes()
-                self.algPartsFusion(4, APHibernate(self, self.brain))
+                self.algPartsFusion(4, APSkillsRemover(self.brain, *self.skills),APVerbatim("hibernating"))
+                # ===================================================================
         else:
-            if self.tg.isClosed() or ear == "wake up":
+            if self.tg.isClosed() or len(ear)>0:
+                # ===================== HIBERNATION ENDS HERE =======================
                 self.hibernating = False
-                self.algPartsFusion(4, APImprintEngram(self.engram, self.brain))
+                self.algPartsFusion(4, APAddUniqueSkills(self.brain, *self.skills))
+                # ===================================================================
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "hibernates its own skills to save resources, wakes them on command or timer"
+        elif param == "triggers":
+            return "hibernate, wake up, or idle standby"
+        return "note unavailable"
 
 
 class AHBuff(Skill):
@@ -615,6 +646,99 @@ class DiInstaller(Skill):
         for skill in self.skills:
             self.brain.add_skill(skill)
         self.brain.remove_skill(self)
+
+
+class AHNagCooldown(Skill):
+    """a container skill: it adds its skills to the brain on manifest. when the same input
+    repeats back to back it warns, and if the nagging continues it removes its skills
+    for a cooldown period, then brings them back (edo tensei) and resets the counter.
+    skills that are not its own are never touched
+    """
+    def __init__(self, brain: Brain, cooldown_minutes=3, warn_at=4, hibernate_at=9):
+        super().__init__()
+        self.brain = brain
+        self.skills: list[Skill] = []
+        self.tg: TimeGate = TimeGate(cooldown_minutes)
+        self.warn_at = max(2, warn_at)  # clamp
+        self.hibernate_at = max(self.warn_at + 1, hibernate_at)  # always after the warning
+        self.hibernating = False
+        self._last_ear = ""
+        self._repeat_count = 0
+
+    def add_skill(self, *skills: Skill) -> "AHNagCooldown":
+        for skill in skills:
+            if skill is not self and skill not in self.skills:
+                self.skills.append(skill)
+        return self
+
+    @staticmethod
+    def _normalize(ear: str) -> str:
+        # "Nag!", "nag " and "NAG" all count as the same input
+        cleaned = "".join(c for c in ear.lower() if c.isalnum() or c.isspace())
+        return " ".join(cleaned.split())
+
+    def _count_repeats(self, ear: str) -> int:
+        # consecutive exact repeats, empty input is ignored
+        if not isinstance(ear, str):
+            return self._repeat_count
+        text = self._normalize(ear)
+        if text == "":
+            return self._repeat_count
+        if text == self._last_ear:
+            self._repeat_count += 1
+        else:
+            self._last_ear = text
+            self._repeat_count = 1
+        return self._repeat_count
+
+    def _reset_counter(self):
+        self._last_ear = ""
+        self._repeat_count = 0
+
+    def manifest(self):
+        # add my skills to the brain
+        for skill in self.skills:
+            if not self.brain.contains_skill(skill):
+                self.brain.add_skill(skill)
+
+    def ghost(self):
+        # I am being removed, my skills go with me
+        for skill in self.skills:
+            self.brain.remove_skill(skill)
+
+    def input(self, ear: str, skin: str, eye: str):
+        if not self.hibernating:
+            count = self._count_repeats(ear)
+            if count >= self.hibernate_at:
+                # ===================== HIBERNATION STARTS HERE =====================
+                self.hibernating = True
+                self._reset_counter()
+                self.tg.openForPauseMinutes()
+                # announce first, then remove my skills
+                self.algPartsFusion(4,
+                                    APVerbatim("I'm hibernating now, talk to you later"),
+                                    APSkillsRemover(self.brain, *self.skills))
+                # ===================================================================
+            elif count == self.warn_at:
+                # tier 1: warning, fires once at the threshold, nothing is removed
+                self.setSimpleAlg("stop repeating yourself")
+        else:
+            if self.tg.isClosed():
+                # ===================== HIBERNATION ENDS HERE =======================
+                self.hibernating = False
+                self._reset_counter()  # back to square one
+                # clear throat, then edo tensei my skills
+                self.algPartsFusion(4,
+                                    APVerbatim("ahem"),
+                                    APAddUniqueSkills(self.brain, *self.skills))
+                # ===================================================================
+
+    def skillNotes(self, param: str) -> str:
+        if param == "notes":
+            return "warns on repeated input, then hibernates its own skills for a cooldown"
+        elif param == "triggers":
+            return "repeat the same input back to back"
+        return "note unavailable"
 
 
 # ╔════════════════════════════════════════════════╗
