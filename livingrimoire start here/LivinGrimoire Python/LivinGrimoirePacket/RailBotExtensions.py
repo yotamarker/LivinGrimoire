@@ -183,20 +183,6 @@ class PopulatorFunc:
         pass
 
 
-class StringCache:
-    def __init__(self):
-        self._cache: set[str] = set()
-
-    def check_and_add(self, text: str) -> bool:
-        if text in self._cache:
-            return True
-        self._cache.add(text)
-        return False
-
-    def clear(self):
-        self._cache.clear()
-
-
 # ╔════════════════════════════════════════════════════════════════════════╗
 # ║                              RAILPUNK                                  ║
 # ╚════════════════════════════════════════════════════════════════════════╝
@@ -347,22 +333,26 @@ class PricePerUnit(PopulatorFunc):
     def __init__(self):
         super().__init__()
         self.regex = "price per unit"
-        self.cache: StringCache = StringCache()
-
-    def populate(self, railbot: RailPunk, str1: str):
-        if self.cache.check_and_add(str1):
-            return
-        pattern = (
+        self.pattern = re.compile(
             r"^(?P<product>\w+)\s+costs\s+"
             r"(?P<cost>\d+(?:\.\d+)?)\s+for\s+"
-            r"(?P<units>\d+)\s+units$"
+            r"(?P<units>\d+)\s+units$",
+            re.IGNORECASE,
         )
-        match = re.match(pattern, str1.strip(), re.IGNORECASE)
-        if not match:
-            return
-        cost_per_unit_str = f"{float(match.group('cost')) / int(match.group('units')):.2f}".rstrip("0").rstrip(".")
-        railbot.learn_key_value(f"{match.group('product')} price per unit", cost_per_unit_str)
 
+    def populate(self, railbot: RailPunk, str1: str):
+        if not isinstance(str1, str) or not str1:
+            return
+        match = self.pattern.match(str1.strip())
+        if match is None:
+            return
+        units = int(match.group("units"))
+        if units == 0:
+            return
+        per_unit = f"{float(match.group('cost')) / units:.2f}".rstrip("0").rstrip(".")
+        if not per_unit:
+            per_unit = "0"
+        railbot.learn_key_value(f"{match.group('product')} price per unit", per_unit)
 
 # CATEGORIZATION
 
@@ -386,7 +376,6 @@ class NoNos(PopulatorFunc):
     def __init__(self):
         super().__init__()
         self.regex = "nonos"
-        self.cache: StringCache = StringCache()
 
     @staticmethod
     def remove_ing_from_string(s):
@@ -406,11 +395,8 @@ class EmailPopulator(PopulatorFunc):
     def __init__(self):
         super().__init__()
         self.regex = "emails"
-        self.cache: StringCache = StringCache()
 
     def populate(self, railbot: RailPunk, str1: str):
-        if self.cache.check_and_add(str1):
-            return
         pattern = (
             r"^the email for\s+(?P<name>\w+(?:\s+\w+)?)\s+is\s+"
             r"(?P<email>[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$"
