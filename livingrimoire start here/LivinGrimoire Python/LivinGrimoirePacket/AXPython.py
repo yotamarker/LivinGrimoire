@@ -87,6 +87,7 @@ from difflib import SequenceMatcher
 # - NSilenceCyclesAfterStr
 # - SimilarityScorer
 # - TrueSprinkler
+# - DailyEngager
 
 # ┌──────────────────────────────────────────────┐
 # │ 🧪 SPECIAL SKILLS DEPENDENCIES               │
@@ -1951,6 +1952,69 @@ class TrueSprinkler:
             self._slots.remove(m)                         # consume so it only fires once
             return True
         return False
+
+
+class DailyEngager:
+    """
+    span:  minutes an engagement stays "true" once triggered
+    times: how many times per day it can be engaged
+
+    poll(trigger) is the per-cycle call: trigger=True spends a credit
+    (free if a window is already open), then returns whether the window
+    is open. A lapsed window never renews itself, only a new trigger
+    does. The `times` counter resets when the calendar day changes.
+    """
+
+    def __init__(self, span: int, times: int):
+        self.span = max(0, span)
+        self.times = max(0, times)
+
+        self._count = 0
+        self._day = datetime.datetime.now().date()
+        self._active_until = None  # type: datetime.datetime | None
+
+    def _roll_day_if_needed(self):
+        today = datetime.datetime.now().date()
+        if today != self._day:
+            self._day = today
+            self._count = 0
+            self._active_until = None
+
+    def engage(self) -> bool:
+        """Explicit credit spend. Don't call this every cycle, use poll()."""
+        self._roll_day_if_needed()
+        now = datetime.datetime.now()
+
+        if self._active_until is not None and now < self._active_until:
+            return True
+
+        if self._count < self.times:
+            self._count += 1
+            self._active_until = now + datetime.timedelta(minutes=self.span)
+            return True
+
+        self._active_until = None
+        return False
+
+    def poll(self, trigger: bool = False) -> bool:
+        """Safe per-cycle call. Only a trigger can consume a credit."""
+        if trigger:
+            self.engage()
+        return self.is_active
+
+    def stop(self):
+        self._active_until = None
+
+    @property
+    def is_active(self) -> bool:
+        """Peek at current state without consuming a use or re-engaging."""
+        self._roll_day_if_needed()
+        return self._active_until is not None and datetime.datetime.now() < self._active_until
+
+    @property
+    def remaining_today(self) -> int:
+        self._roll_day_if_needed()
+        return self.times - self._count
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
