@@ -20,11 +20,11 @@ class DiRailPunk(Skill):
         super().__init__()
         self.set_skill_type(2)
         self.chatbot: RailPunk = RailPunk()
+        # self.chatbot: RailPunk = RailPunk(db=SQLiteDictionaryDB("railpunk.db"))
         self.chatbot.add_populator(KeyVal())
         self.chatbot.add_populator(GoodFor())
         self.chatbot.add_populator(XYPatternLearner())
         self.add_populators(Walkthrough(), Snippet(), Composition(), NoNos())
-        self.chatbot.enable_db_wrapper()
         self.idler: NSilenceCyclesAfterStr = NSilenceCyclesAfterStr(3, 5)
         self.chatbot.set_context("stand by")
         self.monolog: set[str] = {"yeah", "elaborate", "elab"}
@@ -54,7 +54,7 @@ class DiRailPunk(Skill):
             self.setSimpleAlg("focusing")
             return
         if self.idler.check(ear):
-            self.chatbot.save_learned_data(self.getKokoro().grimoireMemento)
+            self.chatbot.save_learned_data()
             self.chatbot.set_context("stand by")
             self.focus = False
             return
@@ -62,16 +62,16 @@ class DiRailPunk(Skill):
         if self.HP.triggered(str1):
             reply = ""  # noqa
             if ear in self.monolog:
-                reply = self.chatbot.loadable_monolog(self.getKokoro().grimoireMemento)
+                reply = self.chatbot.reply_monolog()
                 reply = PhraseInflector.inflect_phrase(reply)
                 if len(reply) > 0:
                     self.setSimpleAlg(reply)
                 return
             else:
                 if not self.focus:
-                    reply = self.chatbot.loadable_dialog(ear, self.getKokoro().grimoireMemento)
+                    reply = self.chatbot.reply(ear)
                 else:
-                    reply = self.chatbot.loadable_latest_dialog(ear, self.getKokoro().grimoireMemento)
+                    reply = self.chatbot.reply(ear, True)
             if self.filter.shield(reply):
                 self.chatbot.learn(ear)
                 return

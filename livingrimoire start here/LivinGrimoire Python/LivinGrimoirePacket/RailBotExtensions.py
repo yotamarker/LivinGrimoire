@@ -176,9 +176,6 @@ class Tokenizer:
 
 
 class PopulatorFunc:
-    def __init__(self):
-        self.regex = __class__.__name__
-
     def populate(self, railbot: RailPunk, str1: str):
         pass
 
@@ -189,123 +186,115 @@ class PopulatorFunc:
 
 
 class RailPunk:
-    def __init__(self, limit=5):
-        self.ec = EventChatV2(limit)
-        self.context = "stand by"
-        self.eliza_wrapper: ElizaDBWrapper | None = None
-        self.funcs: dict[str, PopulatorFunc] = {}
-        self.add_populator(KeysFunnel())
-        self.removables: set[str] = Tokenizer.exclusions
-        self.skip = False
+    def __init__(self, limit=5, db: AbsDictionaryDB | None = None):
+        self.ec = EventChatV2(limit)  # the memory: key -> weighted replies (limit = replies kept per key)
+        self.context = "stand by"  # the last line the bot is "on"; monolog continues from here
+        self.db: AbsDictionaryDB | None = db  # optional storage; None = memory only
+        # DB wrapper exists only if a DB was given, this is what auto-picks DB or no DB
+        self.eliza_wrapper: ElizaDBWrapper | None = ElizaDBWrapper() if db is not None else None
+        self.funcs: dict[str, PopulatorFunc] = {}  # populators: small helpers that deduce extra knowledge from input
+        self.add_populator(KeysFunnel())  # default populator: indexes lines by their canonical key
+        self.removables: set[str] = Tokenizer.exclusions  # filler words dropped when building canonical keys
+        self.skip = False  # True after a reply(), makes the next monolog take an extra step
+
+    # ---------- populators ----------
 
     def add_populator(self, func: PopulatorFunc):
-        if len(func.regex) > 0:
-            self.funcs[func.regex] = func
+        # register a populator under its class name (adding the same class twice replaces the first)
+        self.funcs[type(func).__name__] = func
 
     def _populate(self, str1: str):
-        for regex, func in self.funcs.items():
-            self.funcs[regex].populate(self, str1)
-
-    def enable_db_wrapper(self):
-        if self.eliza_wrapper is None:
-            self.eliza_wrapper = ElizaDBWrapper()
-
-    def disable_db_wrapper(self):
-        self.eliza_wrapper = None
+        # run every populator on the input
+        for func in self.funcs.values():
+            func.populate(self, str1)
 
     def set_context(self, context):
+        # manually set the current context (empty values are ignored)
         if not context:
             return
         self.context = context
 
-    def _respond_monolog(self, ear):
+    # ---------- replying ----------
+
+    def _fetch(self, key: str, latest: bool) -> str:
+        # the ONLY place that cares about DB or no DB
+        if self.eliza_wrapper is None:
+            # no DB: read from memory only
+            return self.ec.response_latest(key) if latest else self.ec.response(key)
+        # with DB: wrapper loads the key from the DB first (once), then reads memory
+        if latest:
+            return self.eliza_wrapper.respond_latest(key, self.ec, self.db)
+        return self.eliza_wrapper.respond(key, self.ec, self.db)
+
+    def reply(self, ear: str, latest: bool = False) -> str:
+        # answer an input; latest=True gives the newest stored reply instead of a weighted random one
         if not ear:
-            return ""
-        temp = self.ec.response(ear)
-        if temp:
-            self.context = temp
-        return temp
+            return ""  # nothing to look up, and never hit the DB with an empty key
+        self.skip = True
+        result = self._fetch(ear, latest)  # try the exact input first
+        if result:
+            return result
+        # fallback: try the canonical key (lowercase, sorted, filler words removed)
+        return self._fetch(Tokenizer.canonical_key(ear, self.removables), latest)
+
+    def reply_monolog(self, latest: bool = False) -> str:
+        # the bot talks to itself, following the chain from self.context
+        passes = 2 if self.skip else 1  # after a reply() take one extra step first
+        self.skip = False
+        result = ""
+        for _ in range(passes):
+            if not self.context:
+                return ""
+            result = self._fetch(self.context, latest)
+            if result:
+                self.context = result  # move forward along the chain
+        return result
+
+    # ---------- learning ----------
 
     def learn(self, ear):
-        if not ear or ear == self.context:
+        # full learning: deduce + link the previous line to this one
+        if not ear or ear == self.context:  # ignore empty or repeated line
+            return
+        self._populate(ear)  # populators deduce extra knowledge
+        self.ec.add_key_value(self.context, ear)  # previous line -> this line
+        self.context = ear  # this line becomes the new context
+
+    def learn_only_deduce(self, ear: str):
+        # populators only: deduce knowledge but do NOT link previous line -> this line
+        if not ear:
             return
         self._populate(ear)
-        self.ec.add_key_value(self.context, ear)
-        self.context = ear
+        self.context = ear  # still move context so monolog and the next learn() continue from here
 
-    def monolog(self):
-        if self.skip:
-            self._respond_monolog(self.context)
-            self.skip = False
-        return self._respond_monolog(self.context)
-
-    def respond_dialog(self, ear):
-        self.skip = True
-        result = self.ec.response(ear)
-        if result:
-            return result
-        return self.ec.response(Tokenizer.canonical_key(ear, self.removables))
-
-    def respond_latest(self, ear):
-        self.skip = True
-        result = self.ec.response_latest(ear)
-        if result:
-            return result
-        return self.ec.response_latest(Tokenizer.canonical_key(ear, self.removables))
-
-    def learn_key_value(self, context, reply):
-        self.ec.add_key_value(context, reply)
+    def learn_key_value(self, context, value):
+        # teach one key -> reply pair directly
+        self.ec.add_key_value(context, value)
 
     def feed_key_value_pairs(self, kv_list: list[AXKeyValuePair]):
+        # teach many key -> reply pairs at once
         if not kv_list:
             return
         for kv in kv_list:
             self.learn_key_value(kv.get_key(), kv.get_value())
 
-    def save_learned_data(self, db: AbsDictionaryDB):
+    # ---------- saving / clearing ----------
+
+    def save_learned_data(self):
+        # write everything learned since the last save to the DB (does nothing without a DB)
         if self.eliza_wrapper is None:
             return
-        self.eliza_wrapper.sleep_n_save(self.ec, db)
+        self.eliza_wrapper.sleep_n_save(self.ec, self.db)
 
-    def _loadable_monolog_mechanics(self, ear, db: AbsDictionaryDB):
-        if not ear:
-            return ""
-        temp = self.eliza_wrapper.respond(ear, self.ec, db)
-        if temp:
-            self.context = temp
-        return temp
-
-    def loadable_monolog(self, db: AbsDictionaryDB):
-        if self.skip:
-            self._respond_monolog(self.context)
-            self.skip = False
-        if self.eliza_wrapper is None:
-            return self.monolog()
-        return self._loadable_monolog_mechanics(self.context, db)
-
-    def loadable_dialog(self, ear, db: AbsDictionaryDB):
-        self.skip = True
-        if self.eliza_wrapper is None:
-            return self.respond_dialog(ear)
-        result = self.eliza_wrapper.respond(ear, self.ec, db)
-        if result:
-            return result
-        return self.eliza_wrapper.respond(Tokenizer.canonical_key(ear, self.removables), self.ec, db)
-
-    def loadable_latest_dialog(self, ear, db: AbsDictionaryDB):
-        if self.eliza_wrapper is None:
-            return self.respond_latest(ear)
-        return self.eliza_wrapper.respond_latest(ear, self.ec, db)
-
-    def clear(self, db: AbsDictionaryDB | None = None):
-        """Wipe in-memory dictionary state, and DB-backed state if a db is given."""
-        self.ec.clear()
-        self.context = "stand by"
+    def clear(self):
+        """Wipe in-memory state, and DB-backed state if this instance has a DB."""
+        self.ec.clear()  # forget all learned pairs
+        self.context = "stand by"  # reset context
         self.skip = False
         if self.eliza_wrapper is not None:
-            self.eliza_wrapper.clear()
-        if db is not None:
-            db.clear()
+            self.eliza_wrapper.clear()  # forget which keys were already loaded from the DB
+        if self.db is not None:
+            self.db.clear()  # wipe the DB too
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -317,7 +306,6 @@ class RailPunk:
 class KeysFunnel(PopulatorFunc):
     def __init__(self):
         super().__init__()
-        self.regex = "funnel"
         self.context = "standby"
 
     def populate(self, railbot: RailPunk, str1: str):
@@ -332,7 +320,6 @@ class KeysFunnel(PopulatorFunc):
 class PricePerUnit(PopulatorFunc):
     def __init__(self):
         super().__init__()
-        self.regex = "price per unit"
         self.pattern = re.compile(
             r"^(?P<product>\w+)\s+costs\s+"
             r"(?P<cost>\d+(?:\.\d+)?)\s+for\s+"
@@ -359,7 +346,6 @@ class PricePerUnit(PopulatorFunc):
 class Nickname(PopulatorFunc):
     def __init__(self):
         super().__init__()
-        self.regex = "nickname"
         self.regex_code = r"call me (.+)"
 
     def populate(self, railbot: RailPunk, str1: str):
@@ -375,7 +361,6 @@ class Nickname(PopulatorFunc):
 class NoNos(PopulatorFunc):
     def __init__(self):
         super().__init__()
-        self.regex = "nonos"
 
     @staticmethod
     def remove_ing_from_string(s):
@@ -394,7 +379,6 @@ class NoNos(PopulatorFunc):
 class EmailPopulator(PopulatorFunc):
     def __init__(self):
         super().__init__()
-        self.regex = "emails"
 
     def populate(self, railbot: RailPunk, str1: str):
         pattern = (
@@ -441,7 +425,6 @@ class KeyVal(PopulatorFunc):
 class GoodFor(PopulatorFunc):
     def __init__(self):
         super().__init__()
-        self.regex = "good for"
 
     def populate(self, railbot: RailPunk, str1: str):
         if not str1:
@@ -452,9 +435,14 @@ class GoodFor(PopulatorFunc):
 
 
 class XYPatternLearner(PopulatorFunc):
+    # teach examples (trigger;key;value):
+    # x is a y;recommend a y;x
+    # x lives in y;where does x live;x lives in y
+    # then feed:
+    # pizza is a food          -> "recommend a food" -> "pizza"
+    # bob lives in paris       -> "where does bob live" -> "bob lives in paris"
     def __init__(self, max_patterns: int = 3):
         super().__init__()
-        self.regex = "xy pattern learner"
         self._patterns: list[dict] = []
         self._max_patterns = max_patterns
 
@@ -476,16 +464,24 @@ class XYPatternLearner(PopulatorFunc):
 
     @staticmethod
     def _tmpl_to_regex(tmpl: str) -> re.Pattern | None:
-        if "x" not in tmpl and "y" not in tmpl:
+        if len(re.findall(r"\bx\b", tmpl)) > 1 or len(re.findall(r"\by\b", tmpl)) > 1:
             return None
-        escaped = re.escape(tmpl)
-        escaped = escaped.replace(r"x", r"(?P<x>.+?)")
-        escaped = escaped.replace(r"y", r"(?P<y>.+?)")
-        return re.compile(f"^{escaped}$", re.IGNORECASE)
+        if not re.search(r"\b[xy]\b", tmpl):
+            return None
+        parts = re.split(r"\b([xy])\b", tmpl)
+        out = []
+        for part in parts:
+            if part == "x":
+                out.append(r"(?P<x>.+?)")
+            elif part == "y":
+                out.append(r"(?P<y>.+?)")
+            else:
+                out.append(re.escape(part))
+        return re.compile("^" + "".join(out) + "$", re.IGNORECASE)
 
     @staticmethod
     def _fill_tmpl(tmpl: str, x: str, y: str) -> str:
-        return tmpl.replace("x", x).replace("y", y)
+        return re.sub(r"\b([xy])\b", lambda m: x if m.group(1) == "x" else y, tmpl)
 
     def _teach_pattern(self, raw: str):
         parts = raw.split(";")
@@ -516,9 +512,15 @@ class XYPatternLearner(PopulatorFunc):
 
 
 class XOnlyPatternLearner(PopulatorFunc):
+    # teach examples (trigger;key;value):
+    # my name is x;who am i;you are x
+    # i like x;what do i like;you like x
+    # then feed:
+    # my name is Owly          -> "who am i" -> "you are Owly"
+    # i like pizza             -> "what do i like" -> "you like pizza"
+
     def __init__(self, max_patterns: int = 3):
         super().__init__()
-        self.regex = "x-only pattern learner"
         self._patterns: list[dict] = []
         self._max_patterns = max_patterns
 
@@ -540,18 +542,26 @@ class XOnlyPatternLearner(PopulatorFunc):
 
     @staticmethod
     def _tmpl_to_regex(tmpl: str) -> re.Pattern | None:
-        if "x" not in tmpl and "y" not in tmpl:
+        if len(re.findall(r"\bx\b", tmpl)) > 1 or len(re.findall(r"\by\b", tmpl)) > 1:
             return None
-        escaped = re.escape(tmpl)
-        escaped = escaped.replace(r"x", r"(?P<x>.+?)")
-        escaped = escaped.replace(r"y", r"(?P<y>.+?)")
-        return re.compile(f"^{escaped}$", re.IGNORECASE)
+        if not re.search(r"\b[xy]\b", tmpl):
+            return None
+        parts = re.split(r"\b([xy])\b", tmpl)
+        out = []
+        for part in parts:
+            if part == "x":
+                out.append(r"(?P<x>.+?)")
+            elif part == "y":
+                out.append(r"(?P<y>.+?)")
+            else:
+                out.append(re.escape(part))
+        return re.compile("^" + "".join(out) + "$", re.IGNORECASE)
 
     @staticmethod
     def _fill_tmpl(tmpl: str, x: str | None, y: str | None) -> str:
-        if x is None: x = ""
-        if y is None: y = ""
-        return tmpl.replace("x", x).replace("y", y)
+        x = x or ""
+        y = y or ""
+        return re.sub(r"\b([xy])\b", lambda m: x if m.group(1) == "x" else y, tmpl)
 
     def _teach_pattern(self, raw: str):
         parts = raw.split(";")
@@ -586,7 +596,6 @@ class XOnlyPatternLearner(PopulatorFunc):
 class Snippet(PopulatorFunc):
     def __init__(self):
         super().__init__()
-        self.regex = "snippet"
         self.regex_code1 = r"^(.*?)\s+snippet"
         self.regex_code2 = r"snippet\s+(.*?)$"
 
@@ -604,7 +613,6 @@ class Snippet(PopulatorFunc):
 class Composition(PopulatorFunc):
     def __init__(self):
         super().__init__()
-        self.regex = "composition"
         self.regex_code1 = r"^(.*?)\s+ingredients are"
         self.regex_code2 = r"ingredients are\s+(.*?)$"
 
@@ -622,7 +630,6 @@ class Composition(PopulatorFunc):
 class Walkthrough(PopulatorFunc):
     def __init__(self):
         super().__init__()
-        self.regex = "walkthrough"
         self.regex_code1 = r"^(.*?)\s+walkthrough is"
         self.regex_code2 = r"walkthrough is\s+(.*?)$"
 
