@@ -176,8 +176,11 @@ class Tokenizer:
 
 
 class PopulatorFunc:
-    def populate(self, railbot: RailPunk, str1: str):
-        pass
+    example: str = ""  # a sample line that makes this populator return True ("" = no example)
+
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
+        # True = handled the line, stops the populator loop. False = not mine
+        return False
 
 
 # ╔════════════════════════════════════════════════════════════════════════╗
@@ -192,21 +195,29 @@ class RailPunk:
         self.db: AbsDictionaryDB | None = db  # optional storage; None = memory only
         # DB wrapper exists only if a DB was given, this is what auto-picks DB or no DB
         self.eliza_wrapper: ElizaDBWrapper | None = ElizaDBWrapper() if db is not None else None
-        self.funcs: dict[str, PopulatorFunc] = {}  # populators: small helpers that deduce extra knowledge from input
-        self.add_populator(KeysFunnel())  # default populator: indexes lines by their canonical key
-        self.removables: set[str] = Tokenizer.exclusions  # filler words dropped when building canonical keys
         self.skip = False  # True after a reply(), makes the next monolog take an extra step
+        self.removables: set[str] = Tokenizer.exclusions  # filler words dropped when building canonical keys
+        self.populators: list[PopulatorFunc] = []  # ordered: specific first, broad last
+        self.add_populator(KeysFunnel())  # default populator: indexes lines by their canonical key
 
     # ---------- populators ----------
 
     def add_populator(self, func: PopulatorFunc):
-        # register a populator under its class name (adding the same class twice replaces the first)
-        self.funcs[type(func).__name__] = func
+        # insert func at the last position where its example doesn't trigger a populator before it
+        pos = len(self.populators)
+        if func.example:
+            for i, triggering in enumerate(self.populators):
+                if triggering.populate(self, func.example):
+                    pos = i  # this one would eat my example, so I go before it
+                    break
+            self.flush()  # wipe whatever the test calls learned
+        self.populators.insert(pos, func)
 
     def _populate(self, str1: str):
-        # run every populator on the input
-        for func in self.funcs.values():
-            func.populate(self, str1)
+        # run populators in order, stop at the first one that handled the line
+        for p in self.populators:
+            if p.populate(self, str1):
+                break
 
     def set_context(self, context):
         # manually set the current context (empty values are ignored)
@@ -286,13 +297,17 @@ class RailPunk:
             return
         self.eliza_wrapper.sleep_n_save(self.ec, self.db)
 
-    def clear(self):
-        """Wipe in-memory state, and DB-backed state if this instance has a DB."""
+    def flush(self):
+        # wipe in-memory state, DB untouched
         self.ec.clear()  # forget all learned pairs
         self.context = "stand by"  # reset context
         self.skip = False
         if self.eliza_wrapper is not None:
             self.eliza_wrapper.clear()  # forget which keys were already loaded from the DB
+
+    def clear(self):
+        """Wipe in-memory state, and DB-backed state if this instance has a DB."""
+        self.flush()
         if self.db is not None:
             self.db.clear()  # wipe the DB too
 
@@ -308,16 +323,19 @@ class KeysFunnel(PopulatorFunc):
         super().__init__()
         self.context = "standby"
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         if len(str1) == 0:
-            return
+            return False
         railbot.learn_key_value(Tokenizer.canonical_key(self.context, Tokenizer.exclusions), str1)
         self.context = str1
+        return False  # indexer: never stops the loop
 
 
 # CALC
 
 class PricePerUnit(PopulatorFunc):
+    example = "pen costs 10 for 5 units"
+
     def __init__(self):
         super().__init__()
         self.pattern = re.compile(
@@ -327,38 +345,45 @@ class PricePerUnit(PopulatorFunc):
             re.IGNORECASE,
         )
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         if not isinstance(str1, str) or not str1:
-            return
+            return False
         match = self.pattern.match(str1.strip())
         if match is None:
-            return
+            return False
         units = int(match.group("units"))
         if units == 0:
-            return
+            return False
         per_unit = f"{float(match.group('cost')) / units:.2f}".rstrip("0").rstrip(".")
         if not per_unit:
             per_unit = "0"
         railbot.learn_key_value(f"{match.group('product')} price per unit", per_unit)
+        return True
 
 # CATEGORIZATION
 
 class Nickname(PopulatorFunc):
+    example = "call me bob"
+
     def __init__(self):
         super().__init__()
         self.regex_code = r"call me (.+)"
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         if len(str1) == 0:
-            return
+            return False
         match = re.search(self.regex_code, str1)
-        if match:
-            railbot.learn_key_value("hi", f"hi {match.group(1)}")
+        if not match:
+            return False
+        railbot.learn_key_value("hi", f"hi {match.group(1)}")
+        return True
 
 
 # DEDUCEMENT
 
 class NoNos(PopulatorFunc):
+    example = "running is wrong"
+
     def __init__(self):
         super().__init__()
 
@@ -366,34 +391,41 @@ class NoNos(PopulatorFunc):
     def remove_ing_from_string(s):
         return " ".join(w[:-3] if w.endswith("ing") else w for w in s.split())
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         m = re.fullmatch(r"(.*)\s+is wrong", str1)
         x = m.group(1) if m else ""
         x = NoNos.remove_ing_from_string(x)
-        if len(x) > 0:
-            railbot.learn_key_value(f"may i {x}", f"no you are not allowed to {x}")
+        if len(x) == 0:
+            return False
+        railbot.learn_key_value(f"may i {x}", f"no you are not allowed to {x}")
+        return True
 
 
 # LOGGING
 
 class EmailPopulator(PopulatorFunc):
+    example = "the email for bob smith is bob@mail.com"
+
     def __init__(self):
         super().__init__()
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         pattern = (
             r"^the email for\s+(?P<name>\w+(?:\s+\w+)?)\s+is\s+"
             r"(?P<email>[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$"
         )
         match = re.match(pattern, str1.strip(), re.IGNORECASE)
         if not match:
-            return
+            return False
         railbot.learn_key_value(f"what is the mail for {match.group('name').strip()}", match.group("email"))
+        return True
 
 
 # PATTERN
 
 class KeyVal(PopulatorFunc):
+    example = "a;b"
+
     def __init__(self):
         super().__init__()
 
@@ -416,25 +448,32 @@ class KeyVal(PopulatorFunc):
                 found = True
         return found
 
-    def populate(self, railbot: RailPunk, str1: str):
-        if self.matches_pattern(str1):
-            k, v = self.split_key_value(str1)
-            railbot.learn_key_value(k, v)
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
+        if not self.matches_pattern(str1):
+            return False
+        k, v = self.split_key_value(str1)
+        railbot.learn_key_value(k, v)
+        return True
 
 
 class GoodFor(PopulatorFunc):
+    example = "pizza is a good food"
+
     def __init__(self):
         super().__init__()
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         if not str1:
-            return
+            return False
         match = re.match(r"^(.+?)\s+is a good\s+(.+)$", str1, re.IGNORECASE)
-        if match:
-            railbot.learn_key_value(f"recommend a {match.group(2).strip()}", match.group(1).strip())
+        if not match:
+            return False
+        railbot.learn_key_value(f"recommend a {match.group(2).strip()}", match.group(1).strip())
+        return True
 
 
 class XYPatternLearner(PopulatorFunc):
+    # no example: it only fires after being taught, so it lands last
     # teach examples (trigger;key;value):
     # x is a y;recommend a y;x
     # x lives in y;where does x live;x lives in y
@@ -483,35 +522,37 @@ class XYPatternLearner(PopulatorFunc):
     def _fill_tmpl(tmpl: str, x: str, y: str) -> str:
         return re.sub(r"\b([xy])\b", lambda m: x if m.group(1) == "x" else y, tmpl)
 
-    def _teach_pattern(self, raw: str):
+    def _teach_pattern(self, raw: str) -> bool:
         parts = raw.split(";")
         if len(parts) != 3:
-            return
+            return False
         trigger_raw, key_tmpl, val_tmpl = [p.strip() for p in parts]
         regex = self._tmpl_to_regex(trigger_raw)
         if regex is None:
-            return
+            return False
         self._patterns.append({"trigger_re": regex, "key_tmpl": key_tmpl, "val_tmpl": val_tmpl})
         self._sort_patterns()
         if len(self._patterns) > self._max_patterns:
             self._patterns.pop()
+        return True
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         if not str1:
-            return
+            return False
         if str1.count(";") == 2:
-            self._teach_pattern(str1)
-            return
+            return self._teach_pattern(str1)
         for p in self._patterns:
             m = p["trigger_re"].match(str1.strip())
             if m:
                 x = m.group("x").strip()
                 y = m.group("y").strip()
                 railbot.learn_key_value(self._fill_tmpl(p["key_tmpl"], x, y), self._fill_tmpl(p["val_tmpl"], x, y))
-                return
+                return True
+        return False
 
 
 class XOnlyPatternLearner(PopulatorFunc):
+    # no example: it only fires after being taught, so it lands last
     # teach examples (trigger;key;value):
     # my name is x;who am i;you are x
     # i like x;what do i like;you like x
@@ -563,82 +604,98 @@ class XOnlyPatternLearner(PopulatorFunc):
         y = y or ""
         return re.sub(r"\b([xy])\b", lambda m: x if m.group(1) == "x" else y, tmpl)
 
-    def _teach_pattern(self, raw: str):
+    def _teach_pattern(self, raw: str) -> bool:
         parts = raw.split(";")
         if len(parts) != 3:
-            return
+            return False
         trigger_raw, key_tmpl, val_tmpl = [p.strip() for p in parts]
         regex = self._tmpl_to_regex(trigger_raw)
         if regex is None:
-            return
+            return False
         self._patterns.append({"trigger_re": regex, "key_tmpl": key_tmpl, "val_tmpl": val_tmpl})
         self._sort_patterns()
         if len(self._patterns) > self._max_patterns:
             self._patterns.pop()
+        return True
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         if not str1:
-            return
+            return False
         if str1.count(";") == 2:
-            self._teach_pattern(str1)
-            return
+            return self._teach_pattern(str1)
         for p in self._patterns:
             m = p["trigger_re"].match(str1.strip())
             if m:
                 x = m.groupdict().get("x")
                 y = m.groupdict().get("y")
                 railbot.learn_key_value(self._fill_tmpl(p["key_tmpl"], x, y), self._fill_tmpl(p["val_tmpl"], x, y))
-                return
+                return True
+        return False
 
 
 # RECIPES
 
 class Snippet(PopulatorFunc):
+    example = "hello snippet world"
+
     def __init__(self):
         super().__init__()
         self.regex_code1 = r"^(.*?)\s+snippet"
         self.regex_code2 = r"snippet\s+(.*?)$"
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         if len(str1) == 0:
-            return
+            return False
         match = re.search(self.regex_code1, str1)
-        if match:
-            param1 = match.group(1)
-            match = re.search(self.regex_code2, str1)
-            if match:
-                railbot.learn_key_value(f'{param1} snippet', match.group(1))
+        if not match:
+            return False
+        param1 = match.group(1)
+        match = re.search(self.regex_code2, str1)
+        if not match:
+            return False
+        railbot.learn_key_value(f'{param1} snippet', match.group(1))
+        return True
 
 
 class Composition(PopulatorFunc):
+    example = "pizza ingredients are dough and cheese"
+
     def __init__(self):
         super().__init__()
         self.regex_code1 = r"^(.*?)\s+ingredients are"
         self.regex_code2 = r"ingredients are\s+(.*?)$"
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         if len(str1) == 0:
-            return
+            return False
         match = re.search(self.regex_code1, str1)
-        if match:
-            param1 = match.group(1)
-            match = re.search(self.regex_code2, str1)
-            if match:
-                railbot.learn_key_value(f'{param1} ingredients', match.group(1))
+        if not match:
+            return False
+        param1 = match.group(1)
+        match = re.search(self.regex_code2, str1)
+        if not match:
+            return False
+        railbot.learn_key_value(f'{param1} ingredients', match.group(1))
+        return True
 
 
 class Walkthrough(PopulatorFunc):
+    example = "pizza walkthrough is knead then bake"
+
     def __init__(self):
         super().__init__()
         self.regex_code1 = r"^(.*?)\s+walkthrough is"
         self.regex_code2 = r"walkthrough is\s+(.*?)$"
 
-    def populate(self, railbot: RailPunk, str1: str):
+    def populate(self, railbot: RailPunk, str1: str) -> bool:
         if len(str1) == 0:
-            return
+            return False
         match = re.search(self.regex_code1, str1)
-        if match:
-            param1 = match.group(1)
-            match = re.search(self.regex_code2, str1)
-            if match:
-                railbot.learn_key_value(f'{param1} walkthrough', match.group(1))
+        if not match:
+            return False
+        param1 = match.group(1)
+        match = re.search(self.regex_code2, str1)
+        if not match:
+            return False
+        railbot.learn_key_value(f'{param1} walkthrough', match.group(1))
+        return True
